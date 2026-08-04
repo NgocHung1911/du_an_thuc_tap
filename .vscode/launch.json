@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-TaskManagementSystemApplication<task_management_system>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.task.management.TaskManagementSystemApplication",
+            "projectName": "task_management_system",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
