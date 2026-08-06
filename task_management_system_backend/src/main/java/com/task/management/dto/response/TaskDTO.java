@@ -23,7 +23,6 @@ public class TaskDTO {
     private TaskPriority priority;
     private TaskStatus status;
 
-    // Trả về thông tin ngắn gọn của Project và User để tránh tuần hoàn dữ liệu (circular reference)
     private ProjectDTO project;
     private UserDTO assignedUser;
 
