@@ -52,10 +52,10 @@ export const RegisterPage: React.FC = () => {
         role,
       });
 
-      setSuccess('Đăng ký tài khoản thành công! Đang chuyển hướng đến trang Đăng nhập...');
+      setSuccess('Đăng ký tài khoản thành công! Đang chuyển hướng đến trang nhập mã OTP xác thực...');
       setTimeout(() => {
-        navigate('/login');
-      }, 1500);
+        navigate('/verify-otp', { state: { email } });
+      }, 1200);
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.message) {

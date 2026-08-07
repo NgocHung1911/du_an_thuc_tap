@@ -67,6 +67,7 @@ public class GoogleAuthService {
                 if (user.getGoogleId() == null) {
                     user.setGoogleId(googleId);
                 }
+                user.setVerified(true);
                 userRepository.save(user);
             } else {
                 // Trường hợp 1: Chưa có tài khoản -> Tự động đăng ký
@@ -75,6 +76,7 @@ public class GoogleAuthService {
                 user.setGoogleId(googleId);
                 user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 user.setRole(Role.MEMBER);
+                user.setVerified(true);
 
                 String baseUsername = email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
                 String username = baseUsername;

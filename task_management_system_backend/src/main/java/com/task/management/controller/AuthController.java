@@ -4,11 +4,14 @@ import com.task.management.config.security.JwtTokenProvider;
 import com.task.management.dto.request.GoogleLoginRequestDTO;
 import com.task.management.dto.request.LoginRequestDTO;
 import com.task.management.dto.request.RegisterRequestDTO;
+import com.task.management.dto.request.ResendOtpRequestDTO;
+import com.task.management.dto.request.VerifyOtpRequestDTO;
 import com.task.management.dto.response.AuthResponseDTO;
 import com.task.management.entity.User;
 import com.task.management.enums.Role;
 import com.task.management.repository.UserRepository;
 import com.task.management.service.GoogleAuthService;
+import com.task.management.service.OtpService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,9 +37,20 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthService googleAuthService;
+    private final OtpService otpService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
+        User user = userRepository.findByUsername(loginDTO.getUsername()).orElse(null);
+        if (user != null && !user.isVerified()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "message", "Tài khoản chưa được xác thực OTP. Vui lòng xác thực email để đăng nhập!",
+                            "isVerified", false,
+                            "email", user.getEmail()
+                    ));
+        }
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -48,7 +62,6 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String token = tokenProvider.generateToken(authentication);
 
-            User user = userRepository.findByUsername(loginDTO.getUsername()).orElse(null);
             List<String> roles = authentication.getAuthorities().stream()
                     .map(authority -> authority.getAuthority())
                     .collect(Collectors.toList());
@@ -84,14 +97,51 @@ public class AuthController {
         user.setUsername(registerDTO.getUsername());
         user.setEmail(registerDTO.getEmail());
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
-        
-        // Mặc định là MEMBER nếu không chỉ định role
+        user.setVerified(false);
         user.setRole(registerDTO.getRole() != null ? registerDTO.getRole() : Role.MEMBER);
 
         userRepository.save(user);
 
+        // Sinh mã OTP và gửi mail qua Brevo REST API
+        try {
+            otpService.generateAndSendOtp(user.getEmail());
+        } catch (Exception e) {
+            // Log lỡ gặp sự cố gửi mail
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Đăng ký tài khoản thành công!", "username", user.getUsername()));
+                .body(Map.of(
+                        "message", "Đăng ký tài khoản thành công! Vui lòng kiểm tra email để nhập mã OTP xác thực.",
+                        "username", user.getUsername(),
+                        "email", user.getEmail(),
+                        "isVerified", false
+                ));
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequestDTO verifyDto) {
+        try {
+            otpService.verifyOtp(verifyDto.getEmail(), verifyDto.getOtpCode());
+            return ResponseEntity.ok(Map.of(
+                    "message", "Xác thực tài khoản OTP thành công! Bạn có thể đăng nhập ngay bây giờ."
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Xác thực OTP thất bại!"));
+        }
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequestDTO resendDto) {
+        try {
+            otpService.resendOtp(resendDto.getEmail());
+            return ResponseEntity.ok(Map.of(
+                    "message", "Mã OTP mới đã được gửi đến email của bạn!"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Gửi lại mã OTP thất bại!"));
+        }
     }
 
     @PostMapping("/google")

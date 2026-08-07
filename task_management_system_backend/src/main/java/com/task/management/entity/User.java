@@ -29,6 +29,9 @@ public class User {
     @Column(name = "google_id")
     private String googleId;
 
+    @Column(name = "is_verified", nullable = false)
+    private boolean isVerified = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;

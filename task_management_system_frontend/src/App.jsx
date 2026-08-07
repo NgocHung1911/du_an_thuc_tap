@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { OtpVerificationPage } from './pages/auth/OtpVerificationPage';
 import { ProtectedRoute } from './routes/ProtectedRoutes';
 import { MainLayout } from './components/layout/MainLayout';
 
@@ -19,7 +20,7 @@ import { MemberMyTasksPage } from './pages/member/MemberMyTasksPage';
 import { MemberProjectsPage } from './pages/member/MemberProjectsPage';
 import { MemberProfilePage } from './pages/member/MemberProfilePage';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '123456789-dummyclientid.apps.googleusercontent.com';
 
 const RootRedirect = () => {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -38,6 +39,7 @@ function App() {
             {/* Public Authentication Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-otp" element={<OtpVerificationPage />} />
 
             {/* Root Path Smart Redirect */}
             <Route path="/" element={<RootRedirect />} />

@@ -3,12 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../services/authApi';
 import { GoogleLogin } from '@react-oauth/google';
-import { LogIn, Lock, User, AlertCircle } from 'lucide-react';
+import { LogIn, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
@@ -32,6 +33,7 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setUnverifiedEmail(null);
 
     if (!username.trim() || !password.trim()) {
       setError('Vui lòng nhập đầy đủ Tên đăng nhập và Mật khẩu!');
@@ -45,7 +47,10 @@ export const LoginPage: React.FC = () => {
       handleLoginSuccess(response);
     } catch (err: any) {
       console.error(err);
-      if (err.response?.data?.message) {
+      if (err.response?.data?.isVerified === false) {
+        setError(err.response.data.message || 'Tài khoản chưa được xác thực OTP!');
+        setUnverifiedEmail(err.response.data.email || '');
+      } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
         setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
@@ -63,6 +68,7 @@ export const LoginPage: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setUnverifiedEmail(null);
 
     try {
       const response = await authApi.googleLogin(credentialResponse.credential);
@@ -92,9 +98,23 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mb-5 p-3.5 bg-[#FFEBE6] border border-[#FFBDAD] text-[#BF2600] rounded text-sm flex items-start gap-2.5">
-            <AlertCircle size={18} className="shrink-0 mt-0.5" />
-            <span>{error}</span>
+          <div className="mb-5 p-3.5 bg-[#FFEBE6] border border-[#FFBDAD] text-[#BF2600] rounded text-sm space-y-2">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+            {unverifiedEmail && (
+              <div className="pt-2 border-t border-[#FFBDAD]/50 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate('/verify-otp', { state: { email: unverifiedEmail } })}
+                  className="bg-[#0052CC] hover:bg-[#0747A6] text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+                >
+                  <ShieldCheck size={14} />
+                  <span>Xác thực OTP ngay</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
