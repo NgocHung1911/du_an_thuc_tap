@@ -23,6 +23,11 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getAllTasks());
     }
 
+    @GetMapping("/project/{projectId}")
+    public ResponseEntity<List<TaskDTO>> getTasksByProjectId(@PathVariable Long projectId) {
+        return ResponseEntity.ok(taskService.getTasksByProjectId(projectId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTaskById(id));
@@ -37,6 +42,30 @@ public class TaskController {
     @PutMapping("/{id}")
     public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @Valid @RequestBody TaskRequest request) {
         return ResponseEntity.ok(taskService.updateTask(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<TaskDTO> updateTaskStatus(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        String statusStr = body.get("status");
+        if (statusStr == null || statusStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Trạng thái (status) không được để trống");
+        }
+        com.task.management.enums.TaskStatus status = com.task.management.enums.TaskStatus.valueOf(statusStr.trim().toUpperCase());
+        return ResponseEntity.ok(taskService.updateTaskStatus(id, status));
+    }
+
+    @PatchMapping("/{id}/priority")
+    public ResponseEntity<TaskDTO> updateTaskPriority(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        String priorityStr = body.get("priority");
+        if (priorityStr == null || priorityStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mức độ ưu tiên (priority) không được để trống");
+        }
+        com.task.management.enums.TaskPriority priority = com.task.management.enums.TaskPriority.valueOf(priorityStr.trim().toUpperCase());
+        return ResponseEntity.ok(taskService.updateTaskPriority(id, priority));
     }
 
     @PutMapping("/{taskId}/assign/{userId}")

@@ -10,13 +10,12 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] flex flex-col font-sans">
-      {/* Jira Top Header Bar */}
       <header className="h-14 bg-[#0052CC] text-white flex items-center justify-between px-5 shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center font-bold text-base">
             J
           </div>
-          <span className="font-bold text-lg tracking-wide">Jira Task Management</span>
+          <span className="font-bold text-lg tracking-wide">Kira Task Management</span>
         </div>
 
         <div className="flex items-center gap-4">

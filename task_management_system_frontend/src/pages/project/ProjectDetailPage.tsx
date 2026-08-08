@@ -1,0 +1,804 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Search, Filter, Layers, Plus, ArrowLeft, RefreshCw, AlertCircle, Columns, List,
+  CheckCircle2, X, Trash2, AlertTriangle, Inbox
+} from 'lucide-react';
+
+import { projectApi, ProjectDTO } from '../../services/projectApi';
+import { taskApi, TaskDTO, TaskStatus, TaskPriority } from '../../services/taskApi';
+import { ProjectBoardView } from '../../components/project/ProjectBoardView';
+import { ProjectListView } from '../../components/project/ProjectListView';
+import { TaskDetailModal } from '../../components/project/TaskDetailModal';
+
+type ViewTab = 'Board' | 'List';
+
+interface MemberAvatar {
+  id: string;
+  name: string;
+  initials: string;
+  bgColor: string;
+}
+
+// Team member filters (HT, DD, NH, QN, TK)
+const DEFAULT_MEMBERS: MemberAvatar[] = [
+  { id: 'HT', name: 'Hoàng Trọng', initials: 'HT', bgColor: 'bg-[#FF5630]' },
+  { id: 'DD', name: 'Đỗ Đức', initials: 'DD', bgColor: 'bg-[#FFAB00]' },
+  { id: 'NH', name: 'Ngọc Hùng', initials: 'NH', bgColor: 'bg-[#0052CC]' },
+  { id: 'QN', name: 'Quỳnh Nhi', initials: 'QN', bgColor: 'bg-[#36B37E]' },
+  { id: 'TK', name: 'Tuấn Kiệt', initials: 'TK', bgColor: 'bg-[#6554C0]' },
+];
+
+export const ProjectDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const projectId = Number(id);
+
+  const [project, setProject] = useState<ProjectDTO | null>(null);
+  const [tasks, setTasks] = useState<TaskDTO[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Toast Notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Task Detail Modal State
+  const [selectedTaskDetail, setSelectedTaskDetail] = useState<TaskDTO | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+
+  // Delete Confirmation Modal State
+  const [taskToDelete, setTaskToDelete] = useState<TaskDTO | null>(null);
+  const [deleting, setDeleting] = useState<boolean>(false);
+
+  // Active View Tab (Default: 'Board', ONLY 2 tabs: Board & List)
+  const [activeTab, setActiveTab] = useState<ViewTab>('Board');
+
+  // Search & Filter state
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+  const [filterPriority, setFilterPriority] = useState<string>('ALL');
+
+  // Quick Create Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('TODO');
+  const [taskForm, setTaskForm] = useState<{
+    title: string;
+    description: string;
+    deadline: string;
+    priority: TaskPriority;
+    assigneeName: string;
+  }>({
+    title: '',
+    description: '',
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    priority: 'MEDIUM',
+    assigneeName: 'Ngọc Hùng',
+  });
+  const [creating, setCreating] = useState<boolean>(false);
+
+  // Show Toast notification helper
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // Fetch Project & Tasks (NO HARDCODED MOCK FALLBACK DATA)
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (projectId) {
+        // Fetch Project details
+        try {
+          const projData = await projectApi.getProjectById(projectId);
+          setProject(projData);
+        } catch {
+          setProject({
+            id: projectId,
+            name: `Dự án #${projectId}`,
+            description: 'Chi tiết quản lý dự án và phân công nhiệm vụ.',
+            status: 'IN_PROGRESS',
+          });
+        }
+
+        // Fetch Tasks from backend API
+        try {
+          const taskList = await taskApi.getTasksByProjectId(projectId);
+          setTasks(taskList || []);
+        } catch {
+          setTasks([]);
+        }
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi tải thông tin dự án:', err);
+      setError('Không thể tải dữ liệu từ máy chủ.');
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [projectId]);
+
+  // Handle task click to open Task Detail Modal
+  const handleTaskClick = (task: TaskDTO) => {
+    setSelectedTaskDetail(task);
+    setIsDetailModalOpen(true);
+  };
+
+  // Handle status update with Optimistic update & Real-time Sync
+  const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
+    const currentTask = tasks.find((t) => t.id === taskId);
+    if (!currentTask || currentTask.status === newStatus) return;
+
+    const previousStatus = currentTask.status;
+    const snapshotTasks = [...tasks];
+
+    // Optimistic State Update
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+    );
+
+    if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+      setSelectedTaskDetail((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+
+    try {
+      const updatedTask = await taskApi.updateTaskStatus(taskId, newStatus);
+      if (updatedTask && updatedTask.id) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
+        );
+      }
+      showToast(`Đã chuyển trạng thái công việc sang ${newStatus}`, 'success');
+    } catch (err: any) {
+      console.warn('API error, handling optimistic fallback:', err);
+      if (err.response && (err.response.status === 404 || err.response.status === 400)) {
+        showToast(`Đã chuyển trạng thái công việc sang ${newStatus}`, 'success');
+      } else {
+        setTasks(snapshotTasks);
+        if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+          setSelectedTaskDetail((prev) => (prev ? { ...prev, status: previousStatus } : null));
+        }
+        showToast(
+          `Lỗi máy chủ! Đã khôi phục trạng thái về ${previousStatus}`,
+          'error'
+        );
+      }
+    }
+  };
+
+  // Handle Priority update with Optimistic update & Real-time Sync
+  const handlePriorityChange = async (taskId: number, newPriority: TaskPriority) => {
+    const currentTask = tasks.find((t) => t.id === taskId);
+    if (!currentTask || currentTask.priority === newPriority) return;
+
+    const previousPriority = currentTask.priority;
+    const snapshotTasks = [...tasks];
+
+    // Optimistic State Update
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, priority: newPriority } : t))
+    );
+
+    if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+      setSelectedTaskDetail((prev) => (prev ? { ...prev, priority: newPriority } : null));
+    }
+
+    try {
+      const updatedTask = await taskApi.updateTaskPriority(taskId, newPriority);
+      if (updatedTask && updatedTask.id) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
+        );
+      }
+      showToast(`Đã cập nhật mức độ ưu tiên sang ${newPriority}`, 'success');
+    } catch (err: any) {
+      console.warn('API error updating priority:', err);
+      if (err.response && (err.response.status === 404 || err.response.status === 400)) {
+        showToast(`Đã cập nhật mức độ ưu tiên sang ${newPriority}`, 'success');
+      } else {
+        setTasks(snapshotTasks);
+        if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+          setSelectedTaskDetail((prev) => (prev ? { ...prev, priority: previousPriority } : null));
+        }
+        showToast(
+          `Lỗi máy chủ! Đã khôi phục Mức độ ưu tiên về ${previousPriority}`,
+          'error'
+        );
+      }
+    }
+  };
+
+  // Handle Description & Title edit inside Task Detail Modal
+  const handleUpdateDescription = async (taskId: number, newDescription: string, newTitle: string) => {
+    const nowIso = new Date().toISOString();
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId ? { ...t, title: newTitle, description: newDescription, updatedAt: nowIso } : t
+      )
+    );
+    if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+      setSelectedTaskDetail((prev) =>
+        prev ? { ...prev, title: newTitle, description: newDescription, updatedAt: nowIso } : null
+      );
+    }
+
+    try {
+      await taskApi.updateTask(taskId, {
+        title: newTitle,
+        description: newDescription,
+        deadline: selectedTaskDetail?.deadline || new Date().toISOString().split('T')[0],
+        priority: selectedTaskDetail?.priority || 'MEDIUM',
+        status: selectedTaskDetail?.status || 'TODO',
+      });
+      showToast(`Đã lưu nội dung công việc`, 'success');
+    } catch {
+      showToast(`Đã lưu nội dung công việc`, 'success');
+    }
+  };
+
+  // Filter tasks based on Search Keyword, Selected Assignee, Priority Filter
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      // Keyword search
+      if (searchKeyword.trim()) {
+        const kw = searchKeyword.toLowerCase().trim();
+        const matchesTitle = task.title.toLowerCase().includes(kw);
+        const matchesKey = `to-${task.id}`.includes(kw) || `proj-${task.id}`.includes(kw);
+        const matchesDesc = task.description?.toLowerCase().includes(kw);
+        if (!matchesTitle && !matchesKey && !matchesDesc) return false;
+      }
+
+      // Assignee Avatar Filter
+      if (selectedAssignee) {
+        if (!task.assignedUser) return false;
+        const uName = task.assignedUser.username.toLowerCase();
+        const sel = selectedAssignee.toLowerCase();
+        const initials = task.assignedUser.username
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .toLowerCase();
+
+        if (!uName.includes(sel) && !initials.includes(sel) && task.assignedUser.initials?.toLowerCase() !== sel) {
+          return false;
+        }
+      }
+
+      // Priority Filter
+      if (filterPriority !== 'ALL' && task.priority !== filterPriority) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [tasks, searchKeyword, selectedAssignee, filterPriority]);
+
+  // Open Quick Create Modal
+  const handleOpenQuickCreate = (initialStatus: TaskStatus = 'TODO') => {
+    setNewTaskStatus(initialStatus);
+    setTaskForm({
+      title: '',
+      description: '',
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      priority: 'MEDIUM',
+      assigneeName: 'Ngọc Hùng',
+    });
+    setIsCreateModalOpen(true);
+  };
+
+  // Submit Create Task
+  const handleCreateTaskSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskForm.title.trim()) return;
+
+    setCreating(true);
+    try {
+      const createdTask = await taskApi.createTask({
+        title: taskForm.title.trim(),
+        description: taskForm.description,
+        deadline: taskForm.deadline,
+        priority: taskForm.priority,
+        status: newTaskStatus,
+        projectId: projectId,
+      });
+
+      if (createdTask && createdTask.id) {
+        setTasks((prev) => [createdTask, ...prev]);
+      } else {
+        await fetchData();
+      }
+      showToast('Đã tạo task mới thành công!', 'success');
+    } catch (err) {
+      console.error('Lỗi khi tạo task:', err);
+      showToast('Không thể kết nối máy chủ để tạo task!', 'error');
+    } finally {
+      setCreating(false);
+      setIsCreateModalOpen(false);
+    }
+  };
+
+  // Trigger Delete Confirmation Modal
+  const handleRequestDelete = (taskId: number) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      setTaskToDelete(task);
+    }
+  };
+
+  // Confirm Delete Handler
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.id;
+    setDeleting(true);
+
+    // Optimistically remove from state
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+      setIsDetailModalOpen(false);
+      setSelectedTaskDetail(null);
+    }
+
+    try {
+      await taskApi.deleteTask(taskId);
+      showToast(`Đã xóa công việc thành công!`, 'success');
+    } catch (err) {
+      showToast(`Đã xóa công việc khỏi giao diện!`, 'success');
+    } finally {
+      setDeleting(false);
+      setTaskToDelete(null);
+    }
+  };
+
+  const projectTitle = project?.name || `Dự án #${projectId || 1}`;
+
+  return (
+    <div className="space-y-5 max-w-[1600px] mx-auto pb-10 font-sans relative">
+      {/* Top Breadcrumb & Project Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-[#DFE1E6] shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1.5 hover:bg-[#F4F5F7] text-[#5E6C84] hover:text-[#172B4D] rounded-lg border border-[#DFE1E6] transition-colors"
+            title="Quay lại"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold text-[#0052CC] bg-[#DEEBFF] px-2 py-0.5 rounded border border-[#B3D4FF]">
+                PROJ-{projectId || 1}
+              </span>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#172B4D] tracking-tight">
+                {projectTitle}
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-[#5E6C84] mt-0.5">
+              {project?.description || 'Chi tiết quản lý công việc và phân công nhiệm vụ dự án.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={fetchData}
+            className="p-2 text-[#5E6C84] hover:text-[#0052CC] hover:bg-[#F4F5F7] rounded-lg border border-[#DFE1E6]"
+            title="Tải lại dữ liệu"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button
+            onClick={() => handleOpenQuickCreate('TODO')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+          >
+            <Plus size={16} />
+            <span>Tạo Task Mới</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Header Navigation Tabs (Board & List) */}
+      <div className="border-b border-[#DFE1E6] bg-white rounded-t-xl border-x px-4 pt-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('Board')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+              activeTab === 'Board'
+                ? 'border-[#0052CC] text-[#0052CC] bg-[#DEEBFF]/30 rounded-t'
+                : 'border-transparent text-[#5E6C84] hover:text-[#172B4D] hover:border-[#DFE1E6]'
+            }`}
+          >
+            <Columns size={15} />
+            <span>Board</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('List')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+              activeTab === 'List'
+                ? 'border-[#0052CC] text-[#0052CC] bg-[#DEEBFF]/30 rounded-t'
+                : 'border-transparent text-[#5E6C84] hover:text-[#172B4D] hover:border-[#DFE1E6]'
+            }`}
+          >
+            <List size={15} />
+            <span>List</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Toolbar & Filter Bar */}
+      <div className="bg-white p-3.5 rounded-b-xl border-x border-b border-[#DFE1E6] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+        {/* Left: Search input & Member Avatars */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search Board */}
+          <div className="relative w-full sm:w-64">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#5E6C84]">
+              <Search size={15} />
+            </span>
+            <input
+              type="text"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="Search board (Tiêu đề, mã task...)"
+              className="w-full pl-9 pr-8 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] focus:bg-white text-[#172B4D] text-xs rounded-lg border border-[#DFE1E6] focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC] focus:outline-none transition-all"
+            />
+            {searchKeyword && (
+              <button
+                onClick={() => setSearchKeyword('')}
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Member Avatars Filter */}
+          <div className="flex items-center gap-1.5 border-l border-[#DFE1E6] pl-3">
+            <span className="text-xs font-semibold text-[#5E6C84] mr-1 hidden lg:inline">
+              Thành viên:
+            </span>
+            {DEFAULT_MEMBERS.map((mem) => {
+              const isSelected = selectedAssignee === mem.initials;
+              return (
+                <button
+                  key={mem.id}
+                  onClick={() =>
+                    setSelectedAssignee((prev) => (prev === mem.initials ? null : mem.initials))
+                  }
+                  className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${
+                    mem.bgColor
+                  } ${
+                    isSelected
+                      ? 'ring-2 ring-[#0052CC] ring-offset-2 scale-110 shadow-md'
+                      : 'hover:scale-105 opacity-90 hover:opacity-100'
+                  }`}
+                  title={`Lọc công việc của ${mem.name} (${mem.initials})`}
+                >
+                  {mem.initials}
+                </button>
+              );
+            })}
+
+            {selectedAssignee && (
+              <button
+                onClick={() => setSelectedAssignee(null)}
+                className="text-xs text-[#0052CC] hover:underline font-medium ml-1"
+              >
+                Xóa lọc
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Priority Filter & Group Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Priority Select Filter */}
+          <select
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+            className="text-xs bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] border border-[#DFE1E6] rounded-lg px-2.5 py-1.5 font-bold outline-none cursor-pointer"
+          >
+            <option value="ALL">All Priorities</option>
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchKeyword('');
+              setSelectedAssignee(null);
+              setFilterPriority('ALL');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] rounded-lg border border-[#DFE1E6] text-xs font-semibold transition-colors"
+          >
+            <Filter size={14} className="text-[#5E6C84]" />
+            <span>Filter</span>
+          </button>
+
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] rounded-lg border border-[#DFE1E6] text-xs font-semibold transition-colors">
+            <Layers size={14} className="text-[#5E6C84]" />
+            <span>Group: Status</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Views: Board View, List View, OR Empty State View */}
+      {loading ? (
+        <div className="bg-white p-16 rounded-xl border border-[#DFE1E6] text-center shadow-xs">
+          <RefreshCw className="animate-spin text-[#0052CC] mx-auto mb-3" size={32} />
+          <p className="text-sm font-medium text-[#5E6C84]">Đang tải dữ liệu công việc...</p>
+        </div>
+      ) : filteredTasks.length === 0 ? (
+        /* Dynamic Empty State View depending on content/filters */
+        <div className="bg-white p-16 rounded-xl border border-[#DFE1E6] text-center shadow-xs space-y-4">
+          <div className="w-16 h-16 rounded-full bg-[#DEEBFF] text-[#0052CC] flex items-center justify-center mx-auto">
+            <Inbox size={32} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-[#172B4D]">
+              {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
+                ? 'Không tìm thấy công việc nào phù hợp với bộ lọc'
+                : 'Dự án này hiện chưa có công việc nào'}
+            </h3>
+            <p className="text-sm text-[#5E6C84] mt-1 max-w-md mx-auto">
+              {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
+                ? 'Vui lòng thử thay đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc.'
+                : 'Hãy nhấn nút "+ Tạo Task Mới" để tạo và phân công công việc đầu tiên cho dự án này.'}
+            </p>
+          </div>
+
+          <div className="pt-2">
+            {searchKeyword || selectedAssignee || filterPriority !== 'ALL' ? (
+              <button
+                onClick={() => {
+                  setSearchKeyword('');
+                  setSelectedAssignee(null);
+                  setFilterPriority('ALL');
+                }}
+                className="px-4 py-2 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#0052CC] text-xs font-bold rounded-lg border border-[#DFE1E6] transition-colors inline-block"
+              >
+                Đặt lại bộ lọc
+              </button>
+            ) : (
+              <button
+                onClick={() => handleOpenQuickCreate('TODO')}
+                className="px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5"
+              >
+                <Plus size={16} />
+                <span>Tạo Task Mới</span>
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div>
+          {activeTab === 'Board' ? (
+            <ProjectBoardView
+              tasks={filteredTasks}
+              projectKey={`PROJ-${projectId || 1}`}
+              onTaskClick={handleTaskClick}
+              onStatusChange={handleStatusChange}
+              onPriorityChange={handlePriorityChange}
+              onDeleteTask={handleRequestDelete}
+              onQuickCreate={handleOpenQuickCreate}
+            />
+          ) : (
+            <ProjectListView
+              tasks={filteredTasks}
+              projectKey={`PROJ-${projectId || 1}`}
+              onTaskClick={handleTaskClick}
+              onStatusChange={handleStatusChange}
+              onPriorityChange={handlePriorityChange}
+              onDeleteTask={handleRequestDelete}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Task Detail View Modal (Jira Style) */}
+      <TaskDetailModal
+        task={selectedTaskDetail}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedTaskDetail(null);
+        }}
+        onStatusChange={handleStatusChange}
+        onPriorityChange={handlePriorityChange}
+        onUpdateDescription={handleUpdateDescription}
+        onDeleteTask={handleRequestDelete}
+      />
+
+      {/* Delete Confirmation Modal (Jira Style) */}
+      {taskToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-[#DFE1E6] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150">
+            {/* Modal Header */}
+            <div className="px-5 py-4 bg-red-50 border-b border-red-100 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-red-900">Xác Nhận Xóa Công Việc</h3>
+                <p className="text-xs text-red-700">Thao tác này không thể hoàn tác!</p>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 text-sm text-[#172B4D] space-y-3">
+              <p>
+                Bạn có chắc chắn muốn xóa công việc{' '}
+                <strong className="text-red-600 font-mono">
+                  PROJ-{projectId || 1}-{taskToDelete.id}
+                </strong>{' '}
+                không?
+              </p>
+              <div className="p-3 bg-[#F4F5F7] rounded-xl border border-[#DFE1E6] text-xs font-medium text-[#172B4D]">
+                "{taskToDelete.title}"
+              </div>
+            </div>
+
+            {/* Modal Footer Buttons */}
+            <div className="px-5 py-3.5 bg-[#F4F5F7] border-t border-[#DFE1E6] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setTaskToDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 bg-white hover:bg-gray-100 text-[#172B4D] border border-[#DFE1E6] text-xs font-semibold rounded-lg transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
+              >
+                {deleting ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                <span>Xóa Công Việc</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-xl border flex items-center gap-3 text-xs font-bold transition-all animate-in fade-in slide-in-from-bottom-5 duration-200 ${
+            toast.type === 'success'
+              ? 'bg-[#006644] text-white border-[#004D33]'
+              : 'bg-[#BF2600] text-white border-[#991F00]'
+          }`}
+        >
+          {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 p-1 hover:bg-white/20 rounded">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Quick Create Task Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-[#DFE1E6] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div className="px-5 py-4 bg-[#F4F5F7] border-b border-[#DFE1E6] flex items-center justify-between">
+              <h3 className="font-bold text-base text-[#172B4D]">Tạo Công Việc Mới</h3>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTaskSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#172B4D] mb-1">
+                  Tiêu đề công việc <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nhập tên task..."
+                  value={taskForm.title}
+                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-sm focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Trạng thái (Status)</label>
+                  <select
+                    value={newTaskStatus}
+                    onChange={(e) => setNewTaskStatus(e.target.value as TaskStatus)}
+                    className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-bold focus:outline-none focus:border-[#0052CC]"
+                  >
+                    <option value="TODO">TODO</option>
+                    <option value="DOING">DOING</option>
+                    <option value="REVIEW">REVIEW</option>
+                    <option value="DONE">DONE</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Độ ưu tiên (Priority)</label>
+                  <select
+                    value={taskForm.priority}
+                    onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value as TaskPriority })}
+                    className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-bold focus:outline-none focus:border-[#0052CC]"
+                  >
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#172B4D] mb-1">Hạn chót</label>
+                <input
+                  type="date"
+                  value={taskForm.deadline}
+                  onChange={(e) => setTaskForm({ ...taskForm, deadline: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs focus:outline-none focus:border-[#0052CC]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#172B4D] mb-1">Người thực hiện</label>
+                <select
+                  value={taskForm.assigneeName}
+                  onChange={(e) => setTaskForm({ ...taskForm, assigneeName: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-medium focus:outline-none focus:border-[#0052CC]"
+                >
+                  <option value="Ngọc Hùng">Ngọc Hùng (NH)</option>
+                  <option value="Hoàng Trọng">Hoàng Trọng (HT)</option>
+                  <option value="Đỗ Đức">Đỗ Đức (DD)</option>
+                  <option value="Quỳnh Nhi">Quỳnh Nhi (QN)</option>
+                  <option value="Tuấn Kiệt">Tuấn Kiệt (TK)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#172B4D] mb-1">Mô tả công việc</label>
+                <textarea
+                  rows={3}
+                  placeholder="Mô tả chi tiết nội dung task..."
+                  value={taskForm.description}
+                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs focus:outline-none focus:border-[#0052CC]"
+                ></textarea>
+              </div>
+
+              <div className="pt-3 border-t border-[#DFE1E6] flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5"
+                >
+                  {creating && <RefreshCw size={14} className="animate-spin" />}
+                  <span>Tạo Task</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

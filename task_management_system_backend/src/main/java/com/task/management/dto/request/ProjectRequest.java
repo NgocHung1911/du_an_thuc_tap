@@ -18,7 +18,7 @@ import java.time.LocalDate;
 public class ProjectRequest {
 
     @NotBlank(message = "Tên dự án không được để trống")
-    @Size(min = 3, max = 100, message = "Tên dự án phải từ 3 đến 100 ký tự")
+    @Size(max = 100, message = "Tên dự án không được vượt quá 100 ký tự")
     private String name;
 
     private String description;

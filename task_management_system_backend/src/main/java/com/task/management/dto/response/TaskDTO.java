@@ -26,6 +26,11 @@ public class TaskDTO {
     private ProjectDTO project;
     private UserDTO assignedUser;
 
+    private Long projectId;
+    private String projectName;
+    private Long userId;
+    private String userFullName;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

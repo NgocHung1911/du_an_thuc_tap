@@ -44,6 +44,11 @@ public class TaskService {
                     .build();
         }
 
+        Long projId = task.getProject() != null ? task.getProject().getId() : null;
+        String projName = task.getProject() != null ? task.getProject().getName() : null;
+        Long uId = task.getUser() != null ? task.getUser().getId() : null;
+        String uFullName = task.getUser() != null ? task.getUser().getUsername() : null;
+
         return TaskDTO.builder()
                 .id(task.getId())
                 .title(task.getTitle())
@@ -53,6 +58,10 @@ public class TaskService {
                 .status(task.getStatus())
                 .project(projectDTO)
                 .assignedUser(userDTO)
+                .projectId(projId)
+                .projectName(projName)
+                .userId(uId)
+                .userFullName(uFullName)
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();
@@ -60,6 +69,13 @@ public class TaskService {
 
     public List<TaskDTO> getAllTasks() {
         return taskRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskDTO> getTasksByProjectId(Long projectId) {
+        return taskRepository.findByProjectId(projectId)
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
@@ -116,6 +132,24 @@ public class TaskService {
         }
 
         Task updatedTask = taskRepository.save(existingTask);
+        return mapToDTO(updatedTask);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public TaskDTO updateTaskStatus(Long id, com.task.management.enums.TaskStatus status) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Task với ID: " + id));
+        task.setStatus(status);
+        Task updatedTask = taskRepository.save(task);
+        return mapToDTO(updatedTask);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public TaskDTO updateTaskPriority(Long id, com.task.management.enums.TaskPriority priority) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Task với ID: " + id));
+        task.setPriority(priority);
+        Task updatedTask = taskRepository.save(task);
         return mapToDTO(updatedTask);
     }
 

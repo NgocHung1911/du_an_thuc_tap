@@ -20,6 +20,9 @@ import { MemberMyTasksPage } from './pages/member/MemberMyTasksPage';
 import { MemberProjectsPage } from './pages/member/MemberProjectsPage';
 import { MemberProfilePage } from './pages/member/MemberProfilePage';
 
+// Project Pages
+import { ProjectDetailPage } from './pages/project/ProjectDetailPage';
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '123456789-dummyclientid.apps.googleusercontent.com';
 
 const RootRedirect = () => {
@@ -52,12 +55,17 @@ function App() {
                 <Route path="/admin/tasks" element={<AdminTasksPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/projects" element={<AdminProjectsPage />} />
+                <Route path="/admin/projects/:id" element={<ProjectDetailPage />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
 
                 {/* Member Scope Routes */}
                 <Route path="/member/my-tasks" element={<MemberMyTasksPage />} />
                 <Route path="/member/projects" element={<MemberProjectsPage />} />
+                <Route path="/member/projects/:id" element={<ProjectDetailPage />} />
                 <Route path="/member/profile" element={<MemberProfilePage />} />
+
+                {/* Common Project Detail Route */}
+                <Route path="/projects/:id" element={<ProjectDetailPage />} />
               </Route>
             </Route>
 

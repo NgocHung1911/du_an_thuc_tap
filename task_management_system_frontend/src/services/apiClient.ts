@@ -21,12 +21,12 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Tự động xóa Token & Chuyển hướng /login nếu gặp 401 hoặc 403
+// Response Interceptor: Chỉ đăng xuất khi gặp lỗi 401 (Unauthorized / Token hết hạn)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      console.warn('Phiên làm việc hết hạn hoặc không có quyền truy cập. Đăng xuất...');
+    if (error.response && error.response.status === 401) {
+      console.warn('Phiên làm việc hết hạn hoặc token không hợp lệ. Đăng xuất...');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('roles');
