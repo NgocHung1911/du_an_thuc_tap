@@ -2,42 +2,54 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Search, Filter, Layers, Plus, ArrowLeft, RefreshCw, AlertCircle, Columns, List,
-  CheckCircle2, X, Trash2, AlertTriangle, Inbox
+  CheckCircle2, X, Trash2, AlertTriangle, Inbox, UserPlus, Users
 } from 'lucide-react';
 
+import { useAuth } from '../../context/AuthContext';
 import { projectApi, ProjectDTO } from '../../services/projectApi';
-import { taskApi, TaskDTO, TaskStatus, TaskPriority } from '../../services/taskApi';
+import { taskApi, TaskDTO, TaskStatus, TaskPriority, UserDTO } from '../../services/taskApi';
 import { ProjectBoardView } from '../../components/project/ProjectBoardView';
 import { ProjectListView } from '../../components/project/ProjectListView';
 import { TaskDetailModal } from '../../components/project/TaskDetailModal';
+import { InviteMemberModal } from '../../components/project/InviteMemberModal';
+import { ProjectMembersModal } from '../../components/project/ProjectMembersModal';
 
 type ViewTab = 'Board' | 'List';
 
-interface MemberAvatar {
-  id: string;
-  name: string;
-  initials: string;
-  bgColor: string;
-}
 
-// Team member filters (HT, DD, NH, QN, TK)
-const DEFAULT_MEMBERS: MemberAvatar[] = [
-  { id: 'HT', name: 'Hoàng Trọng', initials: 'HT', bgColor: 'bg-[#FF5630]' },
-  { id: 'DD', name: 'Đỗ Đức', initials: 'DD', bgColor: 'bg-[#FFAB00]' },
-  { id: 'NH', name: 'Ngọc Hùng', initials: 'NH', bgColor: 'bg-[#0052CC]' },
-  { id: 'QN', name: 'Quỳnh Nhi', initials: 'QN', bgColor: 'bg-[#36B37E]' },
-  { id: 'TK', name: 'Tuấn Kiệt', initials: 'TK', bgColor: 'bg-[#6554C0]' },
-];
 
 export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const projectId = Number(id);
+  const { user } = useAuth();
 
   const [project, setProject] = useState<ProjectDTO | null>(null);
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
+  const [projectMembers, setProjectMembers] = useState<UserDTO[]>([]);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState<boolean>(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const currentUserMember = useMemo(() => {
+    if (!user || !projectMembers) return null;
+    return projectMembers.find(
+      (m) =>
+        (m.username && m.username.toLowerCase() === user.username?.toLowerCase()) ||
+        (m.email && user.email && m.email.toLowerCase() === user.email?.toLowerCase())
+    );
+  }, [projectMembers, user]);
+
+  const currentUserProjectRole: 'OWNER' | 'ADMIN' | 'MEMBER' = useMemo(() => {
+    if (currentUserMember?.projectRole) {
+      return currentUserMember.projectRole;
+    }
+    return 'MEMBER';
+  }, [currentUserMember]);
+
+  const canManageTasks = currentUserProjectRole === 'OWNER' || currentUserProjectRole === 'ADMIN';
+  const canManageMembers = currentUserProjectRole === 'OWNER' || currentUserProjectRole === 'ADMIN';
 
   // Toast Notification state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -66,13 +78,13 @@ export const ProjectDetailPage: React.FC = () => {
     description: string;
     deadline: string;
     priority: TaskPriority;
-    assigneeName: string;
+    userId: number | null;
   }>({
     title: '',
     description: '',
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     priority: 'MEDIUM',
-    assigneeName: 'Ngọc Hùng',
+    userId: null,
   });
   const [creating, setCreating] = useState<boolean>(false);
 
@@ -82,7 +94,7 @@ export const ProjectDetailPage: React.FC = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Fetch Project & Tasks (NO HARDCODED MOCK FALLBACK DATA)
+  // Fetch Project & Tasks & Members
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -109,6 +121,14 @@ export const ProjectDetailPage: React.FC = () => {
         } catch {
           setTasks([]);
         }
+
+        // Fetch Project Members from backend API
+        try {
+          const members = await projectApi.getProjectMembers(projectId);
+          setProjectMembers(members || []);
+        } catch {
+          setProjectMembers([]);
+        }
       }
     } catch (err: any) {
       console.error('Lỗi khi tải thông tin dự án:', err);
@@ -117,6 +137,11 @@ export const ProjectDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMemberInvited = (newMember: UserDTO) => {
+    setProjectMembers((prev) => [...prev.filter((m) => m.id !== newMember.id), newMember]);
+    showToast(`Đã thêm thành viên ${newMember.username} vào dự án thành công!`, 'success');
   };
 
   useEffect(() => {
@@ -278,6 +303,76 @@ export const ProjectDetailPage: React.FC = () => {
     });
   }, [tasks, searchKeyword, selectedAssignee, filterPriority]);
 
+  // Handle Assignee change with Optimistic update & Real-time Sync
+  const handleAssigneeChange = async (taskId: number, newUserId: number | null) => {
+    const currentTask = tasks.find((t) => t.id === taskId);
+    if (!currentTask) return;
+
+    const assignedMember = newUserId ? projectMembers.find((m) => m.id === newUserId) : undefined;
+    const previousUser = currentTask.assignedUser;
+    const previousUserId = currentTask.userId;
+    const snapshotTasks = [...tasks];
+
+    // Optimistic State Update
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              userId: newUserId || undefined,
+              assignedUser: assignedMember ? assignedMember : undefined,
+              userFullName: assignedMember ? assignedMember.username : undefined,
+            }
+          : t
+      )
+    );
+
+    if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+      setSelectedTaskDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              userId: newUserId || undefined,
+              assignedUser: assignedMember ? assignedMember : undefined,
+              userFullName: assignedMember ? assignedMember.username : undefined,
+            }
+          : null
+      );
+    }
+
+    try {
+      const updatedTask = await taskApi.assignTaskToUser(taskId, newUserId);
+      if (updatedTask && updatedTask.id) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
+        );
+      }
+      showToast(
+        newUserId
+          ? `Đã gán người thực hiện: ${assignedMember?.username || 'Thành viên'}`
+          : 'Đã bỏ gán người thực hiện công việc',
+        'success'
+      );
+    } catch (err: any) {
+      console.warn('Lỗi API gán người thực hiện:', err);
+      const errMsg = err.response?.data?.message || 'Lỗi máy chủ khi gán người thực hiện!';
+      setTasks(snapshotTasks);
+      if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+        setSelectedTaskDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                userId: previousUserId,
+                assignedUser: previousUser,
+                userFullName: previousUser?.username,
+              }
+            : null
+        );
+      }
+      showToast(errMsg, 'error');
+    }
+  };
+
   // Open Quick Create Modal
   const handleOpenQuickCreate = (initialStatus: TaskStatus = 'TODO') => {
     setNewTaskStatus(initialStatus);
@@ -286,7 +381,7 @@ export const ProjectDetailPage: React.FC = () => {
       description: '',
       deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       priority: 'MEDIUM',
-      assigneeName: 'Ngọc Hùng',
+      userId: null,
     });
     setIsCreateModalOpen(true);
   };
@@ -305,6 +400,7 @@ export const ProjectDetailPage: React.FC = () => {
         priority: taskForm.priority,
         status: newTaskStatus,
         projectId: projectId,
+        userId: taskForm.userId,
       });
 
       if (createdTask && createdTask.id) {
@@ -313,9 +409,10 @@ export const ProjectDetailPage: React.FC = () => {
         await fetchData();
       }
       showToast('Đã tạo task mới thành công!', 'success');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Lỗi khi tạo task:', err);
-      showToast('Không thể kết nối máy chủ để tạo task!', 'error');
+      const errMsg = err.response?.data?.message || 'Không thể kết nối máy chủ để tạo task!';
+      showToast(errMsg, 'error');
     } finally {
       setCreating(false);
       setIsCreateModalOpen(false);
@@ -391,13 +488,15 @@ export const ProjectDetailPage: React.FC = () => {
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
-          <button
-            onClick={() => handleOpenQuickCreate('TODO')}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
-          >
-            <Plus size={16} />
-            <span>Tạo Task Mới</span>
-          </button>
+          {canManageTasks && (
+            <button
+              onClick={() => handleOpenQuickCreate('TODO')}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+            >
+              <Plus size={16} />
+              <span>Tạo Task Mới</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -456,32 +555,61 @@ export const ProjectDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Member Avatars Filter */}
-          <div className="flex items-center gap-1.5 border-l border-[#DFE1E6] pl-3">
+          {/* Member Avatars Filter & Invite Button */}
+          <div className="flex flex-wrap items-center gap-1.5 border-l border-[#DFE1E6] pl-3">
             <span className="text-xs font-semibold text-[#5E6C84] mr-1 hidden lg:inline">
               Thành viên:
             </span>
-            {DEFAULT_MEMBERS.map((mem) => {
-              const isSelected = selectedAssignee === mem.initials;
-              return (
-                <button
-                  key={mem.id}
-                  onClick={() =>
-                    setSelectedAssignee((prev) => (prev === mem.initials ? null : mem.initials))
-                  }
-                  className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${
-                    mem.bgColor
-                  } ${
-                    isSelected
-                      ? 'ring-2 ring-[#0052CC] ring-offset-2 scale-110 shadow-md'
-                      : 'hover:scale-105 opacity-90 hover:opacity-100'
-                  }`}
-                  title={`Lọc công việc của ${mem.name} (${mem.initials})`}
-                >
-                  {mem.initials}
-                </button>
-              );
-            })}
+            {projectMembers.length > 0 &&
+              projectMembers.map((mem, idx) => {
+                const initials = mem.username
+                  ? mem.username.substring(0, 2).toUpperCase()
+                  : 'MB';
+                const isSelected = selectedAssignee === mem.username || selectedAssignee === initials;
+                const colors = ['bg-[#0052CC]', 'bg-[#FF5630]', 'bg-[#FFAB00]', 'bg-[#36B37E]', 'bg-[#6554C0]'];
+                const bgColor = colors[idx % colors.length];
+
+                return (
+                  <button
+                    key={mem.id}
+                    onClick={() =>
+                      setSelectedAssignee((prev) => (prev === mem.username ? null : mem.username))
+                    }
+                    className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${bgColor} ${
+                      isSelected
+                        ? 'ring-2 ring-[#0052CC] ring-offset-2 scale-110 shadow-md'
+                        : 'hover:scale-105 opacity-90 hover:opacity-100'
+                    }`}
+                    title={`${mem.username} (${mem.email || 'Member'})`}
+                  >
+                    {initials}
+                  </button>
+                );
+              })}
+
+            {/* Nút Xem / Quản Lý Thành Viên */}
+            <button
+              type="button"
+              onClick={() => setIsMembersModalOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] font-bold text-xs rounded-full border border-[#DFE1E6] transition-all hover:scale-105 shadow-2xs ml-1"
+              title="Xem danh sách và quản lý vai trò thành viên"
+            >
+              <Users size={14} className="text-[#5E6C84]" />
+              <span>Quản lý</span>
+            </button>
+
+            {/* Nút "+ Mời" (Chỉ Admin hoặc Owner dự án mới có quyền mở modal) */}
+            {canManageMembers && (
+              <button
+                type="button"
+                onClick={() => setIsInviteModalOpen(true)}
+                className="flex items-center gap-1 px-2.5 py-1 bg-[#DEEBFF] hover:bg-[#B3D4FF] text-[#0052CC] font-bold text-xs rounded-full border border-[#B3D4FF] transition-all hover:scale-105 shadow-2xs ml-1"
+                title="Mời thành viên mới vào dự án"
+              >
+                <UserPlus size={14} />
+                <span>+ Mời</span>
+              </button>
+            )}
 
             {selectedAssignee && (
               <button
@@ -548,7 +676,9 @@ export const ProjectDetailPage: React.FC = () => {
             <p className="text-sm text-[#5E6C84] mt-1 max-w-md mx-auto">
               {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
                 ? 'Vui lòng thử thay đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc.'
-                : 'Hãy nhấn nút "+ Tạo Task Mới" để tạo và phân công công việc đầu tiên cho dự án này.'}
+                : canManageTasks
+                ? 'Hãy nhấn nút "+ Tạo Task Mới" để tạo và phân công công việc đầu tiên cho dự án này.'
+                : 'Dự án hiện chưa có công việc nào được khởi tạo. Vui lòng liên hệ Admin hoặc Owner của dự án.'}
             </p>
           </div>
 
@@ -564,7 +694,7 @@ export const ProjectDetailPage: React.FC = () => {
               >
                 Đặt lại bộ lọc
               </button>
-            ) : (
+            ) : canManageTasks ? (
               <button
                 onClick={() => handleOpenQuickCreate('TODO')}
                 className="px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5"
@@ -572,7 +702,7 @@ export const ProjectDetailPage: React.FC = () => {
                 <Plus size={16} />
                 <span>Tạo Task Mới</span>
               </button>
-            )}
+            ) : null}
           </div>
         </div>
       ) : (
@@ -581,9 +711,12 @@ export const ProjectDetailPage: React.FC = () => {
             <ProjectBoardView
               tasks={filteredTasks}
               projectKey={`PROJ-${projectId || 1}`}
+              projectMembers={projectMembers}
+              isAdmin={canManageTasks}
               onTaskClick={handleTaskClick}
               onStatusChange={handleStatusChange}
               onPriorityChange={handlePriorityChange}
+              onAssigneeChange={handleAssigneeChange}
               onDeleteTask={handleRequestDelete}
               onQuickCreate={handleOpenQuickCreate}
             />
@@ -591,9 +724,12 @@ export const ProjectDetailPage: React.FC = () => {
             <ProjectListView
               tasks={filteredTasks}
               projectKey={`PROJ-${projectId || 1}`}
+              projectMembers={projectMembers}
+              isAdmin={canManageTasks}
               onTaskClick={handleTaskClick}
               onStatusChange={handleStatusChange}
               onPriorityChange={handlePriorityChange}
+              onAssigneeChange={handleAssigneeChange}
               onDeleteTask={handleRequestDelete}
             />
           )}
@@ -604,12 +740,15 @@ export const ProjectDetailPage: React.FC = () => {
       <TaskDetailModal
         task={selectedTaskDetail}
         isOpen={isDetailModalOpen}
+        projectMembers={projectMembers}
+        isAdmin={canManageTasks}
         onClose={() => {
           setIsDetailModalOpen(false);
           setSelectedTaskDetail(null);
         }}
         onStatusChange={handleStatusChange}
         onPriorityChange={handlePriorityChange}
+        onAssigneeChange={handleAssigneeChange}
         onUpdateDescription={handleUpdateDescription}
         onDeleteTask={handleRequestDelete}
       />
@@ -755,15 +894,18 @@ export const ProjectDetailPage: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-[#172B4D] mb-1">Người thực hiện</label>
                 <select
-                  value={taskForm.assigneeName}
-                  onChange={(e) => setTaskForm({ ...taskForm, assigneeName: e.target.value })}
+                  value={taskForm.userId || ''}
+                  onChange={(e) =>
+                    setTaskForm({ ...taskForm, userId: e.target.value ? Number(e.target.value) : null })
+                  }
                   className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-medium focus:outline-none focus:border-[#0052CC]"
                 >
-                  <option value="Ngọc Hùng">Ngọc Hùng (NH)</option>
-                  <option value="Hoàng Trọng">Hoàng Trọng (HT)</option>
-                  <option value="Đỗ Đức">Đỗ Đức (DD)</option>
-                  <option value="Quỳnh Nhi">Quỳnh Nhi (QN)</option>
-                  <option value="Tuấn Kiệt">Tuấn Kiệt (TK)</option>
+                  <option value="">-- Chưa phân công --</option>
+                  {projectMembers.map((mem) => (
+                    <option key={mem.id} value={mem.id}>
+                      {mem.username} ({mem.email || 'Member'})
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -799,6 +941,29 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Mời Thành Viên Vào Dự Án */}
+      <InviteMemberModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        projectId={projectId}
+        existingMemberIds={projectMembers.map((m) => m.id)}
+        onMemberInvited={handleMemberInvited}
+      />
+
+      {/* Modal Quản Lý Thành Viên & Phân Quyền */}
+      <ProjectMembersModal
+        isOpen={isMembersModalOpen}
+        onClose={() => setIsMembersModalOpen(false)}
+        projectId={projectId}
+        members={projectMembers}
+        currentUserRole={currentUserProjectRole}
+        currentUserId={currentUserMember?.id}
+        currentUsername={user?.username}
+        onRefreshMembers={fetchData}
+        onOpenInvite={() => setIsInviteModalOpen(true)}
+        onShowToast={showToast}
+      />
     </div>
   );
 };

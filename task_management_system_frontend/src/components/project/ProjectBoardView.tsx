@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { TaskDTO, TaskPriority, TaskStatus } from '../../services/taskApi';
+import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 import { TaskCard } from './TaskCard';
 
 interface ProjectBoardViewProps {
   tasks: TaskDTO[];
   projectKey?: string;
+  projectMembers?: UserDTO[];
+  isAdmin?: boolean;
   onTaskClick?: (task: TaskDTO) => void;
   onStatusChange?: (taskId: number, newStatus: TaskStatus) => void;
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
+  onAssigneeChange?: (taskId: number, userId: number | null) => void;
   onDeleteTask?: (taskId: number) => void;
   onQuickCreate?: (initialStatus: TaskStatus) => void;
 }
@@ -55,9 +58,12 @@ const COLUMNS: ColumnConfig[] = [
 export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   tasks,
   projectKey = 'TO',
+  projectMembers = [],
+  isAdmin = true,
   onTaskClick,
   onStatusChange,
   onPriorityChange,
+  onAssigneeChange,
   onDeleteTask,
   onQuickCreate,
 }) => {
@@ -141,13 +147,15 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
                 </span>
               </div>
 
-              <button
-                onClick={() => onQuickCreate && onQuickCreate(col.id)}
-                className="p-1 hover:bg-[#F4F5F7] rounded text-[#5E6C84] hover:text-[#0052CC] transition-colors"
-                title={`Create task in ${col.title}`}
-              >
-                <Plus size={16} />
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => onQuickCreate && onQuickCreate(col.id)}
+                  className="p-1 hover:bg-[#F4F5F7] rounded text-[#5E6C84] hover:text-[#0052CC] transition-colors"
+                  title={`Create task in ${col.title}`}
+                >
+                  <Plus size={16} />
+                </button>
+              )}
             </div>
 
             {/* Column Body - Task List */}
@@ -166,9 +174,12 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
                     key={task.id}
                     task={task}
                     projectKey={projectKey}
+                    projectMembers={projectMembers}
+                    isAdmin={isAdmin}
                     onTaskClick={onTaskClick}
                     onStatusChange={onStatusChange}
                     onPriorityChange={onPriorityChange}
+                    onAssigneeChange={onAssigneeChange}
                     onDeleteTask={onDeleteTask}
                     onDragStart={handleDragStart}
                   />
@@ -176,16 +187,18 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
               )}
             </div>
 
-            {/* Column Footer: "+ Create" button */}
-            <div className="p-2 border-t border-[#DFE1E6] bg-[#F4F5F7] rounded-b-xl">
-              <button
-                onClick={() => onQuickCreate && onQuickCreate(col.id)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-[#5E6C84] hover:text-[#0052CC] hover:bg-white rounded-lg transition-all border border-transparent hover:border-[#DFE1E6] shadow-2xs"
-              >
-                <Plus size={14} />
-                <span>Create</span>
-              </button>
-            </div>
+            {/* Column Footer: "+ Create" button (Only for Admin/Owner) */}
+            {isAdmin && (
+              <div className="p-2 border-t border-[#DFE1E6] bg-[#F4F5F7] rounded-b-xl">
+                <button
+                  onClick={() => onQuickCreate && onQuickCreate(col.id)}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-[#5E6C84] hover:text-[#0052CC] hover:bg-white rounded-lg transition-all border border-transparent hover:border-[#DFE1E6] shadow-2xs"
+                >
+                  <Plus size={14} />
+                  <span>Create</span>
+                </button>
+              </div>
+            )}
           </div>
         );
       })}

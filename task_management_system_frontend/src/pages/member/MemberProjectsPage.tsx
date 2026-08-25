@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FolderGit2, RefreshCw, Search, Inbox, X
+  FolderGit2, RefreshCw, Search, Inbox, X, Plus, CheckCircle2, AlertCircle
 } from 'lucide-react';
-import { projectApi, ProjectDTO, ProjectStatus } from '../../services/projectApi';
+import { projectApi, ProjectDTO, ProjectRequest, ProjectStatus } from '../../services/projectApi';
 import { ProjectCard } from '../../components/project/ProjectCard';
+import { ProjectFormModal } from '../../components/project/ProjectFormModal';
 
 export const MemberProjectsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,18 @@ export const MemberProjectsPage: React.FC = () => {
   // Search & Filter state
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+
+  // Modal State
+  const [isFormModalOpen, setIsFormModalOpen] = useState<boolean>(false);
+  const [projectToEdit, setProjectToEdit] = useState<ProjectDTO | null>(null);
+
+  // Toast Notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const fetchProjects = async () => {
     try {
@@ -34,26 +47,52 @@ export const MemberProjectsPage: React.FC = () => {
     fetchProjects();
   }, [searchKeyword, filterStatus]);
 
+  // Handle Form Submit (Create or Update)
+  const handleFormSubmit = async (data: ProjectRequest, projectId?: number) => {
+    if (projectId) {
+      await projectApi.updateProject(projectId, data);
+      showToast(`Đã cập nhật dự án PROJ-${projectId} thành công!`, 'success');
+    } else {
+      await projectApi.createProject(data);
+      showToast('Đã tạo dự án mới thành công! Bạn là Chủ sở hữu (Owner) của dự án này.', 'success');
+    }
+    await fetchProjects();
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10 font-sans">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10 font-sans relative">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-xl border border-[#DFE1E6] shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
             <FolderGit2 className="text-[#0052CC]" size={26} />
-            <h1 className="text-2xl font-bold text-[#172B4D]">Dự Án Tham Gia</h1>
+            <h1 className="text-2xl font-bold text-[#172B4D]">Dự Án Của Tôi</h1>
           </div>
           <p className="text-sm text-[#5E6C84] mt-1">
-            Bấm vào dự án để xem chi tiết Bảng công việc (Kanban Board / List View)
+            Danh sách các dự án bạn đã tạo hoặc tham gia. Bấm vào dự án để xem chi tiết Bảng công việc.
           </p>
         </div>
-        <button
-          onClick={fetchProjects}
-          className="p-2 text-[#5E6C84] hover:text-[#0052CC] hover:bg-[#F4F5F7] rounded-lg border border-[#DFE1E6]"
-          title="Tải lại dữ liệu"
-        >
-          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchProjects}
+            className="p-2 text-[#5E6C84] hover:text-[#0052CC] hover:bg-[#F4F5F7] rounded-lg border border-[#DFE1E6]"
+            title="Tải lại dữ liệu"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          <button
+            onClick={() => {
+              setProjectToEdit(null);
+              setIsFormModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
+          >
+            <Plus size={16} />
+            <span>Tạo Dự Án Mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Toolbar & Filter Bar */}
@@ -103,20 +142,33 @@ export const MemberProjectsPage: React.FC = () => {
           <p className="text-sm text-[#5E6C84]">Đang tải danh sách dự án...</p>
         </div>
       ) : projects.length === 0 ? (
-        <div className="bg-white p-16 rounded-xl border border-[#DFE1E6] text-center shadow-xs space-y-3">
+        <div className="bg-white p-16 rounded-xl border border-[#DFE1E6] text-center shadow-xs space-y-4">
           <div className="w-16 h-16 rounded-full bg-[#DEEBFF] text-[#0052CC] flex items-center justify-center mx-auto">
             <Inbox size={32} />
           </div>
           <h3 className="text-lg font-bold text-[#172B4D]">
             {searchKeyword || filterStatus !== 'ALL'
               ? 'Không tìm thấy dự án nào phù hợp với bộ lọc'
-              : 'Chưa có dự án nào được phân công'}
+              : 'Bạn chưa tham gia hoặc sở hữu dự án nào'}
           </h3>
           <p className="text-sm text-[#5E6C84] max-w-md mx-auto">
             {searchKeyword || filterStatus !== 'ALL'
               ? 'Vui lòng thử tìm kiếm bằng từ khóa khác hoặc xóa bộ lọc.'
-              : 'Bạn hiện tại chưa được thêm vào dự án nào. Vui lòng liên hệ Quản trị viên để được phân công làm việc.'}
+              : 'Hãy nhấn nút "+ Tạo Dự Án Mới" ở trên để khởi tạo và làm chủ dự án đầu tiên của bạn!'}
           </p>
+
+          {!(searchKeyword || filterStatus !== 'ALL') && (
+            <button
+              onClick={() => {
+                setProjectToEdit(null);
+                setIsFormModalOpen(true);
+              }}
+              className="px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5"
+            >
+              <Plus size={16} />
+              <span>Tạo Dự Án Mới</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -128,6 +180,34 @@ export const MemberProjectsPage: React.FC = () => {
               onCardClick={(projectId) => navigate(`/projects/${projectId}`)}
             />
           ))}
+        </div>
+      )}
+
+      {/* Modal Tạo/Sửa Dự Án */}
+      <ProjectFormModal
+        isOpen={isFormModalOpen}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setProjectToEdit(null);
+        }}
+        onSubmit={handleFormSubmit}
+        projectToEdit={projectToEdit}
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-xl border flex items-center gap-3 text-xs font-bold transition-all animate-in fade-in slide-in-from-bottom-5 duration-200 ${
+            toast.type === 'success'
+              ? 'bg-[#006644] text-white border-[#004D33]'
+              : 'bg-[#BF2600] text-white border-[#991F00]'
+          }`}
+        >
+          {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 p-1 hover:bg-white/20 rounded">
+            <X size={14} />
+          </button>
         </div>
       )}
     </div>

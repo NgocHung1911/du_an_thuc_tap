@@ -22,6 +22,7 @@ public class ProjectDTO {
     private LocalDate endDate;
     private ProjectStatus status;
     private Integer taskCount;
+    private java.util.List<UserDTO> members;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

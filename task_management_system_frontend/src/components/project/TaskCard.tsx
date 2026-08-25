@@ -1,13 +1,16 @@
 import React from 'react';
 import { Clock, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
-import { TaskDTO, TaskPriority, TaskStatus } from '../../services/taskApi';
+import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 
 interface TaskCardProps {
   task: TaskDTO;
   projectKey?: string;
+  projectMembers?: UserDTO[];
+  isAdmin?: boolean;
   onTaskClick?: (task: TaskDTO) => void;
   onStatusChange?: (taskId: number, newStatus: TaskStatus) => void;
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
+  onAssigneeChange?: (taskId: number, userId: number | null) => void;
   onDeleteTask?: (taskId: number) => void;
   onDragStart?: (e: React.DragEvent, taskId: number) => void;
 }
@@ -15,9 +18,12 @@ interface TaskCardProps {
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
   projectKey = 'TO',
+  projectMembers = [],
+  isAdmin = true,
   onTaskClick,
   onStatusChange,
   onPriorityChange,
+  onAssigneeChange,
   onDeleteTask,
   onDragStart,
 }) => {
@@ -112,37 +118,47 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </span>
 
         <div className="flex items-center gap-1.5">
-          {/* Priority Select */}
+          {/* Priority Select (Admin/Owner only) vs Read-only badge (Member) */}
           <div
             className="flex items-center"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <select
-              value={task.priority}
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                e.stopPropagation();
-                const newPri = e.target.value as TaskPriority;
-                if (onPriorityChange) {
-                  onPriorityChange(task.id, newPri);
-                }
-              }}
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-md border outline-none cursor-pointer transition-colors ${getPriorityStyle(
-                task.priority
-              )}`}
-            >
-              <option value="HIGH">HIGH</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="LOW">LOW</option>
-            </select>
+            {isAdmin ? (
+              <select
+                value={task.priority}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  const newPri = e.target.value as TaskPriority;
+                  if (onPriorityChange) {
+                    onPriorityChange(task.id, newPri);
+                  }
+                }}
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-md border outline-none cursor-pointer transition-colors ${getPriorityStyle(
+                  task.priority
+                )}`}
+              >
+                <option value="HIGH">HIGH</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="LOW">LOW</option>
+              </select>
+            ) : (
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${getPriorityStyle(
+                  task.priority
+                )}`}
+              >
+                {task.priority}
+              </span>
+            )}
           </div>
 
-          {/* Delete Button directly on TaskCard */}
-          {onDeleteTask && (
+          {/* Delete Button directly on TaskCard (Admin/Owner only) */}
+          {isAdmin && onDeleteTask && (
             <button
               type="button"
               onClick={(e) => {
@@ -214,15 +230,48 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </select>
         </div>
 
-        {/* Assignee Avatar */}
-        <div
-          className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
-            task.assignedUser?.username
-          )}`}
-          title={task.assignedUser ? task.assignedUser.username : 'Unassigned'}
-        >
-          {task.assignedUser ? getInitials(task.assignedUser.username) : '?'}
-        </div>
+        {/* Assignee Select / Avatar */}
+        {isAdmin && projectMembers.length > 0 ? (
+          <div
+            className="inline-block"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <select
+              value={task.userId || task.assignedUser?.id || ''}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                e.stopPropagation();
+                const val = e.target.value;
+                const newUserId = val ? Number(val) : null;
+                if (onAssigneeChange) {
+                  onAssigneeChange(task.id, newUserId);
+                }
+              }}
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-[#DFE1E6] bg-[#FAFBFC] hover:bg-white text-[#172B4D] outline-none cursor-pointer max-w-[110px] truncate"
+              title="Gán người thực hiện"
+            >
+              <option value="">-- Chưa gán --</option>
+              {projectMembers.map((mem) => (
+                <option key={mem.id} value={mem.id}>
+                  {mem.username}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div
+            className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
+              task.assignedUser?.username
+            )}`}
+            title={task.assignedUser ? task.assignedUser.username : 'Unassigned'}
+          >
+            {task.assignedUser ? getInitials(task.assignedUser.username) : '?'}
+          </div>
+        )}
       </div>
     </div>
   );

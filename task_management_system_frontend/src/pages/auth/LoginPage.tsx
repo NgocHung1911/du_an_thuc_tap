@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../services/authApi';
 import { GoogleLogin } from '@react-oauth/google';
 import { LogIn, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -15,12 +16,26 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLoginSuccess = (response: any) => {
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setUsername(emailParam);
+    }
+  }, [searchParams]);
+
+  const handleLoginSuccess = async (response: any) => {
     login(response.token, {
       username: response.username,
       email: response.email,
       roles: response.roles,
     });
+
+    const pendingToken = new URLSearchParams(window.location.search).get('token') || localStorage.getItem('pendingInviteToken');
+    if (pendingToken) {
+      console.log(">>> [LOGIN PAGE] Found pendingInviteToken, navigating to /accept-invite page:", pendingToken);
+      navigate(`/accept-invite?token=${pendingToken}`, { replace: true });
+      return;
+    }
 
     const isAdmin = response.roles.some((r: string) => r === 'ROLE_ADMIN' || r === 'ADMIN');
     if (isAdmin) {

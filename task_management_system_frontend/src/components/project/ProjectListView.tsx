@@ -1,22 +1,28 @@
 import React from 'react';
 import { Clock, Edit, Trash2 } from 'lucide-react';
-import { TaskDTO, TaskPriority, TaskStatus } from '../../services/taskApi';
+import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 
 interface ProjectListViewProps {
   tasks: TaskDTO[];
   projectKey?: string;
+  projectMembers?: UserDTO[];
+  isAdmin?: boolean;
   onTaskClick?: (task: TaskDTO) => void;
   onStatusChange?: (taskId: number, newStatus: TaskStatus) => void;
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
+  onAssigneeChange?: (taskId: number, userId: number | null) => void;
   onDeleteTask?: (taskId: number) => void;
 }
 
 export const ProjectListView: React.FC<ProjectListViewProps> = ({
   tasks,
   projectKey = 'TO',
+  projectMembers = [],
+  isAdmin = true,
   onTaskClick,
   onStatusChange,
   onPriorityChange,
+  onAssigneeChange,
   onDeleteTask,
 }) => {
   const renderStatusBadge = (status: TaskStatus) => {
@@ -133,9 +139,9 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                       )}
                     </td>
 
-                    {/* Priority Dropdown Select */}
+                    {/* Priority Dropdown Select (Admin/Owner only) */}
                     <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-                      {onPriorityChange ? (
+                      {isAdmin && onPriorityChange ? (
                         <select
                           value={task.priority}
                           onChange={(e) => onPriorityChange(task.id, e.target.value as TaskPriority)}
@@ -159,15 +165,36 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                     </td>
 
                     {/* Assignee */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-[#0052CC] text-white text-[10px] font-bold flex items-center justify-center">
-                          {getInitials(task.assignedUser?.username)}
+                    <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                      {isAdmin && projectMembers.length > 0 ? (
+                        <select
+                          value={task.userId || task.assignedUser?.id || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const newUserId = val ? Number(val) : null;
+                            if (onAssigneeChange) {
+                              onAssigneeChange(task.id, newUserId);
+                            }
+                          }}
+                          className="text-xs font-medium bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] border border-[#DFE1E6] rounded-md px-2 py-1 outline-none cursor-pointer max-w-[130px] truncate"
+                        >
+                          <option value="">-- Chưa gán --</option>
+                          {projectMembers.map((mem) => (
+                            <option key={mem.id} value={mem.id}>
+                              {mem.username}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-[#0052CC] text-white text-[10px] font-bold flex items-center justify-center">
+                            {getInitials(task.assignedUser?.username)}
+                          </div>
+                          <span className="text-xs text-[#172B4D] font-medium line-clamp-1">
+                            {task.assignedUser?.username || 'Unassigned'}
+                          </span>
                         </div>
-                        <span className="text-xs text-[#172B4D] font-medium line-clamp-1">
-                          {task.assignedUser?.username || 'Unassigned'}
-                        </span>
-                      </div>
+                      )}
                     </td>
 
                     {/* Due Date */}
@@ -189,18 +216,20 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                     {/* Actions */}
                     <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => onTaskClick && onTaskClick(task)}
-                          className="p-1.5 hover:bg-[#EBECF0] rounded text-[#5E6C84] hover:text-[#0052CC]"
-                          title="Edit"
-                        >
-                          <Edit size={14} />
-                        </button>
-                        {onDeleteTask && (
+                        {isAdmin && (
+                          <button
+                            onClick={() => onTaskClick && onTaskClick(task)}
+                            className="p-1.5 hover:bg-[#EBECF0] rounded text-[#5E6C84] hover:text-[#0052CC]"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        )}
+                        {isAdmin && onDeleteTask && (
                           <button
                             onClick={() => onDeleteTask(task.id)}
                             className="p-1.5 hover:bg-red-100 rounded text-red-600 hover:text-red-700"
-                            title="Delete"
+                            title="Xóa"
                           >
                             <Trash2 size={14} />
                           </button>

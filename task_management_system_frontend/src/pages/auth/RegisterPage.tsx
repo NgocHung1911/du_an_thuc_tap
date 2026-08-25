@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../services/authApi';
 import { GoogleLogin } from '@react-oauth/google';
 import { UserPlus, Mail, Lock, User, ShieldCheck, AlertCircle, CheckCircle } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
   const [error, setError] = useState<string | null>(null);
@@ -17,12 +18,26 @@ export const RegisterPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLoginSuccess = (response: any) => {
+  useEffect(() => {
+    const inviteEmail = searchParams.get('email');
+    if (inviteEmail) {
+      setEmail(inviteEmail);
+    }
+  }, [searchParams]);
+
+  const handleLoginSuccess = async (response: any) => {
     login(response.token, {
       username: response.username,
       email: response.email,
       roles: response.roles,
     });
+
+    const pendingToken = searchParams.get('token') || localStorage.getItem('pendingInviteToken');
+    if (pendingToken) {
+      console.log(">>> [REGISTER PAGE] Found pendingInviteToken, navigating to /accept-invite page:", pendingToken);
+      navigate(`/accept-invite?token=${pendingToken}`, { replace: true });
+      return;
+    }
 
     const isAdmin = response.roles.some((r: string) => r === 'ROLE_ADMIN' || r === 'ADMIN');
     if (isAdmin) {

@@ -9,7 +9,7 @@ export const MainLayout: React.FC = () => {
   const { isAdmin, user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] flex flex-col font-sans">
+    <div className="h-screen max-h-screen bg-[#F4F5F7] flex flex-col font-sans overflow-hidden">
       <header className="h-14 bg-[#0052CC] text-white flex items-center justify-between px-5 shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center font-bold text-base">
@@ -49,7 +49,7 @@ export const MainLayout: React.FC = () => {
       </header>
 
       {/* Body Content with Sidebar */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Automatic Sidebar dispatch based on Role */}
         {isAdmin ? <AdminSidebar /> : <MemberSidebar />}
 

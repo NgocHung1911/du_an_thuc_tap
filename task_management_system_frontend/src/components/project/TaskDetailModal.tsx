@@ -3,14 +3,17 @@ import {
   X, Calendar, Clock, User, ArrowUp, ArrowDown, Minus, AlertCircle,
   CheckCircle2, Trash2, Edit3, Save, RefreshCw, Layers, Folder
 } from 'lucide-react';
-import { TaskDTO, TaskPriority, TaskStatus } from '../../services/taskApi';
+import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 
 interface TaskDetailModalProps {
   task: TaskDTO | null;
   isOpen: boolean;
   onClose: () => void;
+  projectMembers?: UserDTO[];
+  isAdmin?: boolean;
   onStatusChange?: (taskId: number, newStatus: TaskStatus) => void;
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
+  onAssigneeChange?: (taskId: number, userId: number | null) => void;
   onUpdateDescription?: (taskId: number, newDescription: string, newTitle: string) => void;
   onDeleteTask?: (taskId: number) => void;
 }
@@ -19,8 +22,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   task,
   isOpen,
   onClose,
+  projectMembers = [],
+  isAdmin = true,
   onStatusChange,
   onPriorityChange,
+  onAssigneeChange,
   onUpdateDescription,
   onDeleteTask,
 }) => {
@@ -139,7 +145,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {onDeleteTask && (
+            {isAdmin && onDeleteTask && (
               <button
                 onClick={() => {
                   onDeleteTask(task.id);
@@ -187,7 +193,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 <h3 className="text-sm font-bold text-[#172B4D] flex items-center gap-2">
                   <span>Mô tả công việc (Description)</span>
                 </h3>
-                {!isEditing ? (
+                {isAdmin && (!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="text-xs text-[#0052CC] hover:underline font-semibold flex items-center gap-1"
@@ -195,7 +201,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     <Edit3 size={13} />
                     <span>Chỉnh sửa</span>
                   </button>
-                ) : (
+                ) : isEditing ? (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsEditing(false)}
@@ -212,7 +218,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       <span>Lưu lại</span>
                     </button>
                   </div>
-                )}
+                ) : null)}
               </div>
 
               {isEditing ? (
@@ -261,34 +267,61 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             {/* Priority Field */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[#5E6C84] block">Priority</label>
-              <select
-                value={task.priority}
-                onChange={(e) =>
-                  onPriorityChange && onPriorityChange(task.id, e.target.value as TaskPriority)
-                }
-                className="w-full px-3 py-2 bg-white text-xs font-bold text-[#172B4D] border border-[#DFE1E6] rounded-lg shadow-2xs focus:outline-none focus:border-[#0052CC] cursor-pointer"
-              >
-                <option value="HIGH">HIGH</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="LOW">LOW</option>
-              </select>
+              {isAdmin ? (
+                <select
+                  value={task.priority}
+                  onChange={(e) =>
+                    onPriorityChange && onPriorityChange(task.id, e.target.value as TaskPriority)
+                  }
+                  className="w-full px-3 py-2 bg-white text-xs font-bold text-[#172B4D] border border-[#DFE1E6] rounded-lg shadow-2xs focus:outline-none focus:border-[#0052CC] cursor-pointer"
+                >
+                  <option value="HIGH">HIGH</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="LOW">LOW</option>
+                </select>
+              ) : (
+                <div className="w-full px-3 py-2 bg-[#F4F5F7] text-xs font-bold text-[#172B4D] border border-[#DFE1E6] rounded-lg">
+                  {task.priority}
+                </div>
+              )}
             </div>
 
             {/* Assignee User */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[#5E6C84] block">Người thực hiện</label>
-              <div className="flex items-center gap-2.5 p-2 bg-white rounded-lg border border-[#DFE1E6]">
-                <div
-                  className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
-                    assigneeName
-                  )}`}
+              {isAdmin ? (
+                <select
+                  value={task.userId || task.assignedUser?.id || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const selectedUserId = val ? Number(val) : null;
+                    if (onAssigneeChange) {
+                      onAssigneeChange(task.id, selectedUserId);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white text-xs font-bold text-[#172B4D] border border-[#DFE1E6] rounded-lg shadow-2xs focus:outline-none focus:border-[#0052CC] cursor-pointer"
                 >
-                  {getInitials(assigneeName)}
+                  <option value="">-- Chưa phân công --</option>
+                  {projectMembers && projectMembers.map((mem) => (
+                    <option key={mem.id} value={mem.id}>
+                      {mem.username} ({mem.email || 'Member'})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="flex items-center gap-2.5 p-2 bg-white rounded-lg border border-[#DFE1E6]">
+                  <div
+                    className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
+                      assigneeName
+                    )}`}
+                  >
+                    {getInitials(assigneeName)}
+                  </div>
+                  <span className="text-xs font-semibold text-[#172B4D]">
+                    {assigneeName}
+                  </span>
                 </div>
-                <span className="text-xs font-semibold text-[#172B4D]">
-                  {assigneeName}
-                </span>
-              </div>
+              )}
             </div>
 
             {/* Deadline */}

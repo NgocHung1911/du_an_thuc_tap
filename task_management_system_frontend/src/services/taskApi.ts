@@ -9,6 +9,7 @@ export interface UserDTO {
   username: string;
   email: string;
   role?: string;
+  projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
   initials?: string;
   avatarBg?: string;
 }
@@ -37,7 +38,8 @@ export interface TaskRequest {
   priority: TaskPriority;
   status: TaskStatus;
   projectId?: number;
-  assignedUserId?: number;
+  userId?: number | null;
+  assignedUserId?: number | null;
 }
 
 export const taskApi = {
@@ -86,9 +88,14 @@ export const taskApi = {
     }
   },
 
-  assignTaskToUser: async (taskId: number, userId: number): Promise<TaskDTO> => {
-    const res = await apiClient.put<TaskDTO>(`/tasks/${taskId}/assign/${userId}`);
-    return res.data;
+  assignTaskToUser: async (taskId: number, userId: number | null): Promise<TaskDTO> => {
+    if (userId !== null && userId !== undefined) {
+      const res = await apiClient.put<TaskDTO>(`/tasks/${taskId}/assign/${userId}`);
+      return res.data;
+    } else {
+      const res = await apiClient.put<TaskDTO>(`/tasks/${taskId}/assign`);
+      return res.data;
+    }
   },
 
   deleteTask: async (id: number): Promise<string> => {

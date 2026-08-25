@@ -98,18 +98,16 @@ export const AdminProjectsPage: React.FC = () => {
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
 
-          {isAdmin && (
-            <button
-              onClick={() => {
-                setProjectToEdit(null);
-                setIsFormModalOpen(true);
-              }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
-            >
-              <Plus size={16} />
-              <span>Tạo Dự Án Mới</span>
-            </button>
-          )}
+          <button
+            onClick={() => {
+              setProjectToEdit(null);
+              setIsFormModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
+          >
+            <Plus size={16} />
+            <span>Tạo Dự Án Mới</span>
+          </button>
         </div>
       </div>
 
@@ -175,7 +173,7 @@ export const AdminProjectsPage: React.FC = () => {
               ? 'Vui lòng thử tìm kiếm bằng từ khóa khác hoặc xóa bộ lọc.'
               : 'Hãy nhấn nút "Tạo Dự Án Mới" ở góc trên để khởi tạo dự án đầu tiên.'}
           </p>
-          {isAdmin && !(searchKeyword || filterStatus !== 'ALL') && (
+          {!(searchKeyword || filterStatus !== 'ALL') && (
             <button
               onClick={() => {
                 setProjectToEdit(null);

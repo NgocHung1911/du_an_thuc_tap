@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { OtpVerificationPage } from './pages/auth/OtpVerificationPage';
+import { AcceptInvitePage } from './pages/auth/AcceptInvitePage';
 import { ProtectedRoute } from './routes/ProtectedRoutes';
 import { MainLayout } from './components/layout/MainLayout';
 
@@ -43,6 +44,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/verify-otp" element={<OtpVerificationPage />} />
+            <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
             {/* Root Path Smart Redirect */}
             <Route path="/" element={<RootRedirect />} />
