@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Crown, User, Trash2, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Shield, Crown, User, Trash2, UserPlus, RefreshCw } from 'lucide-react';
 import { UserDTO } from '../../services/taskApi';
 import { projectApi } from '../../services/projectApi';
 
@@ -11,7 +11,8 @@ interface ProjectMembersModalProps {
   currentUserRole: 'OWNER' | 'ADMIN' | 'MEMBER';
   currentUserId?: number;
   currentUsername?: string;
-  onRefreshMembers: () => void;
+  onUpdateMemberRoleSuccess: (userId: number, newRole: 'ADMIN' | 'MEMBER') => void;
+  onRemoveMemberSuccess: (userId: number) => void;
   onOpenInvite: () => void;
   onShowToast: (message: string, type: 'success' | 'error') => void;
 }
@@ -23,7 +24,8 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
   members,
   currentUserRole,
   currentUsername,
-  onRefreshMembers,
+  onUpdateMemberRoleSuccess,
+  onRemoveMemberSuccess,
   onOpenInvite,
   onShowToast,
 }) => {
@@ -39,12 +41,24 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
     try {
       setLoadingUserId(targetUserId);
       await projectApi.updateMemberRole(projectId, targetUserId, newRole);
-      onShowToast(`Đã cập nhật vai trò thành ${newRole === 'ADMIN' ? 'Quản trị viên (ADMIN)' : 'Thành viên (MEMBER)'}!`, 'success');
-      onRefreshMembers();
+
+      // Requirement 2: Local state update without page reload or full project re-fetch
+      onUpdateMemberRoleSuccess(targetUserId, newRole);
+
+      // Requirement 3: Auto close modal ONLY after successful API call
+      onClose();
+
+      onShowToast(
+        `Đã cập nhật vai trò thành ${
+          newRole === 'ADMIN' ? 'Quản trị viên (ADMIN)' : 'Thành viên (MEMBER)'
+        }!`,
+        'success'
+      );
     } catch (err: any) {
       console.error('Lỗi khi cập nhật vai trò:', err);
       const msg = err.response?.data?.message || 'Không thể thay đổi vai trò thành viên!';
       onShowToast(msg, 'error');
+      // DO NOT close modal if API failed, so Owner can retry
     } finally {
       setLoadingUserId(null);
     }
@@ -58,8 +72,8 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
     try {
       setLoadingUserId(targetUserId);
       await projectApi.removeMemberFromProject(projectId, targetUserId);
+      onRemoveMemberSuccess(targetUserId);
       onShowToast(`Đã xóa thành viên ${username} khỏi dự án!`, 'success');
-      onRefreshMembers();
     } catch (err: any) {
       console.error('Lỗi khi xóa thành viên:', err);
       const msg = err.response?.data?.message || 'Không thể xóa thành viên khỏi dự án!';
@@ -123,6 +137,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
               const canChangeRole = isOwner && !isTargetOwner;
               // Owner can remove anyone except itself. Admin can remove MEMBERs only.
               const canRemove = !isTargetOwner && (isOwner || (isAdmin && !isTargetAdmin));
+              const isLoading = loadingUserId === mem.id;
 
               return (
                 <div key={mem.id} className="py-3 flex items-center justify-between gap-3">
@@ -144,6 +159,9 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
                             (Bạn)
                           </span>
                         )}
+                        {isLoading && (
+                          <RefreshCw size={14} className="animate-spin text-[#0052CC]" />
+                        )}
                       </div>
                       <span className="text-xs text-[#5E6C84] block">{mem.email || 'No Email'}</span>
                     </div>
@@ -154,9 +172,9 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
                     {canChangeRole ? (
                       <select
                         value={pRole}
-                        disabled={loadingUserId === mem.id}
+                        disabled={isLoading}
                         onChange={(e) => handleRoleChange(mem.id, e.target.value as 'ADMIN' | 'MEMBER')}
-                        className="text-xs bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] font-bold border border-[#DFE1E6] rounded-lg px-2.5 py-1.5 outline-none cursor-pointer"
+                        className="text-xs bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] font-bold border border-[#DFE1E6] rounded-lg px-2.5 py-1.5 outline-none cursor-pointer disabled:opacity-50"
                       >
                         <option value="ADMIN">ADMIN</option>
                         <option value="MEMBER">MEMBER</option>
@@ -181,8 +199,8 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveMember(mem.id, mem.username)}
-                        disabled={loadingUserId === mem.id}
-                        className="p-1.5 text-[#5E6C84] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        disabled={isLoading}
+                        className="p-1.5 text-[#5E6C84] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                         title="Xóa thành viên khỏi dự án"
                       >
                         <Trash2 size={16} />

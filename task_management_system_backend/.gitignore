@@ -34,7 +34,9 @@ build/
 
 ### Secrets & Application Configs ###
 *.properties
-*.env
+.env
+.env.*
+!.env.example
 *.yml
 *.yaml
 !**/src/main/resources/application-example.yml

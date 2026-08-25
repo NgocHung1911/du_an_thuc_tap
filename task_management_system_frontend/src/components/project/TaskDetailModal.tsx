@@ -11,7 +11,7 @@ interface TaskDetailModalProps {
   onClose: () => void;
   projectMembers?: UserDTO[];
   isAdmin?: boolean;
-  onStatusChange?: (taskId: number, newStatus: TaskStatus) => void;
+  onStatusChange?: (taskId: number, newStatus: TaskStatus, fromModal?: boolean) => void;
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
   onAssigneeChange?: (taskId: number, userId: number | null) => void;
   onUpdateDescription?: (taskId: number, newDescription: string, newTitle: string) => void;
@@ -253,7 +253,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <select
                 value={task.status}
                 onChange={(e) =>
-                  onStatusChange && onStatusChange(task.id, e.target.value as TaskStatus)
+                  onStatusChange && onStatusChange(task.id, e.target.value as TaskStatus, true)
                 }
                 className="w-full px-3 py-2 bg-white text-xs font-bold text-[#172B4D] border border-[#DFE1E6] rounded-lg shadow-2xs focus:outline-none focus:border-[#0052CC] cursor-pointer"
               >

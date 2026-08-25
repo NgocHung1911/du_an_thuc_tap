@@ -155,7 +155,7 @@ export const ProjectDetailPage: React.FC = () => {
   };
 
   // Handle status update with Optimistic update & Real-time Sync
-  const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
+  const handleStatusChange = async (taskId: number, newStatus: TaskStatus, fromModal = false) => {
     const currentTask = tasks.find((t) => t.id === taskId);
     if (!currentTask || currentTask.status === newStatus) return;
 
@@ -179,20 +179,22 @@ export const ProjectDetailPage: React.FC = () => {
         );
       }
       showToast(`Đã chuyển trạng thái công việc sang ${newStatus}`, 'success');
-    } catch (err: any) {
-      console.warn('API error, handling optimistic fallback:', err);
-      if (err.response && (err.response.status === 404 || err.response.status === 400)) {
-        showToast(`Đã chuyển trạng thái công việc sang ${newStatus}`, 'success');
-      } else {
-        setTasks(snapshotTasks);
-        if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
-          setSelectedTaskDetail((prev) => (prev ? { ...prev, status: previousStatus } : null));
-        }
-        showToast(
-          `Lỗi máy chủ! Đã khôi phục trạng thái về ${previousStatus}`,
-          'error'
-        );
+
+      // Requirement 3: Auto close modal ONLY when API succeeds
+      if (fromModal) {
+        setIsDetailModalOpen(false);
+        setSelectedTaskDetail(null);
       }
+    } catch (err: any) {
+      console.error('API error updating status:', err);
+      // Revert optimistic state
+      setTasks(snapshotTasks);
+      if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+        setSelectedTaskDetail((prev) => (prev ? { ...prev, status: previousStatus } : null));
+      }
+      const errMsg = err.response?.data?.message || err.message || 'Không thể thay đổi trạng thái công việc!';
+      showToast(errMsg, 'error');
+      // DO NOT close modal if API failed!
     }
   };
 
@@ -222,25 +224,25 @@ export const ProjectDetailPage: React.FC = () => {
       }
       showToast(`Đã cập nhật mức độ ưu tiên sang ${newPriority}`, 'success');
     } catch (err: any) {
-      console.warn('API error updating priority:', err);
-      if (err.response && (err.response.status === 404 || err.response.status === 400)) {
-        showToast(`Đã cập nhật mức độ ưu tiên sang ${newPriority}`, 'success');
-      } else {
-        setTasks(snapshotTasks);
-        if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
-          setSelectedTaskDetail((prev) => (prev ? { ...prev, priority: previousPriority } : null));
-        }
-        showToast(
-          `Lỗi máy chủ! Đã khôi phục Mức độ ưu tiên về ${previousPriority}`,
-          'error'
-        );
+      console.error('API error updating priority:', err);
+      setTasks(snapshotTasks);
+      if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+        setSelectedTaskDetail((prev) => (prev ? { ...prev, priority: previousPriority } : null));
       }
+      const errMsg = err.response?.data?.message || err.message || 'Không thể thay đổi mức độ ưu tiên!';
+      showToast(errMsg, 'error');
     }
   };
 
   // Handle Description & Title edit inside Task Detail Modal
   const handleUpdateDescription = async (taskId: number, newDescription: string, newTitle: string) => {
+    const currentTask = tasks.find((t) => t.id === taskId);
+    if (!currentTask) return;
+
+    const previousTitle = currentTask.title;
+    const previousDesc = currentTask.description;
     const nowIso = new Date().toISOString();
+
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId ? { ...t, title: newTitle, description: newDescription, updatedAt: nowIso } : t
@@ -253,16 +255,34 @@ export const ProjectDetailPage: React.FC = () => {
     }
 
     try {
-      await taskApi.updateTask(taskId, {
+      const updatedTask = await taskApi.updateTask(taskId, {
         title: newTitle,
         description: newDescription,
         deadline: selectedTaskDetail?.deadline || new Date().toISOString().split('T')[0],
         priority: selectedTaskDetail?.priority || 'MEDIUM',
         status: selectedTaskDetail?.status || 'TODO',
+        projectId: projectId,
       });
-      showToast(`Đã lưu nội dung công việc`, 'success');
-    } catch {
-      showToast(`Đã lưu nội dung công việc`, 'success');
+      if (updatedTask && updatedTask.id) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
+        );
+      }
+      showToast(`Đã lưu nội dung công việc thành công!`, 'success');
+    } catch (err: any) {
+      console.error('API error updating description:', err);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, title: previousTitle, description: previousDesc } : t
+        )
+      );
+      if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+        setSelectedTaskDetail((prev) =>
+          prev ? { ...prev, title: previousTitle, description: previousDesc } : null
+        );
+      }
+      const errMsg = err.response?.data?.message || err.message || 'Không thể lưu nội dung công việc!';
+      showToast(errMsg, 'error');
     }
   };
 
@@ -960,7 +980,14 @@ export const ProjectDetailPage: React.FC = () => {
         currentUserRole={currentUserProjectRole}
         currentUserId={currentUserMember?.id}
         currentUsername={user?.username}
-        onRefreshMembers={fetchData}
+        onUpdateMemberRoleSuccess={(userId, newRole) => {
+          setProjectMembers((prev) =>
+            prev.map((m) => (m.id === userId ? { ...m, projectRole: newRole } : m))
+          );
+        }}
+        onRemoveMemberSuccess={(userId) => {
+          setProjectMembers((prev) => prev.filter((m) => m.id !== userId));
+        }}
         onOpenInvite={() => setIsInviteModalOpen(true)}
         onShowToast={showToast}
       />
