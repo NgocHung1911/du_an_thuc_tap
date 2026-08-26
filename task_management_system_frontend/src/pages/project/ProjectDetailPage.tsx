@@ -471,114 +471,221 @@ export const ProjectDetailPage: React.FC = () => {
     }
   };
 
+  // Calculate Task Statistics Overview
+  const taskStats = useMemo(() => {
+    const total = tasks.length;
+    const todo = tasks.filter((t) => t.status === 'TODO').length;
+    const doing = tasks.filter((t) => t.status === 'DOING').length;
+    const review = tasks.filter((t) => t.status === 'REVIEW').length;
+    const done = tasks.filter((t) => t.status === 'DONE').length;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const overdue = tasks.filter(
+      (t) => t.deadline && t.status !== 'DONE' && new Date(t.deadline) < today
+    ).length;
+
+    return { total, todo, doing, review, done, overdue };
+  }, [tasks]);
+
   const projectTitle = project?.name || `Dự án #${projectId || 1}`;
 
   return (
     <div className="space-y-5 max-w-[1600px] mx-auto pb-10 font-sans relative">
       {/* Top Breadcrumb & Project Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-[#DFE1E6] shadow-2xs">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1.5 hover:bg-[#F4F5F7] text-[#5E6C84] hover:text-[#172B4D] rounded-lg border border-[#DFE1E6] transition-colors"
-            title="Quay lại"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-[#0052CC] bg-[#DEEBFF] px-2 py-0.5 rounded border border-[#B3D4FF]">
-                PROJ-{projectId || 1}
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#172B4D] tracking-tight">
-                {projectTitle}
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-[#5E6C84] mt-0.5">
-              {project?.description || 'Chi tiết quản lý công việc và phân công nhiệm vụ dự án.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={fetchData}
-            className="p-2 text-[#5E6C84] hover:text-[#0052CC] hover:bg-[#F4F5F7] rounded-lg border border-[#DFE1E6]"
-            title="Tải lại dữ liệu"
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          </button>
-          {canManageTasks && (
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
             <button
-              onClick={() => handleOpenQuickCreate('TODO')}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-xl border border-slate-200 transition-colors shrink-0 mt-0.5 sm:mt-0"
+              title="Quay lại danh sách dự án"
             >
-              <Plus size={16} />
-              <span>Tạo Task Mới</span>
+              <ArrowLeft size={18} />
             </button>
-          )}
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+                    project?.status === 'COMPLETED'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : project?.status === 'IN_PROGRESS'
+                      ? 'bg-sky-50 text-sky-700 border-sky-200'
+                      : project?.status === 'ON_HOLD'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  {project?.status || 'PLANNING'}
+                </span>
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  {projectTitle}
+                </h1>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                {project?.description || 'Task management and project assignments overview.'}
+              </p>
+            </div>
+
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+            <button
+              onClick={fetchData}
+              className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+              title="Refresh data"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin text-blue-600' : ''} />
+            </button>
+
+            {/* Quick Action buttons */}
+            <button
+              type="button"
+              onClick={() => setIsMembersModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition-colors"
+              title="View and manage members"
+            >
+              <Users size={15} className="text-slate-500" />
+              <span className="hidden sm:inline">Members ({projectMembers.length})</span>
+            </button>
+
+            {canManageMembers && (
+              <button
+                type="button"
+                onClick={() => setIsInviteModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 transition-colors"
+                title="Invite new member"
+              >
+                <UserPlus size={15} />
+                <span>+ Invite</span>
+              </button>
+            )}
+
+            {canManageTasks && (
+              <button
+                onClick={() => handleOpenQuickCreate('TODO')}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors"
+              >
+                <Plus size={18} />
+                <span>Create Task</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Header Navigation Tabs (Board & List) */}
-      <div className="border-b border-[#DFE1E6] bg-white rounded-t-xl border-x px-4 pt-3 flex items-center justify-between">
+      {/* Task Overview Statistics Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-slate-500 font-medium block">Total Tasks</span>
+            <span className="text-lg font-bold text-slate-900">{taskStats.total}</span>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">
+            All
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-slate-500 font-medium block">TODO</span>
+            <span className="text-lg font-bold text-slate-700">{taskStats.todo}</span>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">
+            To
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-slate-500 font-medium block">DOING</span>
+            <span className="text-lg font-bold text-sky-700">{taskStats.doing}</span>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-xs">
+            Do
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-slate-500 font-medium block">REVIEW</span>
+            <span className="text-lg font-bold text-purple-700">{taskStats.review}</span>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs">
+            Rv
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-slate-500 font-medium block">DONE</span>
+            <span className="text-lg font-bold text-emerald-700">{taskStats.done}</span>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+            Dn
+          </div>
+        </div>
+      </div>
+
+      {/* View Switcher Header (Board & List) */}
+      <div className="border-b border-slate-200 bg-white rounded-t-2xl border-x px-4 pt-3 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('Board')}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
               activeTab === 'Board'
-                ? 'border-[#0052CC] text-[#0052CC] bg-[#DEEBFF]/30 rounded-t'
-                : 'border-transparent text-[#5E6C84] hover:text-[#172B4D] hover:border-[#DFE1E6]'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             <Columns size={15} />
-            <span>Board</span>
+            <span>Board View</span>
           </button>
 
           <button
             onClick={() => setActiveTab('List')}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
               activeTab === 'List'
-                ? 'border-[#0052CC] text-[#0052CC] bg-[#DEEBFF]/30 rounded-t'
-                : 'border-transparent text-[#5E6C84] hover:text-[#172B4D] hover:border-[#DFE1E6]'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
           >
             <List size={15} />
-            <span>List</span>
+            <span>List View</span>
           </button>
         </div>
       </div>
 
       {/* Toolbar & Filter Bar */}
-      <div className="bg-white p-3.5 rounded-b-xl border-x border-b border-[#DFE1E6] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+      <div className="bg-white p-4 rounded-b-2xl border-x border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
         {/* Left: Search input & Member Avatars */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Search Board */}
           <div className="relative w-full sm:w-64">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#5E6C84]">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
               <Search size={15} />
             </span>
             <input
               type="text"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="Search board (Tiêu đề, mã task...)"
-              className="w-full pl-9 pr-8 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] focus:bg-white text-[#172B4D] text-xs rounded-lg border border-[#DFE1E6] focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC] focus:outline-none transition-all"
+              placeholder="Search tasks (Name, ID)..."
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
             />
             {searchKeyword && (
               <button
                 onClick={() => setSearchKeyword('')}
-                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600"
               >
                 <X size={14} />
               </button>
             )}
           </div>
 
-          {/* Member Avatars Filter & Invite Button */}
-          <div className="flex flex-wrap items-center gap-1.5 border-l border-[#DFE1E6] pl-3">
-            <span className="text-xs font-semibold text-[#5E6C84] mr-1 hidden lg:inline">
-              Thành viên:
+          {/* Member Avatars Filter */}
+          <div className="flex flex-wrap items-center gap-1.5 border-l border-slate-200 pl-3">
+            <span className="text-xs font-semibold text-slate-500 mr-1 hidden lg:inline">
+              Filter by member:
             </span>
             {projectMembers.length > 0 &&
               projectMembers.map((mem, idx) => {
@@ -586,7 +693,7 @@ export const ProjectDetailPage: React.FC = () => {
                   ? mem.username.substring(0, 2).toUpperCase()
                   : 'MB';
                 const isSelected = selectedAssignee === mem.username || selectedAssignee === initials;
-                const colors = ['bg-[#0052CC]', 'bg-[#FF5630]', 'bg-[#FFAB00]', 'bg-[#36B37E]', 'bg-[#6554C0]'];
+                const colors = ['bg-blue-600', 'bg-red-500', 'bg-amber-500', 'bg-emerald-600', 'bg-purple-600'];
                 const bgColor = colors[idx % colors.length];
 
                 return (
@@ -597,7 +704,7 @@ export const ProjectDetailPage: React.FC = () => {
                     }
                     className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${bgColor} ${
                       isSelected
-                        ? 'ring-2 ring-[#0052CC] ring-offset-2 scale-110 shadow-md'
+                        ? 'ring-2 ring-blue-600 ring-offset-2 scale-110 shadow-md'
                         : 'hover:scale-105 opacity-90 hover:opacity-100'
                     }`}
                     title={`${mem.username} (${mem.email || 'Member'})`}
@@ -607,48 +714,24 @@ export const ProjectDetailPage: React.FC = () => {
                 );
               })}
 
-            {/* Nút Xem / Quản Lý Thành Viên */}
-            <button
-              type="button"
-              onClick={() => setIsMembersModalOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] font-bold text-xs rounded-full border border-[#DFE1E6] transition-all hover:scale-105 shadow-2xs ml-1"
-              title="Xem danh sách và quản lý vai trò thành viên"
-            >
-              <Users size={14} className="text-[#5E6C84]" />
-              <span>Quản lý</span>
-            </button>
-
-            {/* Nút "+ Mời" (Chỉ Admin hoặc Owner dự án mới có quyền mở modal) */}
-            {canManageMembers && (
-              <button
-                type="button"
-                onClick={() => setIsInviteModalOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1 bg-[#DEEBFF] hover:bg-[#B3D4FF] text-[#0052CC] font-bold text-xs rounded-full border border-[#B3D4FF] transition-all hover:scale-105 shadow-2xs ml-1"
-                title="Mời thành viên mới vào dự án"
-              >
-                <UserPlus size={14} />
-                <span>+ Mời</span>
-              </button>
-            )}
-
             {selectedAssignee && (
               <button
                 onClick={() => setSelectedAssignee(null)}
-                className="text-xs text-[#0052CC] hover:underline font-medium ml-1"
+                className="text-xs text-blue-600 hover:underline font-bold ml-1"
               >
-                Xóa lọc
+                Clear
               </button>
             )}
           </div>
         </div>
 
-        {/* Right: Priority Filter & Group Buttons */}
+        {/* Right: Priority Filter & Reset Button */}
         <div className="flex items-center gap-2">
-          {/* Priority Select Filter */}
+          <span className="text-xs font-semibold text-slate-600">Priority:</span>
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="text-xs bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] border border-[#DFE1E6] rounded-lg px-2.5 py-1.5 font-bold outline-none cursor-pointer"
+            className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
           >
             <option value="ALL">All Priorities</option>
             <option value="HIGH">HIGH</option>
@@ -656,49 +739,53 @@ export const ProjectDetailPage: React.FC = () => {
             <option value="LOW">LOW</option>
           </select>
 
-          <button
-            onClick={() => {
-              setSearchKeyword('');
-              setSelectedAssignee(null);
-              setFilterPriority('ALL');
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] rounded-lg border border-[#DFE1E6] text-xs font-semibold transition-colors"
-          >
-            <Filter size={14} className="text-[#5E6C84]" />
-            <span>Filter</span>
-          </button>
-
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] rounded-lg border border-[#DFE1E6] text-xs font-semibold transition-colors">
-            <Layers size={14} className="text-[#5E6C84]" />
-            <span>Group: Status</span>
-          </button>
+          {(searchKeyword || selectedAssignee || filterPriority !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearchKeyword('');
+                setSelectedAssignee(null);
+                setFilterPriority('ALL');
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 text-xs font-semibold transition-colors"
+            >
+              <Filter size={14} className="text-slate-400" />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Main Views: Board View, List View, OR Empty State View */}
       {loading ? (
-        <div className="bg-white p-16 rounded-xl border border-[#DFE1E6] text-center shadow-xs">
-          <RefreshCw className="animate-spin text-[#0052CC] mx-auto mb-3" size={32} />
-          <p className="text-sm font-medium text-[#5E6C84]">Đang tải dữ liệu công việc...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((col) => (
+            <div key={col} className="bg-slate-100/70 p-4 rounded-xl border border-slate-200 space-y-3">
+              <div className="w-28 h-6 bg-slate-200 rounded-md animate-pulse" />
+              <div className="space-y-2">
+                <div className="w-full h-24 bg-white rounded-lg animate-pulse" />
+                <div className="w-full h-24 bg-white rounded-lg animate-pulse" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredTasks.length === 0 ? (
-        /* Dynamic Empty State View depending on content/filters */
-        <div className="bg-white p-16 rounded-xl border border-[#DFE1E6] text-center shadow-xs space-y-4">
-          <div className="w-16 h-16 rounded-full bg-[#DEEBFF] text-[#0052CC] flex items-center justify-center mx-auto">
+        /* Empty State View */
+        <div className="bg-white p-12 sm:p-16 rounded-2xl border border-slate-200 text-center shadow-2xs space-y-4">
+          <div className="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
             <Inbox size={32} />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#172B4D]">
+            <h3 className="text-lg font-bold text-slate-900">
               {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
-                ? 'Không tìm thấy công việc nào phù hợp với bộ lọc'
-                : 'Dự án này hiện chưa có công việc nào'}
+                ? 'No tasks found matching your filters'
+                : 'This project currently has no tasks'}
             </h3>
-            <p className="text-sm text-[#5E6C84] mt-1 max-w-md mx-auto">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
               {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
-                ? 'Vui lòng thử thay đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc.'
+                ? 'Please try changing your search keywords or resetting the filters.'
                 : canManageTasks
-                ? 'Hãy nhấn nút "+ Tạo Task Mới" để tạo và phân công công việc đầu tiên cho dự án này.'
-                : 'Dự án hiện chưa có công việc nào được khởi tạo. Vui lòng liên hệ Admin hoặc Owner của dự án.'}
+                ? 'Click the "+ Create Task" button to create and assign the first task for this project.'
+                : 'No tasks have been created for this project yet. Please contact the project Owner or Admin.'}
             </p>
           </div>
 
@@ -710,17 +797,17 @@ export const ProjectDetailPage: React.FC = () => {
                   setSelectedAssignee(null);
                   setFilterPriority('ALL');
                 }}
-                className="px-4 py-2 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#0052CC] text-xs font-bold rounded-lg border border-[#DFE1E6] transition-colors inline-block"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-blue-600 text-xs font-bold rounded-xl border border-slate-200 transition-colors"
               >
-                Đặt lại bộ lọc
+                Reset filters
               </button>
             ) : canManageTasks ? (
               <button
                 onClick={() => handleOpenQuickCreate('TODO')}
-                className="px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors inline-flex items-center gap-1.5"
               >
                 <Plus size={16} />
-                <span>Tạo Task Mới</span>
+                <span>Create Task</span>
               </button>
             ) : null}
           </div>

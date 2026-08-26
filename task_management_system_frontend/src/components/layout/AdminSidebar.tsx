@@ -21,26 +21,26 @@ export const AdminSidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-[#EBECF0] flex flex-col h-full font-sans shadow-sm shrink-0">
-      {/* Phần Top (Profile Header): Cố định ở trên */}
-      <div className="p-5 border-b border-[#EBECF0] shrink-0">
+    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-full font-sans shadow-2xs shrink-0">
+      {/* Top Profile Header */}
+      <div className="p-5 border-b border-slate-200 shrink-0 bg-slate-50/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#0052CC] text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">
+          <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
             {user?.username ? user.username.substring(0, 2).toUpperCase() : 'AD'}
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-[#172B4D] truncate">{user?.username || 'Admin'}</h2>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded text-xs font-semibold bg-[#DEEBFF] text-[#0747A6]">
+            <h2 className="text-sm font-bold text-slate-900 truncate">{user?.username || 'Admin'}</h2>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 mt-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
               <ShieldAlert size={12} />
-              Admin
+              Quản trị viên
             </span>
           </div>
         </div>
       </div>
 
-      {/* Phần Middle (Navigation Menu): flex-1 overflow-y-auto */}
+      {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto min-h-0 p-3 space-y-1">
-        <div className="px-3 py-2 text-xs font-bold text-[#5E6C84] uppercase tracking-wider">
+        <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
           Quản trị hệ thống
         </div>
         {navItems.map((item) => {
@@ -50,10 +50,10 @@ export const AdminSidebar: React.FC = () => {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-[#EBF5FF] text-[#0052CC] font-semibold'
-                    : 'text-[#42526E] hover:bg-[#FAFBFC] hover:text-[#172B4D]'
+                    ? 'bg-blue-50 text-blue-700 font-bold shadow-2xs'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`
               }
             >
@@ -64,11 +64,11 @@ export const AdminSidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Phần Bottom (Nút Đăng xuất): mt-auto shrink-0 ghim dưới đáy */}
-      <div className="p-4 border-t border-[#EBECF0] bg-[#FAFBFC] mt-auto shrink-0">
+      {/* Bottom Logout Button */}
+      <div className="p-4 border-t border-slate-200 bg-slate-50/80 mt-auto shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-[#FFEBE6] text-[#BF2600] border border-[#FFBDAD] rounded-md text-sm font-medium transition-colors shadow-xs"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-all shadow-2xs"
         >
           <LogOut size={16} />
           <span>Đăng xuất</span>
@@ -77,3 +77,4 @@ export const AdminSidebar: React.FC = () => {
     </aside>
   );
 };
+

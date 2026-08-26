@@ -17,7 +17,6 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
-  projectKey = 'TO',
   projectMembers = [],
   isAdmin = true,
   onTaskClick,
@@ -27,8 +26,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onDeleteTask,
   onDragStart,
 }) => {
-  const taskKey = `${projectKey}-${task.id}`;
-
   // Check if overdue
   const isOverdue = React.useMemo(() => {
     if (!task.deadline || task.status === 'DONE') return false;
@@ -43,7 +40,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     if (!task.deadline) return null;
     try {
       const d = new Date(task.deadline);
-      return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+      return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
     } catch {
       return task.deadline;
     }
@@ -59,14 +56,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   // Determine avatar background color from name hash
   const getAvatarColor = (name?: string) => {
-    if (!name) return 'bg-[#5E6C84]';
+    if (!name) return 'bg-slate-400';
     const colors = [
-      'bg-[#FF5630]',
-      'bg-[#FFAB00]',
-      'bg-[#36B37E]',
-      'bg-[#0052CC]',
-      'bg-[#6554C0]',
-      'bg-[#00B8D9]',
+      'bg-red-500',
+      'bg-amber-500',
+      'bg-emerald-600',
+      'bg-blue-600',
+      'bg-purple-600',
+      'bg-teal-600',
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -79,12 +76,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const getPriorityStyle = (priority: TaskPriority) => {
     switch (priority) {
       case 'HIGH':
-        return 'bg-[#FFEBE6] text-[#BF2600] border-[#FFBDAD]';
+        return 'bg-red-50 text-red-700 border-red-200';
       case 'MEDIUM':
-        return 'bg-[#FFF0B3] text-[#172B4D] border-[#FFE380]';
+        return 'bg-amber-50 text-amber-800 border-amber-200';
       case 'LOW':
       default:
-        return 'bg-[#DEEBFF] text-[#0747A6] border-[#B3D4FF]';
+        return 'bg-sky-50 text-sky-700 border-sky-200';
     }
   };
 
@@ -92,52 +89,48 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const getStatusBadgeStyle = (status: TaskStatus) => {
     switch (status) {
       case 'TODO':
-        return 'bg-[#DFE1E6] text-[#42526E] border-[#C1C7D0]';
+        return 'bg-slate-100 text-slate-700 border-slate-300';
       case 'DOING':
-        return 'bg-[#DEEBFF] text-[#0747A6] border-[#B3D4FF]';
+        return 'bg-sky-50 text-sky-700 border-sky-200';
       case 'REVIEW':
-        return 'bg-[#EAE6FF] text-[#403294] border-[#C0B6F2]';
+        return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'DONE':
-        return 'bg-[#E3FCEF] text-[#006644] border-[#ABF5D1]';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
+        return 'bg-slate-100 text-slate-700 border-slate-300';
     }
   };
+
+  const assigneeName = task.userFullName || task.assignedUser?.username || 'Unassigned';
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart && onDragStart(e, task.id)}
       onClick={() => onTaskClick && onTaskClick(task)}
-      className="bg-white rounded-lg border border-[#DFE1E6] hover:border-[#4C9AFF] hover:shadow-md transition-all duration-150 p-3.5 flex flex-col gap-2.5 cursor-grab active:cursor-grabbing group relative select-none"
+      className="bg-white rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all duration-150 p-3.5 flex flex-col gap-2.5 cursor-grab active:cursor-grabbing group relative select-none shadow-2xs"
     >
-      {/* Top Header: Priority Dropdown Select & Delete Button */}
+      {/* Top Header: Task ID & Priority Dropdown Select & Delete Button */}
       <div className="flex items-center justify-between">
-        <span className="font-mono font-bold text-[11px] text-[#0052CC]">
-          {taskKey}
+        <span className="font-mono font-bold text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+          #TASK-{task.id}
         </span>
 
         <div className="flex items-center gap-1.5">
-          {/* Priority Select (Admin/Owner only) vs Read-only badge (Member) */}
+          {/* Priority Select (Admin/Owner only) vs Read-only badge */}
           <div
             className="flex items-center"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            {isAdmin ? (
+            {isAdmin && onPriorityChange ? (
               <select
                 value={task.priority}
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  const newPri = e.target.value as TaskPriority;
-                  if (onPriorityChange) {
-                    onPriorityChange(task.id, newPri);
-                  }
-                }}
+                onChange={(e) => onPriorityChange(task.id, e.target.value as TaskPriority)}
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-md border outline-none cursor-pointer transition-colors ${getPriorityStyle(
                   task.priority
                 )}`}
@@ -157,7 +150,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             )}
           </div>
 
-          {/* Delete Button directly on TaskCard (Admin/Owner only) */}
+          {/* Delete Task Button */}
           {isAdmin && onDeleteTask && (
             <button
               type="button"
@@ -168,8 +161,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-              title="Delete Task"
+              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors opacity-80 group-hover:opacity-100"
+              title="Delete task"
             >
               <Trash2 size={13} />
             </button>
@@ -178,28 +171,34 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       </div>
 
       {/* Task Title */}
-      <h4 className="text-sm font-medium text-[#172B4D] group-hover:text-[#0052CC] leading-snug line-clamp-2 transition-colors">
+      <h4 className="text-sm font-medium text-slate-900 group-hover:text-blue-600 leading-snug line-clamp-2 transition-colors">
         {task.title}
       </h4>
 
       {/* Due Date Indicator */}
       {formattedDate && (
         <div
-          className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md border ${
+          className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md border w-fit ${
             isOverdue
-              ? 'bg-red-50 text-red-600 border-red-200 font-semibold animate-pulse'
+              ? 'bg-red-50 text-red-700 border-red-200 font-bold animate-pulse'
               : task.status === 'DONE'
-              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-              : 'bg-[#F4F5F7] text-[#5E6C84] border-[#DFE1E6]'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-slate-50 text-slate-600 border-slate-200'
           }`}
         >
-          {isOverdue ? <AlertCircle size={12} /> : task.status === 'DONE' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-          <span>Due Date: {formattedDate}</span>
+          {isOverdue ? (
+            <AlertCircle size={12} className="shrink-0 text-red-600" />
+          ) : task.status === 'DONE' ? (
+            <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
+          ) : (
+            <Clock size={12} className="shrink-0 text-slate-400" />
+          )}
+          <span>{isOverdue ? `Overdue: ${formattedDate}` : `Due: ${formattedDate}`}</span>
         </div>
       )}
 
       {/* Footer Info: Status Badge & Assignee Avatar */}
-      <div className="flex items-center justify-between pt-2 border-t border-[#F4F5F7] mt-1 text-xs text-[#5E6C84]">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-1 text-xs">
         {/* Status Select Badge */}
         <div
           className="inline-block"
@@ -219,7 +218,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 onStatusChange(task.id, newStat);
               }
             }}
-            className={`text-[10px] font-bold px-2 py-0.5 rounded border outline-none cursor-pointer font-sans transition-colors ${getStatusBadgeStyle(
+            className={`text-[10px] font-bold px-2 py-0.5 rounded border outline-none cursor-pointer transition-colors ${getStatusBadgeStyle(
               task.status
             )}`}
           >
@@ -251,10 +250,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   onAssigneeChange(task.id, newUserId);
                 }
               }}
-              className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-[#DFE1E6] bg-[#FAFBFC] hover:bg-white text-[#172B4D] outline-none cursor-pointer max-w-[110px] truncate"
-              title="Gán người thực hiện"
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 outline-none cursor-pointer max-w-[110px] truncate"
+              title={`Assigned to: ${assigneeName}`}
             >
-              <option value="">-- Chưa gán --</option>
+              <option value="">Unassigned</option>
               {projectMembers.map((mem) => (
                 <option key={mem.id} value={mem.id}>
                   {mem.username}
@@ -267,7 +266,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
               task.assignedUser?.username
             )}`}
-            title={task.assignedUser ? task.assignedUser.username : 'Unassigned'}
+            title={`Assigned to: ${assigneeName}`}
           >
             {task.assignedUser ? getInitials(task.assignedUser.username) : '?'}
           </div>
@@ -276,3 +275,5 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     </div>
   );
 };
+
+

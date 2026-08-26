@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FolderKanban, Calendar, RefreshCw, AlertCircle } from 'lucide-react';
+import { X, FolderKanban, RefreshCw, AlertCircle } from 'lucide-react';
 import { ProjectDTO, ProjectRequest, ProjectStatus } from '../../services/projectApi';
 
 interface ProjectFormModalProps {
@@ -52,19 +52,19 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     setErrorMessage(null);
 
     if (!name.trim()) {
-      setErrorMessage('Tên dự án không được để trống!');
+      setErrorMessage('Project name is required!');
       return;
     }
     if (!startDate) {
-      setErrorMessage('Vui lòng chọn ngày bắt đầu!');
+      setErrorMessage('Please select a start date!');
       return;
     }
     if (!endDate) {
-      setErrorMessage('Vui lòng chọn ngày kết thúc!');
+      setErrorMessage('Please select an end date!');
       return;
     }
     if (new Date(startDate) > new Date(endDate)) {
-      setErrorMessage('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!');
+      setErrorMessage('End date must be greater than or equal to start date!');
       return;
     }
 
@@ -82,7 +82,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       );
       onClose();
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi lưu thông tin dự án!';
+      const msg = err.response?.data?.message || err.message || 'An error occurred while saving the project!';
       setErrorMessage(msg);
     } finally {
       setLoading(false);
@@ -90,21 +90,22 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#FFFFFF] rounded-2xl border border-[#DFE1E6] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150 font-sans">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150 font-sans">
         {/* Header */}
-        <div className="px-6 py-4 bg-[#F4F5F7] border-b border-[#DFE1E6] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#DEEBFF] text-[#0052CC] flex items-center justify-center font-bold">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
               <FolderKanban size={18} />
             </div>
-            <h3 className="font-bold text-base text-[#172B4D]">
-              {isEditMode ? `Cập Nhật Dự Án (PROJ-${projectToEdit?.id})` : 'Tạo Dự Án Mới'}
+            <h3 className="font-bold text-base text-slate-900">
+              {isEditMode ? 'Edit Project' : 'Create New Project'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-[#5E6C84] hover:text-[#172B4D] hover:bg-[#EBECF0] rounded-lg transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors"
+            title="Close modal"
           >
             <X size={18} />
           </button>
@@ -113,73 +114,73 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-600 flex items-center gap-2">
-              <AlertCircle size={16} className="shrink-0" />
+            <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700 flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0 text-red-600" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-[#172B4D] mb-1">
-              Tên dự án <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Project Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder="Nhập tên dự án..."
+              placeholder="Enter project name..."
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-sm focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC]"
+              className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#172B4D] mb-1">Mô tả dự án</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Project Description</label>
             <textarea
               rows={3}
-              placeholder="Mô tả mục tiêu, phạm vi của dự án..."
+              placeholder="Describe project scope and goals..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs focus:outline-none focus:border-[#0052CC]"
+              className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 leading-relaxed transition-all"
             ></textarea>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#172B4D] mb-1">
-                Ngày bắt đầu <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Start Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs focus:outline-none focus:border-[#0052CC]"
+                className="w-full px-3.5 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#172B4D] mb-1">
-                Ngày kết thúc <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                End Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 required
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs focus:outline-none focus:border-[#0052CC]"
+                className="w-full px-3.5 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#172B4D] mb-1">
-              Trạng thái dự án (Status) <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Project Status <span className="text-red-500">*</span>
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-              className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-bold focus:outline-none focus:border-[#0052CC]"
+              className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 transition-all cursor-pointer"
             >
               <option value="PLANNING">PLANNING</option>
               <option value="IN_PROGRESS">IN_PROGRESS</option>
@@ -189,22 +190,22 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-4 border-t border-[#DFE1E6] flex items-center justify-end gap-2">
+          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#172B4D] text-xs font-semibold rounded-lg transition-colors"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-xs transition-colors"
             >
               {loading && <RefreshCw size={14} className="animate-spin" />}
-              <span>{isEditMode ? 'Cập Nhật Dự Án' : 'Tạo Dự Án Mới'}</span>
+              <span>{isEditMode ? 'Update Project' : 'Create Project'}</span>
             </button>
           </div>
         </form>
@@ -212,3 +213,5 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     </div>
   );
 };
+
+
