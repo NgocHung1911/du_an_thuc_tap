@@ -13,7 +13,7 @@ interface ProjectBoardViewProps {
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
   onAssigneeChange?: (taskId: number, userId: number | null) => void;
   onDeleteTask?: (taskId: number) => void;
-  onAddNewTaskClick?: (status: TaskStatus) => void;
+  onQuickCreate?: (status: TaskStatus) => void;
 }
 
 export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
@@ -25,7 +25,7 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   onPriorityChange,
   onAssigneeChange,
   onDeleteTask,
-  onAddNewTaskClick,
+  onQuickCreate,
 }) => {
   const columns: { status: TaskStatus; label: string; icon: React.FC<{ size?: number }>; color: string }[] = [
     { status: 'TODO', label: 'TODO', icon: Clock, color: 'border-slate-300 bg-slate-50 text-slate-700' },
@@ -80,9 +80,9 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
                 </span>
               </div>
 
-              {isAdmin && onAddNewTaskClick && (
+              {isAdmin && onQuickCreate && (
                 <button
-                  onClick={() => onAddNewTaskClick(col.status)}
+                  onClick={() => onQuickCreate(col.status)}
                   className="p-1 hover:bg-white text-slate-500 hover:text-blue-600 rounded-lg transition-colors"
                   title={`Add task to ${col.label}`}
                 >
@@ -116,9 +116,9 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
             </div>
 
             {/* Bottom Add Task Button */}
-            {isAdmin && onAddNewTaskClick && (
+            {isAdmin && onQuickCreate && (
               <button
-                onClick={() => onAddNewTaskClick(col.status)}
+                onClick={() => onQuickCreate(col.status)}
                 className="mt-3 w-full py-2 px-3 text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-white rounded-xl border border-transparent hover:border-slate-200 flex items-center justify-center gap-1.5 transition-all shrink-0"
               >
                 <Plus size={15} />
