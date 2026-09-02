@@ -51,6 +51,13 @@ export const ProjectDetailPage: React.FC = () => {
   const canManageTasks = currentUserProjectRole === 'OWNER' || currentUserProjectRole === 'ADMIN';
   const canManageMembers = currentUserProjectRole === 'OWNER' || currentUserProjectRole === 'ADMIN';
 
+  // Update tab title when project name is available
+  useEffect(() => {
+    if (project?.name) {
+      document.title = project.name;
+    }
+  }, [project]);
+
   // Toast Notification state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -338,11 +345,11 @@ export const ProjectDetailPage: React.FC = () => {
       prev.map((t) =>
         t.id === taskId
           ? {
-              ...t,
-              userId: newUserId || undefined,
-              assignedUser: assignedMember ? assignedMember : undefined,
-              userFullName: assignedMember ? assignedMember.username : undefined,
-            }
+            ...t,
+            userId: newUserId || undefined,
+            assignedUser: assignedMember ? assignedMember : undefined,
+            userFullName: assignedMember ? assignedMember.username : undefined,
+          }
           : t
       )
     );
@@ -351,11 +358,11 @@ export const ProjectDetailPage: React.FC = () => {
       setSelectedTaskDetail((prev) =>
         prev
           ? {
-              ...prev,
-              userId: newUserId || undefined,
-              assignedUser: assignedMember ? assignedMember : undefined,
-              userFullName: assignedMember ? assignedMember.username : undefined,
-            }
+            ...prev,
+            userId: newUserId || undefined,
+            assignedUser: assignedMember ? assignedMember : undefined,
+            userFullName: assignedMember ? assignedMember.username : undefined,
+          }
           : null
       );
     }
@@ -381,11 +388,11 @@ export const ProjectDetailPage: React.FC = () => {
         setSelectedTaskDetail((prev) =>
           prev
             ? {
-                ...prev,
-                userId: previousUserId,
-                assignedUser: previousUser,
-                userFullName: previousUser?.username,
-              }
+              ...prev,
+              userId: previousUserId,
+              assignedUser: previousUser,
+              userFullName: previousUser?.username,
+            }
             : null
         );
       }
@@ -506,15 +513,14 @@ export const ProjectDetailPage: React.FC = () => {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
-                    project?.status === 'COMPLETED'
+                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${project?.status === 'COMPLETED'
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       : project?.status === 'IN_PROGRESS'
-                      ? 'bg-sky-50 text-sky-700 border-sky-200'
-                      : project?.status === 'ON_HOLD'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-slate-100 text-slate-700 border-slate-200'
-                  }`}
+                        ? 'bg-sky-50 text-sky-700 border-sky-200'
+                        : project?.status === 'ON_HOLD'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                    }`}
                 >
                   {project?.status || 'PLANNING'}
                 </span>
@@ -574,69 +580,15 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Task Overview Statistics Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-slate-500 font-medium block">Total Tasks</span>
-            <span className="text-lg font-bold text-slate-900">{taskStats.total}</span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">
-            All
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-slate-500 font-medium block">TODO</span>
-            <span className="text-lg font-bold text-slate-700">{taskStats.todo}</span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">
-            To
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-slate-500 font-medium block">DOING</span>
-            <span className="text-lg font-bold text-sky-700">{taskStats.doing}</span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-xs">
-            Do
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-slate-500 font-medium block">REVIEW</span>
-            <span className="text-lg font-bold text-purple-700">{taskStats.review}</span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs">
-            Rv
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-slate-500 font-medium block">DONE</span>
-            <span className="text-lg font-bold text-emerald-700">{taskStats.done}</span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
-            Dn
-          </div>
-        </div>
-      </div>
-
       {/* View Switcher Header (Board & List) */}
       <div className="border-b border-slate-200 bg-white rounded-t-2xl border-x px-4 pt-3 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('Board')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
-              activeTab === 'Board'
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'Board'
                 ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-            }`}
+              }`}
           >
             <Columns size={15} />
             <span>Board View</span>
@@ -644,11 +596,10 @@ export const ProjectDetailPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('List')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
-              activeTab === 'List'
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'List'
                 ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-            }`}
+              }`}
           >
             <List size={15} />
             <span>List View</span>
@@ -702,11 +653,10 @@ export const ProjectDetailPage: React.FC = () => {
                     onClick={() =>
                       setSelectedAssignee((prev) => (prev === mem.username ? null : mem.username))
                     }
-                    className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${bgColor} ${
-                      isSelected
+                    className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${bgColor} ${isSelected
                         ? 'ring-2 ring-blue-600 ring-offset-2 scale-110 shadow-md'
                         : 'hover:scale-105 opacity-90 hover:opacity-100'
-                    }`}
+                      }`}
                     title={`${mem.username} (${mem.email || 'Member'})`}
                   >
                     {initials}
@@ -784,8 +734,8 @@ export const ProjectDetailPage: React.FC = () => {
               {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
                 ? 'Please try changing your search keywords or resetting the filters.'
                 : canManageTasks
-                ? 'Click the "+ Create Task" button to create and assign the first task for this project.'
-                : 'No tasks have been created for this project yet. Please contact the project Owner or Admin.'}
+                  ? 'Click the "+ Create Task" button to create and assign the first task for this project.'
+                  : 'No tasks have been created for this project yet. Please contact the project Owner or Admin.'}
             </p>
           </div>
 
@@ -916,11 +866,10 @@ export const ProjectDetailPage: React.FC = () => {
       {/* Floating Toast Notification */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-xl border flex items-center gap-3 text-xs font-bold transition-all animate-in fade-in slide-in-from-bottom-5 duration-200 ${
-            toast.type === 'success'
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-xl border flex items-center gap-3 text-xs font-bold transition-all animate-in fade-in slide-in-from-bottom-5 duration-200 ${toast.type === 'success'
               ? 'bg-[#006644] text-white border-[#004D33]'
               : 'bg-[#BF2600] text-white border-[#991F00]'
-          }`}
+            }`}
         >
           {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           <span>{toast.message}</span>

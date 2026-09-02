@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FolderKanban, RefreshCw, Search, Inbox, X, PlayCircle, CheckCheck, PauseCircle, Filter,
+  FolderKanban, RefreshCw, Search, Inbox, X, Filter,
   Plus, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { projectApi, ProjectDTO, ProjectRequest, ProjectStatus } from '../../services/projectApi';
@@ -63,29 +63,21 @@ export const MemberProjectsPage: React.FC = () => {
     await fetchProjects();
   };
 
-  // Calculate Statistics
-  const stats = useMemo(() => {
-    const total = projects.length;
-    const inProgress = projects.filter((p) => p.status === 'IN_PROGRESS').length;
-    const completed = projects.filter((p) => p.status === 'COMPLETED').length;
-    const onHoldOrPlanning = projects.filter((p) => p.status === 'ON_HOLD' || p.status === 'PLANNING').length;
-
-    return { total, inProgress, completed, onHoldOrPlanning };
-  }, [projects]);
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10 font-sans relative">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-            <FolderKanban size={24} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Joined Projects</h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              List of workspace projects you are currently participating in or managing
-            </p>
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+              <FolderKanban size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Joined Projects</h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                List of workspace projects you are currently participating in or managing
+              </p>
+            </div>
           </div>
         </div>
 
@@ -108,49 +100,6 @@ export const MemberProjectsPage: React.FC = () => {
             <Plus size={18} />
             <span>Create New Project</span>
           </button>
-        </div>
-      </div>
-
-      {/* Overview Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <FolderKanban size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">Total Projects</span>
-            <span className="text-xl font-bold text-slate-900">{stats.total}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-            <PlayCircle size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">In Progress</span>
-            <span className="text-xl font-bold text-sky-700">{stats.inProgress}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCheck size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">Completed</span>
-            <span className="text-xl font-bold text-emerald-700">{stats.completed}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <PauseCircle size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">On Hold / Planning</span>
-            <span className="text-xl font-bold text-amber-700">{stats.onHoldOrPlanning}</span>
-          </div>
         </div>
       </div>
 
@@ -263,14 +212,17 @@ export const MemberProjectsPage: React.FC = () => {
             <ProjectCard
               key={project.id}
               project={project}
-              isAdmin={false}
               onCardClick={(projectId) => navigate(`/projects/${projectId}`)}
+              onEditClick={(proj) => {
+                setProjectToEdit(proj);
+                setIsFormModalOpen(true);
+              }}
             />
           ))}
         </div>
       )}
 
-      {/* Project Form Modal */}
+      {/* Project Form Modal (Create / Edit) */}
       <ProjectFormModal
         isOpen={isFormModalOpen}
         projectToEdit={projectToEdit}

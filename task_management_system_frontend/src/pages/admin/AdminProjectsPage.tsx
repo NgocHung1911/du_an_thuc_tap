@@ -126,49 +126,6 @@ export const AdminProjectsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Overview Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <FolderKanban size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">Total Projects</span>
-            <span className="text-xl font-bold text-slate-900">{stats.total}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-            <PlayCircle size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">In Progress</span>
-            <span className="text-xl font-bold text-sky-700">{stats.inProgress}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCheck size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">Completed</span>
-            <span className="text-xl font-bold text-emerald-700">{stats.completed}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <PauseCircle size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-medium block">On Hold / Planning</span>
-            <span className="text-xl font-bold text-amber-700">{stats.onHoldOrPlanning}</span>
-          </div>
-        </div>
-      </div>
-
       {/* Toolbar & Search/Filter Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
         {/* Search Input */}

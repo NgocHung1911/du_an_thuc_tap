@@ -13,11 +13,11 @@ export const AdminSidebar: React.FC = () => {
   };
 
   const navItems = [
-    { label: 'Dashboard Tổng quan', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { label: 'Quản lý Công việc', icon: ClipboardList, path: '/admin/tasks' },
-    { label: 'Quản lý Người dùng', icon: Users, path: '/admin/users' },
-    { label: 'Quản lý Dự án', icon: FolderKanban, path: '/admin/projects' },
-    { label: 'Cài đặt Hệ thống', icon: Settings, path: '/admin/settings' },
+    { label: 'Dashboard Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'Manage Tasks', icon: ClipboardList, path: '/admin/tasks' },
+    { label: 'Manage Users', icon: Users, path: '/admin/users' },
+    { label: 'Manage Projects', icon: FolderKanban, path: '/admin/projects' },
+    { label: 'System Settings', icon: Settings, path: '/admin/settings' },
   ];
 
   return (
@@ -32,7 +32,7 @@ export const AdminSidebar: React.FC = () => {
             <h2 className="text-sm font-bold text-slate-900 truncate">{user?.username || 'Admin'}</h2>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 mt-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
               <ShieldAlert size={12} />
-              Quản trị viên
+              Administrator
             </span>
           </div>
         </div>
@@ -41,7 +41,7 @@ export const AdminSidebar: React.FC = () => {
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto min-h-0 p-3 space-y-1">
         <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-          Quản trị hệ thống
+          System Administration
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -71,7 +71,7 @@ export const AdminSidebar: React.FC = () => {
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-all shadow-2xs"
         >
           <LogOut size={16} />
-          <span>Đăng xuất</span>
+          <span>Logout</span>
         </button>
       </div>
     </aside>

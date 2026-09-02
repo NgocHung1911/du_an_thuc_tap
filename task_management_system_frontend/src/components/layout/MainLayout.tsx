@@ -25,15 +25,15 @@ export const MainLayout: React.FC = () => {
             </span>
             <input
               type="text"
-              placeholder="Tìm kiếm công việc, dự án..."
+              placeholder="Search for jobs, projects..."
               className="w-full pl-9 pr-3 py-1.5 bg-slate-800/80 hover:bg-slate-800 focus:bg-white focus:text-slate-900 focus:placeholder-slate-400 text-white placeholder-slate-400 rounded-xl text-xs focus:outline-none transition-colors border border-slate-700 focus:border-blue-600"
             />
           </div>
 
-          <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Thông báo">
+          <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Notifications">
             <Bell size={18} />
           </button>
-          <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Trợ giúp">
+          <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Help">
             <HelpCircle size={18} />
           </button>
 

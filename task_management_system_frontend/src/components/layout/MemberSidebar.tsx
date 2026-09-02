@@ -13,9 +13,9 @@ export const MemberSidebar: React.FC = () => {
   };
 
   const navItems = [
-    { label: 'Công việc của tôi', icon: CheckSquare, path: '/member/my-tasks' },
-    { label: 'Dự án tham gia', icon: FolderGit2, path: '/member/projects' },
-    { label: 'Hồ sơ cá nhân', icon: User, path: '/member/profile' },
+    { label: 'My Tasks', icon: CheckSquare, path: '/member/my-tasks' },
+    { label: 'Participating projects', icon: FolderGit2, path: '/member/projects' },
+    { label: 'Personal Profile', icon: User, path: '/member/profile' },
   ];
 
   return (
@@ -30,7 +30,7 @@ export const MemberSidebar: React.FC = () => {
             <h2 className="text-sm font-bold text-slate-900 truncate">{user?.username || 'Member'}</h2>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 mt-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <UserCheck size={12} />
-              Thành viên
+              Member
             </span>
           </div>
         </div>
@@ -39,7 +39,7 @@ export const MemberSidebar: React.FC = () => {
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto min-h-0 p-3 space-y-1">
         <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-          Không gian làm việc
+          Workspace
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -69,7 +69,7 @@ export const MemberSidebar: React.FC = () => {
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-all shadow-2xs"
         >
           <LogOut size={16} />
-          <span>Đăng xuất</span>
+          <span>Logout</span>
         </button>
       </div>
     </aside>

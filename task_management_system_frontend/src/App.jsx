@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { HomePage } from './pages/public/HomePage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { OtpVerificationPage } from './pages/auth/OtpVerificationPage';
@@ -23,30 +24,23 @@ import { MemberProfilePage } from './pages/member/MemberProfilePage';
 // Project Pages
 import { ProjectDetailPage } from './pages/project/ProjectDetailPage';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '123456789-dummyclientid.apps.googleusercontent.com';
+import { PageTitleManager } from './components/common/PageTitleManager';
 
-const RootRedirect = () => {
-  const { isAuthenticated, isAdmin } = useAuth();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  return <Navigate to={isAdmin ? '/admin/dashboard' : '/member/my-tasks'} replace />;
-};
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '123456789-dummyclientid.apps.googleusercontent.com';
 
 function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <BrowserRouter>
+          <PageTitleManager />
           <Routes>
-            {/* Public Authentication Routes */}
+            {/* Public Landing & Authentication Routes */}
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/verify-otp" element={<OtpVerificationPage />} />
             <Route path="/accept-invite" element={<AcceptInvitePage />} />
-
-            {/* Root Path Smart Redirect */}
-            <Route path="/" element={<RootRedirect />} />
 
             {/* Protected Routes inside Jira Main Layout */}
             <Route element={<ProtectedRoute />}>
