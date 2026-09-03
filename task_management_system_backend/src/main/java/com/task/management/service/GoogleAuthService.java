@@ -58,7 +58,7 @@ public class GoogleAuthService {
             String email = payload.getEmail();
             String googleId = payload.getSubject();
 
-            // Lấy tên đại diện từ tài khoản Google
+            // Lấy tên đại diện từ tài khoản Google hoặc lấy tên từ email
             String nameFromGoogle = (String) payload.get("name");
             if (nameFromGoogle == null || nameFromGoogle.isBlank()) {
                 String givenName = (String) payload.get("given_name");
@@ -66,6 +66,9 @@ public class GoogleAuthService {
                 if (givenName != null || familyName != null) {
                     nameFromGoogle = ((familyName != null ? familyName + " " : "") + (givenName != null ? givenName : "")).trim();
                 }
+            }
+            if (nameFromGoogle == null || nameFromGoogle.isBlank()) {
+                nameFromGoogle = email.split("@")[0];
             }
 
             Optional<User> optionalUser = userRepository.findByEmail(email);
@@ -77,9 +80,8 @@ public class GoogleAuthService {
                 if (user.getGoogleId() == null) {
                     user.setGoogleId(googleId);
                 }
-                if (nameFromGoogle != null && !nameFromGoogle.isBlank() && (user.getFullName() == null || user.getFullName().isBlank())) {
-                    user.setFullName(nameFromGoogle);
-                }
+                // Luôn cập nhật fullName theo tên Google/Email bất kể fullName có rỗng hay không
+                user.setFullName(nameFromGoogle);
                 user.setVerified(true);
                 userRepository.save(user);
             } else {
@@ -87,9 +89,7 @@ public class GoogleAuthService {
                 user = new User();
                 user.setEmail(email);
                 user.setGoogleId(googleId);
-                if (nameFromGoogle != null && !nameFromGoogle.isBlank()) {
-                    user.setFullName(nameFromGoogle);
-                }
+                user.setFullName(nameFromGoogle);
                 user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 user.setRole(Role.MEMBER);
                 user.setVerified(true);
