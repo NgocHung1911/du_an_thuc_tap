@@ -78,4 +78,21 @@ public class OtpService {
 
         generateAndSendOtp(email);
     }
+
+    public void verifyOnlyOtp(String email, String otpCode) {
+        OtpToken token = otpTokenRepository.findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(email)
+                .orElseThrow(() -> new IllegalArgumentException("Mã OTP không tồn tại hoặc đã được sử dụng!"));
+
+        if (LocalDateTime.now().isAfter(token.getExpiryTime())) {
+            throw new IllegalArgumentException("Mã OTP đã hết hạn! Vui lòng gửi lại mã OTP mới.");
+        }
+
+        if (!token.getOtpCode().equals(otpCode.trim())) {
+            throw new IllegalArgumentException("Mã OTP không chính xác. Vui lòng kiểm tra lại!");
+        }
+
+        token.setUsed(true);
+        otpTokenRepository.save(token);
+        log.info("Xác thực OTP đổi mật khẩu thành công cho email: {}", email);
+    }
 }

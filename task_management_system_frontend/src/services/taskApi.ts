@@ -8,6 +8,7 @@ export interface UserDTO {
   id: number;
   username: string;
   email: string;
+  fullName?: string;
   role?: string;
   projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
   initials?: string;
