@@ -26,6 +26,9 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @Column(name = "full_name")
+    private String fullName;
+
     @Column(name = "google_id")
     private String googleId;
 
