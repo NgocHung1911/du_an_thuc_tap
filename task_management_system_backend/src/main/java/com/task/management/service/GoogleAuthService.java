@@ -58,6 +58,16 @@ public class GoogleAuthService {
             String email = payload.getEmail();
             String googleId = payload.getSubject();
 
+            // Lấy tên đại diện từ tài khoản Google
+            String nameFromGoogle = (String) payload.get("name");
+            if (nameFromGoogle == null || nameFromGoogle.isBlank()) {
+                String givenName = (String) payload.get("given_name");
+                String familyName = (String) payload.get("family_name");
+                if (givenName != null || familyName != null) {
+                    nameFromGoogle = ((familyName != null ? familyName + " " : "") + (givenName != null ? givenName : "")).trim();
+                }
+            }
+
             Optional<User> optionalUser = userRepository.findByEmail(email);
             User user;
 
@@ -67,6 +77,9 @@ public class GoogleAuthService {
                 if (user.getGoogleId() == null) {
                     user.setGoogleId(googleId);
                 }
+                if (nameFromGoogle != null && !nameFromGoogle.isBlank() && (user.getFullName() == null || user.getFullName().isBlank())) {
+                    user.setFullName(nameFromGoogle);
+                }
                 user.setVerified(true);
                 userRepository.save(user);
             } else {
@@ -74,6 +87,9 @@ public class GoogleAuthService {
                 user = new User();
                 user.setEmail(email);
                 user.setGoogleId(googleId);
+                if (nameFromGoogle != null && !nameFromGoogle.isBlank()) {
+                    user.setFullName(nameFromGoogle);
+                }
                 user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 user.setRole(Role.MEMBER);
                 user.setVerified(true);

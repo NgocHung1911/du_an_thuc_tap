@@ -25,5 +25,7 @@ public class RegisterRequestDTO {
     @Email(message = "Email không hợp lệ")
     private String email;
 
+    private String fullName;
+
     private Role role; 
 }
