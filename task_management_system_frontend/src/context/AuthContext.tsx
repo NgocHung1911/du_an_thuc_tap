@@ -41,8 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = roles.some(r => r === 'ROLE_ADMIN' || r === 'ADMIN');
   const isMember = roles.some(r => r === 'ROLE_MEMBER' || r === 'MEMBER');
 
-  const login = (newToken: string, userData: { username: string; email: string; roles: string[] }) => {
-    const userObj = { username: userData.username, email: userData.email };
+  const login = (newToken: string, userData: { username: string; email: string; roles: string[]; fullName?: string }) => {
+    const userObj = { username: userData.username, email: userData.email, fullName: userData.fullName };
     setToken(newToken);
     setUser(userObj);
     setRoles(userData.roles);
@@ -59,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('roles');
+    localStorage.removeItem('pendingInviteToken');
   };
 
   return (
