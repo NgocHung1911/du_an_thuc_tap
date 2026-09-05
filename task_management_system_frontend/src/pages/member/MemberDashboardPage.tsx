@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, CheckSquare, Clock, AlertTriangle, ListTodo,
-  Calendar, ArrowRight, FolderGit2, AlertCircle, RefreshCw, Zap,
-  Folder, ShieldAlert, User, CheckCircle2, ChevronRight, Flame
+  CheckSquare, Clock, AlertTriangle, Calendar, ArrowRight,
+  FolderGit2, AlertCircle, RefreshCw, Folder, User,
+  CheckCircle2, ChevronRight, Flame
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { taskApi, TaskDTO, TaskStatus, TaskPriority } from '../../services/taskApi';
@@ -66,8 +66,10 @@ export const MemberDashboardPage: React.FC = () => {
     const todoCount = myTasks.filter((t) => t.status === 'TODO').length;
     const doingCount = myTasks.filter((t) => t.status === 'DOING').length;
     const reviewCount = myTasks.filter((t) => t.status === 'REVIEW').length;
+    const doneCount = myTasks.filter((t) => t.status === 'DONE').length;
 
     const inProgressCount = doingCount + reviewCount;
+    const completionRate = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
     // Priority counts
     const highPriorityCount = myTasks.filter((t) => t.priority === 'HIGH' && t.status !== 'DONE').length;
@@ -79,6 +81,8 @@ export const MemberDashboardPage: React.FC = () => {
       todoCount,
       doingCount,
       reviewCount,
+      doneCount,
+      completionRate,
       inProgressCount,
       highPriorityCount,
       mediumPriorityCount,
@@ -200,118 +204,52 @@ export const MemberDashboardPage: React.FC = () => {
 
       {/* Top Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Total Tasks */}
+        {/* 1. Projects (Số Project) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">My Tasks</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Projects</p>
+            <p className="text-3xl font-extrabold text-indigo-600">{projects.length}</p>
+            <p className="text-xs text-slate-500">Participating projects</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+            <FolderGit2 size={24} />
+          </div>
+        </div>
+
+        {/* 2. Total Tasks (Số Task) */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tasks</p>
             <p className="text-3xl font-extrabold text-slate-900">{stats.total}</p>
-            <p className="text-xs text-slate-500">Total assigned to you</p>
+            <p className="text-xs text-slate-500">Assigned to you</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
             <CheckSquare size={24} />
           </div>
         </div>
 
-        {/* 2. To Do (Before In Progress) */}
+        {/* 3. Task Doing (Số Task Doing) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">To Do</p>
-            <p className="text-3xl font-extrabold text-slate-700">{stats.todoCount}</p>
-            <p className="text-xs text-slate-500">Tasks waiting to start</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-            <ListTodo size={24} />
-          </div>
-        </div>
-
-        {/* 3. In Progress */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
-          <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">In Progress</p>
-            <p className="text-3xl font-extrabold text-blue-600">{stats.inProgressCount}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Task Doing</p>
+            <p className="text-3xl font-extrabold text-amber-600">{stats.inProgressCount}</p>
             <p className="text-xs text-slate-500">{stats.doingCount} Doing · {stats.reviewCount} Review</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
             <Clock size={24} />
           </div>
         </div>
 
-        {/* 4. Upcoming & Overdue Deadlines */}
+        {/* 4. Task Done (Số Task Done) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Upcoming Deadlines</p>
-            <p className={`text-3xl font-extrabold ${overdueCount > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
-              {upcomingDeadlines.length}
-            </p>
-            <p className="text-xs text-amber-600 font-semibold">
-              {overdueCount > 0 ? `${overdueCount} Overdue!` : 'All on schedule'}
-            </p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Task Done</p>
+            <p className="text-3xl font-extrabold text-emerald-600">{stats.doneCount}</p>
+            <p className="text-xs text-emerald-600 font-semibold">{stats.completionRate}% Completed</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-            <AlertTriangle size={24} />
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <CheckCircle2 size={24} />
           </div>
-        </div>
-      </div>
-
-      {/* Quick Shortcuts Section (Lối tắt thao tác nhanh) */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center gap-2">
-          <Zap size={18} className="text-amber-500 fill-amber-500" />
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Quick Actions & Shortcuts</h2>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button
-            onClick={() => navigate('/member/my-tasks')}
-            className="p-3.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-slate-50/70 hover:bg-blue-50/50 flex flex-col items-start gap-2 group transition-all"
-          >
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
-              <CheckSquare size={18} />
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600">My Tasks</p>
-              <p className="text-[11px] text-slate-500">View all assigned</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/member/my-tasks')}
-            className="p-3.5 rounded-xl border border-slate-200 hover:border-amber-300 bg-slate-50/70 hover:bg-amber-50/50 flex flex-col items-start gap-2 group transition-all"
-          >
-            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
-              <ShieldAlert size={18} />
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-bold text-slate-900 group-hover:text-amber-600">Overdue Tasks</p>
-              <p className="text-[11px] text-amber-600 font-semibold">{overdueCount} overdue</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/member/projects')}
-            className="p-3.5 rounded-xl border border-slate-200 hover:border-indigo-300 bg-slate-50/70 hover:bg-indigo-50/50 flex flex-col items-start gap-2 group transition-all"
-          >
-            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
-              <FolderGit2 size={18} />
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-bold text-slate-900 group-hover:text-indigo-600">My Projects</p>
-              <p className="text-[11px] text-slate-500">{projects.length} participating</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/member/profile')}
-            className="p-3.5 rounded-xl border border-slate-200 hover:border-purple-300 bg-slate-50/70 hover:bg-purple-50/50 flex flex-col items-start gap-2 group transition-all"
-          >
-            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
-              <User size={18} />
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-bold text-slate-900 group-hover:text-purple-600">Profile</p>
-              <p className="text-[11px] text-slate-500">Manage account</p>
-            </div>
-          </button>
         </div>
       </div>
 
