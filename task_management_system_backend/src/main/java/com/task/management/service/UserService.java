@@ -22,10 +22,6 @@ public class UserService {
         if (user.getFullName() != null && !user.getFullName().isBlank()) {
             return user.getFullName();
         }
-        if (user.getEmail() != null && user.getEmail().contains("@")) {
-            String prefix = user.getEmail().substring(0, user.getEmail().indexOf('@'));
-            return prefix;
-        }
         return user.getUsername();
     }
 
@@ -43,8 +39,11 @@ public class UserService {
     private User mapToEntity(UserRequest request) {
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
         user.setEmail(request.getEmail());
+        user.setFullName(request.getFullName());
         user.setRole(request.getRole());
         return user;
     }
@@ -79,6 +78,12 @@ public class UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email đã tồn tại!");
         }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new RuntimeException("Password không được để trống!");
+        }
+        if (request.getPassword().length() < 6) {
+            throw new RuntimeException("Password phải có ít nhất 6 ký tự!");
+        }
 
         User user = mapToEntity(request);
         User savedUser = userRepository.save(user);
@@ -93,8 +98,14 @@ public class UserService {
         existingUser.setUsername(request.getUsername());
         existingUser.setEmail(request.getEmail());
         existingUser.setRole(request.getRole());
+        if (request.getFullName() != null) {
+            existingUser.setFullName(request.getFullName());
+        }
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            if (request.getPassword().length() < 6) {
+                throw new RuntimeException("Password phải có ít nhất 6 ký tự!");
+            }
             existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 

@@ -58,7 +58,7 @@ public class GoogleAuthService {
             String email = payload.getEmail();
             String googleId = payload.getSubject();
 
-            // Lấy tên đại diện từ tài khoản Google hoặc lấy tên từ email
+            // Lấy tên đại diện từ tài khoản Google
             String nameFromGoogle = (String) payload.get("name");
             if (nameFromGoogle == null || nameFromGoogle.isBlank()) {
                 String givenName = (String) payload.get("given_name");
@@ -67,34 +67,38 @@ public class GoogleAuthService {
                     nameFromGoogle = ((familyName != null ? familyName + " " : "") + (givenName != null ? givenName : "")).trim();
                 }
             }
-            if (nameFromGoogle == null || nameFromGoogle.isBlank()) {
-                nameFromGoogle = email.split("@")[0];
-            }
 
             Optional<User> optionalUser = userRepository.findByEmail(email);
             User user;
 
             if (optionalUser.isPresent()) {
-                // Trường hợp 2: Email đã có trong hệ thống
+                // Trường hợp tài khoản đã tồn tại trong CSDL -> Đăng nhập trực tiếp
                 user = optionalUser.get();
                 if (user.getGoogleId() == null) {
                     user.setGoogleId(googleId);
                 }
-                // Luôn cập nhật fullName theo tên Google/Email bất kể fullName có rỗng hay không
-                user.setFullName(nameFromGoogle);
+                // Chỉ bổ sung fullName nếu tài khoản chưa có fullName và Google cung cấp tên đại diện
+                if ((user.getFullName() == null || user.getFullName().isBlank()) && nameFromGoogle != null && !nameFromGoogle.isBlank()) {
+                    user.setFullName(nameFromGoogle);
+                }
                 user.setVerified(true);
                 userRepository.save(user);
             } else {
-                // Trường hợp 1: Chưa có tài khoản -> Tự động đăng ký
+                // Trường hợp Chưa có tài khoản -> Tự động đăng ký mới
                 user = new User();
                 user.setEmail(email);
                 user.setGoogleId(googleId);
-                user.setFullName(nameFromGoogle);
+                if (nameFromGoogle != null && !nameFromGoogle.isBlank()) {
+                    user.setFullName(nameFromGoogle);
+                }
                 user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 user.setRole(Role.MEMBER);
                 user.setVerified(true);
 
                 String baseUsername = email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
+                if (baseUsername.isBlank()) {
+                    baseUsername = "user";
+                }
                 String username = baseUsername;
                 int suffix = 1;
                 while (userRepository.existsByUsername(username)) {
