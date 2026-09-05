@@ -42,40 +42,64 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       {/* Top Header Row */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${getStatusBadgeStyle(
-              project.status
-            )}`}
-          >
-            {project.status || 'PLANNING'}
-          </span>
+          {onStatusChange ? (
+            <select
+              value={project.status || 'PLANNING'}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                e.stopPropagation();
+                onStatusChange(project.id, e.target.value as ProjectStatus);
+              }}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border outline-none cursor-pointer transition-all hover:opacity-90 ${getStatusBadgeStyle(
+                project.status
+              )}`}
+              title="Quickly change project status"
+            >
+              <option value="PLANNING" className="bg-white text-slate-900 font-semibold">PLANNING</option>
+              <option value="IN_PROGRESS" className="bg-white text-slate-900 font-semibold">IN_PROGRESS</option>
+              <option value="COMPLETED" className="bg-white text-slate-900 font-semibold">COMPLETED</option>
+              <option value="ON_HOLD" className="bg-white text-slate-900 font-semibold">ON_HOLD</option>
+            </select>
+          ) : (
+            <span
+              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${getStatusBadgeStyle(
+                project.status
+              )}`}
+            >
+              {project.status || 'PLANNING'}
+            </span>
+          )}
 
           {/* Top Right Action & Link Indicator */}
           <div className="flex items-center gap-1">
-            {isAdmin && (
+            {(onEditClick || onDeleteClick) && (
               <div className="flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onEditClick) onEditClick(project);
-                  }}
-                  className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500 hover:text-blue-600 transition-colors"
-                  title="Edit project details"
-                >
-                  <Edit3 size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onDeleteClick) onDeleteClick(project);
-                  }}
-                  className="p-1.5 hover:bg-red-50 rounded-md text-slate-400 hover:text-red-600 transition-colors"
-                  title="Delete project"
-                >
-                  <Trash2 size={15} />
-                </button>
+                {onEditClick && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditClick(project);
+                    }}
+                    className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500 hover:text-blue-600 transition-colors"
+                    title="Edit project details"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                )}
+                {onDeleteClick && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteClick(project);
+                    }}
+                    className="p-1.5 hover:bg-red-50 rounded-md text-slate-400 hover:text-red-600 transition-colors"
+                    title="Delete project"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
               </div>
             )}
             <div className="p-1 text-slate-300 group-hover:text-blue-600 transition-colors">

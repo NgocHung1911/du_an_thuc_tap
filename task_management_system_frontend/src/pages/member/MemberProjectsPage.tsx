@@ -245,6 +245,7 @@ export const MemberProjectsPage: React.FC = () => {
               key={project.id}
               project={project}
               onCardClick={(projectId) => navigate(`/projects/${projectId}`)}
+              onStatusChange={handleStatusChange}
               onEditClick={(proj) => {
                 setProjectToEdit(proj);
                 setIsFormModalOpen(true);
