@@ -1,7 +1,8 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CheckSquare, FolderGit2, User, LogOut } from 'lucide-react';
+
+import { LayoutDashboard, CheckSquare, FolderGit2, User, LogOut, UserCheck } from 'lucide-react';
 
 export const MemberSidebar: React.FC = () => {
   const { logout } = useAuth();
@@ -13,6 +14,7 @@ export const MemberSidebar: React.FC = () => {
   };
 
   const navItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/member/dashboard' },
     { label: 'My Tasks', icon: CheckSquare, path: '/member/my-tasks' },
     { label: 'Participating projects', icon: FolderGit2, path: '/member/projects' },
     { label: 'Personal Profile', icon: User, path: '/member/profile' },
