@@ -28,6 +28,8 @@ public class UserRequest {
     @Email(message = "Email không đúng định dạng")
     private String email;
 
+    private String fullName;
+
     @NotNull(message = "Role không được để trống")
     private Role role;
 }

@@ -18,12 +18,24 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private String resolveFullName(User user) {
+        if (user.getFullName() != null && !user.getFullName().isBlank()) {
+            return user.getFullName();
+        }
+        if (user.getEmail() != null && user.getEmail().contains("@")) {
+            String prefix = user.getEmail().substring(0, user.getEmail().indexOf('@'));
+            return prefix;
+        }
+        return user.getUsername();
+    }
+
     private UserDTO mapToDTO(User user) {
         return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
 //                .password(user.getPassword())
                 .email(user.getEmail())
+                .fullName(resolveFullName(user))
                 .role(user.getRole())
                 .build();
     }
@@ -35,6 +47,13 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setRole(request.getRole());
         return user;
+    }
+
+    // Lấy thông tin user hiện tại đang đăng nhập
+    public UserDTO getCurrentUser(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng!"));
+        return mapToDTO(user);
     }
 
     // Lấy danh sách tất cả User
