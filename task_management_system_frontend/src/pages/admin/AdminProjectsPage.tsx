@@ -56,6 +56,37 @@ export const AdminProjectsPage: React.FC = () => {
     fetchProjects();
   }, [searchKeyword, filterStatus]);
 
+  // Handle Quick Status Change from Project Card
+  const handleStatusChange = async (projectId: number, newStatus: ProjectStatus) => {
+    const currentProject = projects.find((p) => p.id === projectId);
+    if (!currentProject || currentProject.status === newStatus) return;
+
+    const previousStatus = currentProject.status;
+
+    // Optimistic state update
+    setProjects((prev) =>
+      prev.map((p) => (p.id === projectId ? { ...p, status: newStatus } : p))
+    );
+
+    try {
+      await projectApi.updateProject(projectId, {
+        name: currentProject.name,
+        description: currentProject.description || '',
+        startDate: currentProject.startDate || new Date().toISOString().split('T')[0],
+        endDate: currentProject.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: newStatus,
+      });
+      showToast(`Đã thay đổi trạng thái dự án sang ${newStatus}!`, 'success');
+    } catch (err: any) {
+      console.error('Lỗi khi đổi trạng thái dự án:', err);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, status: previousStatus } : p))
+      );
+      const msg = err.response?.data?.message || err.message || 'Không thể thay đổi trạng thái dự án!';
+      showToast(msg, 'error');
+    }
+  };
+
   // Handle Form Submit (Create or Update)
   const handleFormSubmit = async (data: ProjectRequest, projectId?: number) => {
     if (projectId) {
@@ -194,6 +225,7 @@ export const AdminProjectsPage: React.FC = () => {
               project={project}
               isAdmin={isAdmin}
               onCardClick={(projectId) => navigate(`/projects/${projectId}`)}
+              onStatusChange={handleStatusChange}
               onEditClick={(proj) => {
                 setProjectToEdit(proj);
                 setIsFormModalOpen(true);

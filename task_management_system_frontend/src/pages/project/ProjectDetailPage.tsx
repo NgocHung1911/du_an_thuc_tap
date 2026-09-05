@@ -69,6 +69,7 @@ export const ProjectDetailPage: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [filterPriority, setFilterPriority] = useState<string>('ALL');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
   // Quick Create Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -266,7 +267,7 @@ export const ProjectDetailPage: React.FC = () => {
     }
   };
 
-  // Filter tasks based on Search Keyword, Selected Assignee, Priority Filter
+  // Filter tasks based on Search Keyword, Selected Assignee, Priority Filter, Status Filter
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       // Keyword search
@@ -294,6 +295,11 @@ export const ProjectDetailPage: React.FC = () => {
         }
       }
 
+      // Status Filter
+      if (filterStatus !== 'ALL' && task.status !== filterStatus) {
+        return false;
+      }
+
       // Priority Filter
       if (filterPriority !== 'ALL' && task.priority !== filterPriority) {
         return false;
@@ -301,7 +307,7 @@ export const ProjectDetailPage: React.FC = () => {
 
       return true;
     });
-  }, [tasks, searchKeyword, selectedAssignee, filterPriority]);
+  }, [tasks, searchKeyword, selectedAssignee, filterStatus, filterPriority]);
 
   // Handle Assignee change with Optimistic update & Real-time Sync
   const handleAssigneeChange = async (taskId: number, newUserId: number | null) => {
@@ -622,36 +628,51 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Priority Filter & Group Buttons */}
-        <div className="flex items-center gap-2">
-          {/* Priority Select Filter */}
-          <select
-            value={filterPriority}
-            onChange={(e) => setFilterPriority(e.target.value)}
-            className="text-xs bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] border border-[#DFE1E6] rounded-lg px-2.5 py-1.5 font-bold outline-none cursor-pointer"
-          >
-            <option value="ALL">All Priorities</option>
-            <option value="HIGH">HIGH</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="LOW">LOW</option>
-          </select>
+        {/* Right: Status & Priority Filters & Reset Button */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[#5E6C84]">Status:</span>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="text-xs bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] border border-[#DFE1E6] rounded-lg px-2.5 py-1.5 font-bold outline-none cursor-pointer"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="TODO">To Do</option>
+              <option value="DOING">In Progress</option>
+              <option value="REVIEW">In Review</option>
+              <option value="DONE">Done</option>
+            </select>
+          </div>
 
-          <button
-            onClick={() => {
-              setSearchKeyword('');
-              setSelectedAssignee(null);
-              setFilterPriority('ALL');
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] rounded-lg border border-[#DFE1E6] text-xs font-semibold transition-colors"
-          >
-            <Filter size={14} className="text-[#5E6C84]" />
-            <span>Filter</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[#5E6C84]">Priority:</span>
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="text-xs bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] border border-[#DFE1E6] rounded-lg px-2.5 py-1.5 font-bold outline-none cursor-pointer"
+            >
+              <option value="ALL">All Priorities</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+            </select>
+          </div>
 
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] rounded-lg border border-[#DFE1E6] text-xs font-semibold transition-colors">
-            <Layers size={14} className="text-[#5E6C84]" />
-            <span>Group: Status</span>
-          </button>
+          {(searchKeyword || selectedAssignee || filterPriority !== 'ALL' || filterStatus !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearchKeyword('');
+                setSelectedAssignee(null);
+                setFilterPriority('ALL');
+                setFilterStatus('ALL');
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#172B4D] rounded-lg border border-[#DFE1E6] text-xs font-semibold transition-colors"
+            >
+              <Filter size={14} className="text-[#5E6C84]" />
+              <span>Đặt lại</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -669,12 +690,12 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-lg font-bold text-[#172B4D]">
-              {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
+              {searchKeyword || selectedAssignee || filterPriority !== 'ALL' || filterStatus !== 'ALL'
                 ? 'Không tìm thấy công việc nào phù hợp với bộ lọc'
                 : 'Dự án này hiện chưa có công việc nào'}
             </h3>
             <p className="text-sm text-[#5E6C84] mt-1 max-w-md mx-auto">
-              {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
+              {searchKeyword || selectedAssignee || filterPriority !== 'ALL' || filterStatus !== 'ALL'
                 ? 'Vui lòng thử thay đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc.'
                 : canManageTasks
                 ? 'Hãy nhấn nút "+ Tạo Task Mới" để tạo và phân công công việc đầu tiên cho dự án này.'
@@ -683,12 +704,13 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
 
           <div className="pt-2">
-            {searchKeyword || selectedAssignee || filterPriority !== 'ALL' ? (
+            {searchKeyword || selectedAssignee || filterPriority !== 'ALL' || filterStatus !== 'ALL' ? (
               <button
                 onClick={() => {
                   setSearchKeyword('');
                   setSelectedAssignee(null);
                   setFilterPriority('ALL');
+                  setFilterStatus('ALL');
                 }}
                 className="px-4 py-2 bg-[#F4F5F7] hover:bg-[#EBECF0] text-[#0052CC] text-xs font-bold rounded-lg border border-[#DFE1E6] transition-colors inline-block"
               >
