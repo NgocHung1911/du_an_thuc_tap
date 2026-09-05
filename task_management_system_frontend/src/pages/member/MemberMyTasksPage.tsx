@@ -68,7 +68,7 @@ export const MemberMyTasksPage: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
 
-  // Expanded states per project
+  // Expanded states per project (Default: false -> Collapsed by default)
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
 
   // Task Detail Modal State
@@ -240,7 +240,7 @@ export const MemberMyTasksPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 font-sans">
+    <div className="space-y-6 pb-12">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -262,7 +262,7 @@ export const MemberMyTasksPage: React.FC = () => {
             📌 My Tasks
           </h1>
           <p className="text-sm text-[#5E6C84] mt-0.5">
-            Tasks assigned to you categorized by Project & Status
+            Tasks assigned to <strong>{user?.username}</strong> categorized by Project & Status
           </p>
         </div>
         <button
@@ -367,6 +367,7 @@ export const MemberMyTasksPage: React.FC = () => {
         <div className="space-y-8">
           {projectGroups.map((group) => {
             const pKey = String(group.projectId);
+            // Default: Collapsed (isExpanded = false), unless toggled or currently searching
             const isExpanded = Boolean(expandedProjects[pKey]) || Boolean(searchKeyword.trim());
 
             return (
@@ -518,3 +519,4 @@ export const MemberMyTasksPage: React.FC = () => {
     </div>
   );
 };
+

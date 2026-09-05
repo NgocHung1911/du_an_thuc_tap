@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React from 'react';
+import { Plus, CheckCircle2, Clock, PlayCircle, Eye } from 'lucide-react';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 import { TaskCard } from './TaskCard';
 
@@ -13,51 +13,11 @@ interface ProjectBoardViewProps {
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
   onAssigneeChange?: (taskId: number, userId: number | null) => void;
   onDeleteTask?: (taskId: number) => void;
-  onQuickCreate?: (initialStatus: TaskStatus) => void;
+  onQuickCreate?: (status: TaskStatus) => void;
 }
-
-interface ColumnConfig {
-  id: TaskStatus;
-  title: string;
-  badgeBg: string;
-  badgeText: string;
-  borderTopColor: string;
-}
-
-const COLUMNS: ColumnConfig[] = [
-  {
-    id: 'TODO',
-    title: 'TODO',
-    badgeBg: 'bg-[#DFE1E6]',
-    badgeText: 'text-[#42526E]',
-    borderTopColor: 'border-blue-500',
-  },
-  {
-    id: 'DOING',
-    title: 'DOING',
-    badgeBg: 'bg-[#DEEBFF]',
-    badgeText: 'text-[#0747A6]',
-    borderTopColor: 'border-amber-500',
-  },
-  {
-    id: 'REVIEW',
-    title: 'REVIEW',
-    badgeBg: 'bg-[#EAE6FF]',
-    badgeText: 'text-[#403294]',
-    borderTopColor: 'border-purple-500',
-  },
-  {
-    id: 'DONE',
-    title: 'DONE',
-    badgeBg: 'bg-[#E3FCEF]',
-    badgeText: 'text-[#006644]',
-    borderTopColor: 'border-emerald-500',
-  },
-];
 
 export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   tasks,
-  projectKey = 'TO',
   projectMembers = [],
   isAdmin = true,
   onTaskClick,
@@ -67,113 +27,81 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   onDeleteTask,
   onQuickCreate,
 }) => {
-  const [draggedOverCol, setDraggedOverCol] = useState<TaskStatus | null>(null);
+  const columns: { status: TaskStatus; label: string; icon: React.FC<{ size?: number }>; color: string }[] = [
+    { status: 'TODO', label: 'TODO', icon: Clock, color: 'border-slate-300 bg-slate-50 text-slate-700' },
+    { status: 'DOING', label: 'DOING', icon: PlayCircle, color: 'border-sky-300 bg-sky-50 text-sky-700' },
+    { status: 'REVIEW', label: 'REVIEW', icon: Eye, color: 'border-purple-300 bg-purple-50 text-purple-700' },
+    { status: 'DONE', label: 'DONE', icon: CheckCircle2, color: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
+  ];
 
-  // Map tasks into 4 column buckets
-  const columnTasks = React.useMemo(() => {
-    const map: Record<TaskStatus, TaskDTO[]> = {
-      TODO: [],
-      DOING: [],
-      REVIEW: [],
-      DONE: [],
-    };
-
-    tasks.forEach((task) => {
-      let status = task.status;
-      if (!map[status]) {
-        if (status === ('IN_PROGRESS' as any)) status = 'DOING';
-        else if (status === ('IN_REVIEW' as any) || status === ('REOPEN' as any)) status = 'REVIEW';
-        else status = 'TODO';
-      }
-      if (map[status]) {
-        map[status].push(task);
-      } else {
-        map['TODO'].push(task);
-      }
-    });
-
-    return map;
-  }, [tasks]);
-
-  // Handle Drag Start from TaskCard
-  const handleDragStart = (e: React.DragEvent, taskId: number) => {
-    e.dataTransfer.setData('text/plain', String(taskId));
-    e.dataTransfer.effectAllowed = 'move';
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
-  // Handle Drop on Column
   const handleDrop = (e: React.DragEvent, targetStatus: TaskStatus) => {
     e.preventDefault();
-    setDraggedOverCol(null);
     const taskIdStr = e.dataTransfer.getData('text/plain');
     if (!taskIdStr) return;
-
     const taskId = Number(taskIdStr);
-    if (!isNaN(taskId) && onStatusChange) {
+    if (taskId && onStatusChange) {
       onStatusChange(taskId, targetStatus);
     }
   };
 
+  const handleDragStart = (e: React.DragEvent, taskId: number) => {
+    e.dataTransfer.setData('text/plain', String(taskId));
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6 items-start">
-      {COLUMNS.map((col) => {
-        const colTaskList = columnTasks[col.id] || [];
-        const taskCount = colTaskList.length;
-        const isDraggedOver = draggedOverCol === col.id;
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start font-sans">
+      {columns.map((col) => {
+        const columnTasks = tasks.filter((t) => t.status === col.status);
+        const IconComponent = col.icon;
 
         return (
           <div
-            key={col.id}
-            onDragOver={(e) => {
-              e.preventDefault();
-              if (draggedOverCol !== col.id) setDraggedOverCol(col.id);
-            }}
-            onDragLeave={() => setDraggedOverCol(null)}
-            onDrop={(e) => handleDrop(e, col.id)}
-            className={`w-full bg-[#F4F5F7] rounded-xl border transition-all duration-150 flex flex-col max-h-full shadow-2xs ${
-              isDraggedOver
-                ? 'border-[#0052CC] ring-2 ring-[#0052CC]/50 bg-[#DEEBFF]/30 shadow-md'
-                : 'border-[#DFE1E6]'
-            }`}
+            key={col.status}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, col.status)}
+            className="bg-slate-100/80 rounded-2xl border border-slate-200/80 p-3.5 flex flex-col max-h-[80vh] shadow-2xs transition-colors hover:border-slate-300"
           >
             {/* Column Header */}
-            <div className={`p-3 border-t-4 ${col.borderTopColor} bg-white rounded-t-xl border-b border-[#DFE1E6] flex items-center justify-between`}>
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 shrink-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-xs tracking-wider text-[#5E6C84] uppercase">
-                  {col.title}
+                <span className={`p-1.5 rounded-lg border ${col.color}`}>
+                  <IconComponent size={15} />
+                </span>
+                <h3 className="font-bold text-xs text-slate-800 tracking-wider uppercase">
+                  {col.label}
                 </h3>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${col.badgeBg} ${col.badgeText}`}>
-                  {taskCount}
+                <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200 shadow-2xs">
+                  {columnTasks.length}
                 </span>
               </div>
 
-              {isAdmin && (
+              {isAdmin && onQuickCreate && (
                 <button
-                  onClick={() => onQuickCreate && onQuickCreate(col.id)}
-                  className="p-1 hover:bg-[#F4F5F7] rounded text-[#5E6C84] hover:text-[#0052CC] transition-colors"
-                  title={`Create task in ${col.title}`}
+                  onClick={() => onQuickCreate(col.status)}
+                  className="p-1 hover:bg-white text-slate-500 hover:text-blue-600 rounded-lg transition-colors"
+                  title={`Add task to ${col.label}`}
                 >
                   <Plus size={16} />
                 </button>
               )}
             </div>
 
-            {/* Column Body - Task List */}
-            <div
-              className={`p-2.5 flex flex-col gap-2.5 overflow-y-auto max-h-[calc(100vh-320px)] min-h-[150px] transition-colors ${
-                isDraggedOver ? 'bg-[#DEEBFF]/20' : ''
-              }`}
-            >
-              {colTaskList.length === 0 ? (
-                <div className="border-2 border-dashed border-[#DFE1E6] rounded-lg p-6 text-center text-xs text-[#A5ADBA] font-medium my-auto">
-                  {isDraggedOver ? 'Drop task here' : 'Drag and drop task here'}
+            {/* Task List Container */}
+            <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-[120px] scrollbar-thin">
+              {columnTasks.length === 0 ? (
+                <div className="h-28 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400 font-medium p-4 text-center">
+                  No tasks in this column
                 </div>
               ) : (
-                colTaskList.map((task) => (
+                columnTasks.map((task) => (
                   <TaskCard
                     key={task.id}
                     task={task}
-                    projectKey={projectKey}
                     projectMembers={projectMembers}
                     isAdmin={isAdmin}
                     onTaskClick={onTaskClick}
@@ -187,17 +115,15 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
               )}
             </div>
 
-            {/* Column Footer: "+ Create" button (Only for Admin/Owner) */}
-            {isAdmin && (
-              <div className="p-2 border-t border-[#DFE1E6] bg-[#F4F5F7] rounded-b-xl">
-                <button
-                  onClick={() => onQuickCreate && onQuickCreate(col.id)}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-[#5E6C84] hover:text-[#0052CC] hover:bg-white rounded-lg transition-all border border-transparent hover:border-[#DFE1E6] shadow-2xs"
-                >
-                  <Plus size={14} />
-                  <span>Create</span>
-                </button>
-              </div>
+            {/* Bottom Add Task Button */}
+            {isAdmin && onQuickCreate && (
+              <button
+                onClick={() => onQuickCreate(col.status)}
+                className="mt-3 w-full py-2 px-3 text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-white rounded-xl border border-transparent hover:border-slate-200 flex items-center justify-center gap-1.5 transition-all shrink-0"
+              >
+                <Plus size={15} />
+                <span>Create Task</span>
+              </button>
             )}
           </div>
         );

@@ -96,6 +96,9 @@ public class AuthController {
         User user = new User();
         user.setUsername(registerDTO.getUsername());
         user.setEmail(registerDTO.getEmail());
+        if (registerDTO.getFullName() != null && !registerDTO.getFullName().isBlank()) {
+            user.setFullName(registerDTO.getFullName());
+        }
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         user.setVerified(false);
         user.setRole(registerDTO.getRole() != null ? registerDTO.getRole() : Role.MEMBER);
