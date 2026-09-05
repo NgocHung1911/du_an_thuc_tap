@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 export interface UserInfo {
   username: string;
   email: string;
+  fullName?: string;
 }
 
 interface AuthContextType {
@@ -12,7 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isMember: boolean;
-  login: (token: string, userData: { username: string; email: string; roles: string[] }) => void;
+  login: (token: string, userData: { username: string; email: string; roles: string[]; fullName?: string }) => void;
   logout: () => void;
   loading: boolean;
 }

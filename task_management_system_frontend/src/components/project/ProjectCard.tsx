@@ -8,6 +8,7 @@ interface ProjectCardProps {
   onCardClick: (projectId: number) => void;
   onEditClick?: (project: ProjectDTO) => void;
   onDeleteClick?: (project: ProjectDTO) => void;
+  onStatusChange?: (projectId: number, newStatus: ProjectStatus) => void;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -16,6 +17,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onCardClick,
   onEditClick,
   onDeleteClick,
+  onStatusChange,
 }) => {
   const getStatusBadgeStyle = (status?: ProjectStatus | string) => {
     switch (status) {
