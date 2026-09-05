@@ -17,6 +17,7 @@ import { AdminProjectsPage } from './pages/admin/AdminProjectsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 
 // Member Pages
+import { MemberDashboardPage } from './pages/member/MemberDashboardPage';
 import { MemberMyTasksPage } from './pages/member/MemberMyTasksPage';
 import { MemberProjectsPage } from './pages/member/MemberProjectsPage';
 import { MemberProfilePage } from './pages/member/MemberProfilePage';
@@ -54,6 +55,8 @@ function App() {
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
 
                 {/* Member Scope Routes */}
+                <Route path="/member" element={<Navigate to="/member/dashboard" replace />} />
+                <Route path="/member/dashboard" element={<MemberDashboardPage />} />
                 <Route path="/member/my-tasks" element={<MemberMyTasksPage />} />
                 <Route path="/member/projects" element={<MemberProjectsPage />} />
                 <Route path="/member/projects/:id" element={<ProjectDetailPage />} />
