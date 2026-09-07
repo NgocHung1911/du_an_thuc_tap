@@ -9,6 +9,7 @@ import com.task.management.entity.ProjectMember;
 import com.task.management.entity.User;
 import com.task.management.enums.ProjectRole;
 import com.task.management.enums.ProjectStatus;
+import com.task.management.enums.Role;
 import com.task.management.exception.BadRequestException;
 import com.task.management.exception.ResourceNotFoundException;
 import com.task.management.repository.ProjectMemberRepository;
@@ -99,6 +100,11 @@ public class ProjectService {
         User currentUser = userRepository.findByUsername(username)
                 .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
 
+        if (all) {
+            return projectRepository.searchProjects(search, status)
+                    .stream().map(this::mapToDTO).collect(Collectors.toList());
+        }
+
         if (currentUser == null) {
             return projectRepository.searchProjects(search, status)
                     .stream().map(this::mapToDTO).collect(Collectors.toList());
@@ -123,9 +129,14 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + id));
 
         if (username != null && !username.trim().isEmpty()) {
-            ProjectRole callerRole = getUserRoleInProject(id, username);
-            if (callerRole == null) {
-                throw new BadRequestException("Bạn không phải là thành viên của dự án này!");
+            User currentUser = userRepository.findByUsername(username)
+                    .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
+
+            if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
+                ProjectRole callerRole = getUserRoleInProject(id, username);
+                if (callerRole == null) {
+                    throw new BadRequestException("Bạn không phải là thành viên của dự án này!");
+                }
             }
         }
         return mapToDTO(project);
@@ -174,9 +185,14 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + id));
 
         if (username != null && !username.trim().isEmpty()) {
-            ProjectRole callerRole = getUserRoleInProject(id, username);
-            if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
-                throw new BadRequestException("Bạn không có quyền cập nhật dự án này!");
+            User currentUser = userRepository.findByUsername(username)
+                    .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
+
+            if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
+                ProjectRole callerRole = getUserRoleInProject(id, username);
+                if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
+                    throw new BadRequestException("Bạn không có quyền cập nhật dự án này!");
+                }
             }
         }
 
@@ -208,9 +224,14 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + id));
 
         if (username != null && !username.trim().isEmpty()) {
-            ProjectRole callerRole = getUserRoleInProject(id, username);
-            if (callerRole != ProjectRole.OWNER) {
-                throw new BadRequestException("Chỉ Owner mới có quyền xóa dự án!");
+            User currentUser = userRepository.findByUsername(username)
+                    .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
+
+            if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
+                ProjectRole callerRole = getUserRoleInProject(id, username);
+                if (callerRole != ProjectRole.OWNER) {
+                    throw new BadRequestException("Chỉ Owner mới có quyền xóa dự án!");
+                }
             }
         }
 

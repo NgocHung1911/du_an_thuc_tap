@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, ClipboardList, Users, FolderKanban, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderGit2, ClipboardList, Users, FolderKanban, Settings, LogOut } from 'lucide-react';
 
 export const AdminSidebar: React.FC = () => {
   const { logout } = useAuth();
@@ -14,9 +14,10 @@ export const AdminSidebar: React.FC = () => {
 
   const navItems = [
     { label: 'Dashboard Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'Participating Projects', icon: FolderGit2, path: '/admin/my-projects' },
     { label: 'Manage Tasks', icon: ClipboardList, path: '/admin/tasks' },
     { label: 'Manage Users', icon: Users, path: '/admin/users' },
-    { label: 'Manage Projects', icon: FolderKanban, path: '/admin/projects' },
+    { label: 'Manage System Projects', icon: FolderKanban, path: '/admin/projects' },
     { label: 'System Settings', icon: Settings, path: '/admin/settings' },
   ];
 
