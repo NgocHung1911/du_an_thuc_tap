@@ -3,18 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, CheckCircle2, Clock, AlertTriangle, Users,
   FolderGit2, RefreshCw, CheckSquare, ListTodo, Shield, AlertCircle,
-  TrendingUp, ArrowRight, Activity, Settings, UserPlus
+  TrendingUp, ArrowRight, Activity, Settings, UserPlus, User
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { taskApi, TaskDTO, UserDTO } from '../../services/taskApi';
 import { projectApi, ProjectDTO } from '../../services/projectApi';
 import { userApi } from '../../services/userApi';
 
 export const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
   const [projects, setProjects] = useState<ProjectDTO[]>([]);
   const [users, setUsers] = useState<UserDTO[]>([]);
+  const [userProfile, setUserProfile] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,15 +25,19 @@ export const AdminDashboardPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const [allTasks, allProjects, allUsers] = await Promise.all([
+      const [allTasks, allProjects, allUsers, currentUser] = await Promise.all([
         taskApi.getAllTasks().catch(() => []),
         projectApi.getAllProjects().catch(() => []),
         userApi.getAllUsers().catch(() => []),
+        userApi.getCurrentUser().catch(() => null),
       ]);
 
       setTasks(allTasks || []);
       setProjects(allProjects || []);
       setUsers(allUsers || []);
+      if (currentUser) {
+        setUserProfile(currentUser);
+      }
     } catch (err: any) {
       console.error('Lỗi khi tải dữ liệu Admin Dashboard:', err);
       setError('Không thể tải dữ liệu tổng quan. Vui lòng kiểm tra kết nối hệ thống.');
@@ -116,18 +123,25 @@ export const AdminDashboardPage: React.FC = () => {
     return list;
   }, [tasks, projects]);
 
+  const displayName = userProfile?.fullName || userProfile?.username || user?.fullName || user?.username || 'Admin';
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10 font-sans">
       {/* Top Banner Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 p-6 rounded-2xl text-white shadow-md">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
-            <LayoutDashboard size={26} className="text-blue-200" />
-            <span>📊 Dashboard Tổng Quan</span>
-          </h1>
-          <p className="text-blue-100 text-sm mt-1">
-            Báo cáo tổng quan tiến độ dự án, công việc và thành viên toàn hệ thống
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xl text-white backdrop-blur-xs shrink-0 shadow-inner">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+              <LayoutDashboard size={24} className="text-blue-200" />
+              <span>📊 Dashboard Tổng Quan - Xin chào, {displayName}!</span> 👋
+            </h1>
+            <p className="text-blue-100 text-sm mt-1">
+              Báo cáo tổng quan tiến độ dự án, công việc và thành viên toàn hệ thống
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <button
@@ -176,7 +190,7 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* 1. Tổng số công việc */}
             <div
-              onClick={() => navigate('/admin/tasks')}
+              onClick={() => navigate('/admin/projects')}
               className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-400 transition-all cursor-pointer flex items-center justify-between group"
             >
               <div className="space-y-1">
@@ -191,7 +205,7 @@ export const AdminDashboardPage: React.FC = () => {
 
             {/* 2. Đã hoàn thành */}
             <div
-              onClick={() => navigate('/admin/tasks')}
+              onClick={() => navigate('/admin/projects')}
               className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-emerald-400 transition-all cursor-pointer flex items-center justify-between group"
             >
               <div className="space-y-1">
@@ -239,7 +253,7 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               onClick={() => navigate('/admin/projects')}
-              className="p-4 bg-white hover:bg-indigo-50/50 rounded-2xl border border-slate-200 hover:border-indigo-300 shadow-xs transition-all flex items-center gap-3 text-left group"
+              className="p-4 bg-white hover:bg-indigo-50/50 rounded-2xl border border-slate-200 hover:border-indigo-300 shadow-xs transition-all flex items-center gap-3 text-left group cursor-pointer"
             >
               <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl font-bold group-hover:scale-110 transition-transform">
                 <FolderGit2 size={20} />
@@ -251,15 +265,15 @@ export const AdminDashboardPage: React.FC = () => {
             </button>
 
             <button
-              onClick={() => navigate('/admin/tasks')}
-              className="p-4 bg-white hover:bg-blue-50/50 rounded-2xl border border-slate-200 hover:border-blue-300 shadow-xs transition-all flex items-center gap-3 text-left group"
+              onClick={() => navigate('/admin/my-projects')}
+              className="p-4 bg-white hover:bg-blue-50/50 rounded-2xl border border-slate-200 hover:border-blue-300 shadow-xs transition-all flex items-center gap-3 text-left group cursor-pointer"
             >
               <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl font-bold group-hover:scale-110 transition-transform">
-                <CheckSquare size={20} />
+                <FolderGit2 size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600">Quản Lý Công Việc</p>
-                <p className="text-[11px] text-slate-500">{stats.totalTasks} công việc</p>
+                <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600">Dự Án Tham Gia</p>
+                <p className="text-[11px] text-slate-500">Dự án cá nhân</p>
               </div>
             </button>
 
@@ -277,15 +291,15 @@ export const AdminDashboardPage: React.FC = () => {
             </button>
 
             <button
-              onClick={() => navigate('/admin/settings')}
-              className="p-4 bg-white hover:bg-slate-100 rounded-2xl border border-slate-200 shadow-xs transition-all flex items-center gap-3 text-left group"
+              onClick={() => navigate('/admin/profile')}
+              className="p-4 bg-white hover:bg-slate-100 rounded-2xl border border-slate-200 shadow-xs transition-all flex items-center gap-3 text-left group cursor-pointer"
             >
               <div className="p-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold group-hover:scale-110 transition-transform">
-                <Settings size={20} />
+                <User size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Cài Đặt Hệ Thống</p>
-                <p className="text-[11px] text-slate-500">Cấu hình chung</p>
+                <p className="text-xs font-bold text-slate-900">Hồ Sơ Cá Nhân</p>
+                <p className="text-[11px] text-slate-500">Thông tin tài khoản</p>
               </div>
             </button>
           </div>
