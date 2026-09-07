@@ -11,7 +11,6 @@ import { MainLayout } from './components/layout/MainLayout';
 
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
-import { AdminTasksPage } from './pages/admin/AdminTasksPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
@@ -48,12 +47,12 @@ function App() {
               <Route element={<MainLayout />}>
                 {/* Admin Scope Routes */}
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                <Route path="/admin/tasks" element={<AdminTasksPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/projects" element={<AdminProjectsPage />} />
                 <Route path="/admin/my-projects" element={<MemberProjectsPage />} />
                 <Route path="/admin/projects/:id" element={<ProjectDetailPage />} />
-                <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                <Route path="/admin/settings" element={<MemberProfilePage />} />
+                <Route path="/admin/profile" element={<MemberProfilePage />} />
 
                 {/* Member Scope Routes */}
                 <Route path="/member" element={<Navigate to="/member/dashboard" replace />} />

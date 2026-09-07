@@ -6,8 +6,9 @@ import {
   CheckCircle2, ChevronRight, Flame
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { taskApi, TaskDTO, TaskStatus, TaskPriority } from '../../services/taskApi';
+import { taskApi, TaskDTO, TaskStatus, TaskPriority, UserDTO } from '../../services/taskApi';
 import { projectApi, ProjectDTO } from '../../services/projectApi';
+import { userApi } from '../../services/userApi';
 import { TaskDetailModal } from '../../components/project/TaskDetailModal';
 
 export const MemberDashboardPage: React.FC = () => {
@@ -16,6 +17,7 @@ export const MemberDashboardPage: React.FC = () => {
 
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
   const [projects, setProjects] = useState<ProjectDTO[]>([]);
+  const [userProfile, setUserProfile] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,17 +25,21 @@ export const MemberDashboardPage: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<TaskDTO | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // Fetch tasks and projects
+  // Fetch tasks, projects and current user profile
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [allTasks, allProjects] = await Promise.all([
+      const [allTasks, allProjects, currentUser] = await Promise.all([
         taskApi.getAllTasks().catch(() => []),
         projectApi.getAllProjects().catch(() => []),
+        userApi.getCurrentUser().catch(() => null),
       ]);
       setTasks(allTasks || []);
       setProjects(allProjects || []);
+      if (currentUser) {
+        setUserProfile(currentUser);
+      }
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data. Please verify connection.');
@@ -165,29 +171,46 @@ export const MemberDashboardPage: React.FC = () => {
     }
   };
 
+  const displayName = userProfile?.fullName || userProfile?.username || user?.fullName || user?.username || 'Member';
+  const displayEmail = userProfile?.email || user?.email;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10 font-sans">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-6 rounded-2xl text-white shadow-md">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
-            <span>Welcome back, {user?.fullName || user?.username || 'Member'}!</span> 👋
-          </h1>
-          <p className="text-blue-100 text-sm mt-1">
-            Here is your personal task summary, and upcoming deadlines.
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xl text-white backdrop-blur-xs shrink-0 shadow-inner overflow-hidden">
+            {userProfile?.avatarUrl ? (
+              <img src={userProfile.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              displayName.charAt(0).toUpperCase()
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+              <span>Welcome back, {displayName}!</span> 👋
+            </h1>
+            <p className="text-blue-100 text-sm mt-1 flex flex-wrap items-center gap-2">
+              <span>Here is your personal task summary, and upcoming deadlines.</span>
+              {displayEmail && (
+                <span className="bg-white/15 px-2.5 py-0.5 rounded-full text-xs text-blue-100 font-medium border border-white/20">
+                  {displayEmail}
+                </span>
+              )}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={fetchDashboardData}
-            className="flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold backdrop-blur-xs transition-all border border-white/20"
+            className="flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold backdrop-blur-xs transition-all border border-white/20 cursor-pointer"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             <span>Refresh Data</span>
           </button>
           <button
             onClick={() => navigate('/member/my-tasks')}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-xl text-xs font-bold shadow-xs transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
           >
             <CheckSquare size={16} />
             <span>View All Tasks</span>

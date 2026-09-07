@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.security.Principal;
 import java.util.List;
 
@@ -26,6 +28,19 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(userService.getCurrentUser(principal.getName()));
+    }
+
+    // POST /api/users/me/avatar
+    @PostMapping("/me/avatar")
+    public ResponseEntity<UserDTO> uploadAvatar(
+            Principal principal,
+            @RequestParam("file") MultipartFile file
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        UserDTO updatedUser = userService.updateAvatar(principal.getName(), file);
+        return ResponseEntity.ok(updatedUser);
     }
 
     // GET /api/users
