@@ -174,7 +174,7 @@ export const MemberDashboardPage: React.FC = () => {
             <span>Welcome back, {user?.fullName || user?.username || 'Member'}!</span> 👋
           </h1>
           <p className="text-blue-100 text-sm mt-1">
-            Here is your personal task summary, quick actions, and upcoming deadlines.
+            Here is your personal task summary, and upcoming deadlines.
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">

@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
     if (isAdmin) {
       navigate('/admin/dashboard');
     } else {
-      navigate('/member/my-tasks');
+      navigate('/member/dashboard');
     }
   };
 
