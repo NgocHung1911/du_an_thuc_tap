@@ -9,6 +9,7 @@ export interface UserDTO {
   username: string;
   email: string;
   fullName?: string;
+  avatarUrl?: string;
   role?: string;
   projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
   initials?: string;

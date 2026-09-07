@@ -17,6 +17,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CloudflareR2Service cloudflareR2Service;
 
     private String resolveFullName(User user) {
         if (user.getFullName() != null && !user.getFullName().isBlank()) {
@@ -29,9 +30,9 @@ public class UserService {
         return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
-//                .password(user.getPassword())
                 .email(user.getEmail())
                 .fullName(resolveFullName(user))
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole())
                 .build();
     }
@@ -118,5 +119,15 @@ public class UserService {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy User với ID: " + id));
         userRepository.delete(existingUser);
+    }
+
+    // Cập nhật ảnh đại diện (Avatar) lên Cloudflare R2
+    public UserDTO updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng!"));
+        String avatarUrl = cloudflareR2Service.uploadAvatar(file, user.getId());
+        user.setAvatarUrl(avatarUrl);
+        User savedUser = userRepository.save(user);
+        return mapToDTO(savedUser);
     }
 }

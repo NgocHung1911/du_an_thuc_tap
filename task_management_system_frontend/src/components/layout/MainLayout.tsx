@@ -47,8 +47,12 @@ export const MainLayout: React.FC = () => {
           <div className="h-5 w-px bg-slate-800"></div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-blue-600 border border-blue-400/30 flex items-center justify-center text-xs font-bold text-white shadow-xs">
-              {getInitials(displayName)}
+            <div className="w-8 h-8 rounded-full bg-blue-600 border border-blue-400/30 flex items-center justify-center text-xs font-bold text-white shadow-xs overflow-hidden">
+              {profile?.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+              ) : (
+                getInitials(displayName)
+              )}
             </div>
             <span className="text-xs font-semibold text-slate-200 hidden sm:inline">{displayName}</span>
           </div>

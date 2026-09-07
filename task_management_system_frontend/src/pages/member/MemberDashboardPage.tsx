@@ -179,8 +179,12 @@ export const MemberDashboardPage: React.FC = () => {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-6 rounded-2xl text-white shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xl text-white backdrop-blur-xs shrink-0 shadow-inner">
-            {displayName.charAt(0).toUpperCase()}
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xl text-white backdrop-blur-xs shrink-0 shadow-inner overflow-hidden">
+            {userProfile?.avatarUrl ? (
+              <img src={userProfile.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              displayName.charAt(0).toUpperCase()
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">

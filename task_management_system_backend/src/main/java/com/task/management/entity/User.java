@@ -35,6 +35,9 @@ public class User {
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified = false;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
