@@ -51,6 +51,7 @@ function App() {
                 <Route path="/admin/tasks" element={<AdminTasksPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/projects" element={<AdminProjectsPage />} />
+                <Route path="/admin/my-projects" element={<MemberProjectsPage />} />
                 <Route path="/admin/projects/:id" element={<ProjectDetailPage />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
 
