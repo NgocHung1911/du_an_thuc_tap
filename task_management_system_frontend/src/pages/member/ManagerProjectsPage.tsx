@@ -7,9 +7,12 @@ import {
 import { projectApi, ProjectDTO, ProjectRequest, ProjectStatus } from '../../services/projectApi';
 import { ProjectCard } from '../../components/project/ProjectCard';
 import { ProjectFormModal } from '../../components/project/ProjectFormModal';
+import { useAuth } from '../../context/AuthContext';
 
-export const MemberProjectsPage: React.FC = () => {
+export const ManagerProjectsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const pathPrefix = isAdmin ? '/admin/projects' : '/member/projects';
 
   const [projects, setProjects] = useState<ProjectDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -244,7 +247,7 @@ export const MemberProjectsPage: React.FC = () => {
             <ProjectCard
               key={project.id}
               project={project}
-              onCardClick={(projectId) => navigate(`/projects/${projectId}`)}
+              onCardClick={(projectId) => navigate(`${pathPrefix}/${projectId}`)}
               onStatusChange={handleStatusChange}
               onEditClick={(proj) => {
                 setProjectToEdit(proj);
