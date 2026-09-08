@@ -48,11 +48,7 @@ export const userApi = {
   uploadAvatar: async (file: File): Promise<UserDTO> => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await apiClient.post<UserDTO>('/users/me/avatar', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const res = await apiClient.post<UserDTO>('/users/me/avatar', formData);
     return res.data;
   },
 };

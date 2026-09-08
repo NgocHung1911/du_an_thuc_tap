@@ -13,13 +13,12 @@ import { MainLayout } from './components/layout/MainLayout';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage';
-import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 
 // Member Pages
 import { MemberDashboardPage } from './pages/member/MemberDashboardPage';
 import { MemberMyTasksPage } from './pages/member/MemberMyTasksPage';
-import { MemberProjectsPage } from './pages/member/MemberProjectsPage';
-import { MemberProfilePage } from './pages/member/MemberProfilePage';
+import { ManagerProjectsPage } from './pages/member/ManagerProjectsPage';
+import { PersonalProfilePage } from './pages/member/PersonalProfilePage';
 
 // Project Pages
 import { ProjectDetailPage } from './pages/project/ProjectDetailPage';
@@ -49,21 +48,18 @@ function App() {
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/projects" element={<AdminProjectsPage />} />
-                <Route path="/admin/my-projects" element={<MemberProjectsPage />} />
+                <Route path="/admin/my-projects" element={<ManagerProjectsPage />} />
                 <Route path="/admin/projects/:id" element={<ProjectDetailPage />} />
-                <Route path="/admin/settings" element={<MemberProfilePage />} />
-                <Route path="/admin/profile" element={<MemberProfilePage />} />
+                <Route path="/admin/profile" element={<PersonalProfilePage />} />
 
                 {/* Member Scope Routes */}
                 <Route path="/member" element={<Navigate to="/member/dashboard" replace />} />
                 <Route path="/member/dashboard" element={<MemberDashboardPage />} />
                 <Route path="/member/my-tasks" element={<MemberMyTasksPage />} />
-                <Route path="/member/projects" element={<MemberProjectsPage />} />
+                <Route path="/member/projects" element={<ManagerProjectsPage />} />
                 <Route path="/member/projects/:id" element={<ProjectDetailPage />} />
-                <Route path="/member/profile" element={<MemberProfilePage />} />
+                <Route path="/member/profile" element={<PersonalProfilePage />} />
 
-                {/* Common Project Detail Route */}
-                <Route path="/projects/:id" element={<ProjectDetailPage />} />
               </Route>
             </Route>
 

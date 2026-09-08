@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userApi } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
-import { User, Mail, Camera, UploadCloud, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { User, Mail, Camera, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
-export const MemberProfilePage: React.FC = () => {
+export const PersonalProfilePage: React.FC = () => {
   const { user } = useAuth();
 
   const [profile, setProfile] = useState<UserDTO | null>(null);
@@ -153,27 +153,12 @@ export const MemberProfilePage: React.FC = () => {
             )}
           </div>
 
-          <button
-            onClick={handleAvatarClick}
-            disabled={uploading}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all disabled:opacity-50 cursor-pointer mb-2"
-          >
-            <UploadCloud size={14} className="text-blue-600" />
-            <span>{uploading ? 'Đang tải lên...' : 'Tải ảnh mới lên Cloudflare R2'}</span>
-          </button>
-
           <h2 className="text-lg font-bold text-slate-900">
             {profile?.fullName || profile?.username || user?.username}
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             {profile?.email || user?.email}
           </p>
-
-          {profile?.avatarUrl && (
-            <span className="mt-2 text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 rounded-full">
-              ☁️ Cloudflare R2 Storage
-            </span>
-          )}
         </div>
 
         {/* Basic Profile Info Details */}

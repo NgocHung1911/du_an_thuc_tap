@@ -334,7 +334,7 @@ export const AdminProjectsPage: React.FC = () => {
                     {/* Name & Description */}
                     <td className="py-3.5 px-4 max-w-xs sm:max-w-md">
                       <button
-                        onClick={() => navigate(`/projects/${project.id}`)}
+                        onClick={() => navigate(`/admin/projects/${project.id}`)}
                         className="font-bold text-slate-900 hover:text-blue-600 transition-colors text-left line-clamp-1 hover:underline"
                       >
                         {project.name}
@@ -398,7 +398,7 @@ export const AdminProjectsPage: React.FC = () => {
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => navigate(`/projects/${project.id}`)}
+                          onClick={() => navigate(`/admin/projects/${project.id}`)}
                           className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="View details"
                         >
