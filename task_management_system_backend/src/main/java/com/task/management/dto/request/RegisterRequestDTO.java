@@ -13,16 +13,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RegisterRequestDTO {
 
-    @NotBlank(message = "Tên đăng nhập không được để trống")
-    @Size(min = 3, max = 50, message = "Tên đăng nhập từ 3 đến 50 ký tự")
+    @NotBlank(message = "Username cannot be blank")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải từ 6 ký tự trở lên")
+    @NotBlank(message = "Password cannot be blank")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Invalid email address")
     private String email;
 
     private String fullName;

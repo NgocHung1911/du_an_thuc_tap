@@ -53,7 +53,7 @@ export const LoginPage: React.FC = () => {
     setUnverifiedEmail(null);
 
     if (!username.trim() || !password.trim()) {
-      setError('Vui lòng nhập đầy đủ Tên đăng nhập và Mật khẩu!');
+      setError('Please enter both Username and Password!');
       return;
     }
 
@@ -65,12 +65,12 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.isVerified === false) {
-        setError(err.response.data.message || 'Tài khoản chưa được xác thực OTP!');
+        setError(err.response.data.message || 'Account not verified with OTP!');
         setUnverifiedEmail(err.response.data.email || '');
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
+        setError('Sign in failed. Please check your credentials!');
       }
     } finally {
       setLoading(false);
@@ -79,7 +79,7 @@ export const LoginPage: React.FC = () => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse.credential) {
-      setError('Không thể lấy Token xác thực từ Google!');
+      setError('Failed to retrieve authentication token from Google!');
       return;
     }
 
@@ -95,7 +95,7 @@ export const LoginPage: React.FC = () => {
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Đăng nhập Google thất bại!');
+        setError('Google sign in failed!');
       }
     } finally {
       setLoading(false);
@@ -133,7 +133,7 @@ export const LoginPage: React.FC = () => {
                     className="bg-[#0052CC] hover:bg-[#0747A6] text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
                   >
                     <ShieldCheck size={14} />
-                    <span>Xác thực OTP ngay</span>
+                    <span>Verify OTP now</span>
                   </button>
                 </div>
               )}
@@ -206,7 +206,7 @@ export const LoginPage: React.FC = () => {
             <div className="w-full flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setError('Đăng nhập bằng Google không thành công!')}
+                onError={() => setError('Google sign in was unsuccessful!')}
                 shape="rectangular"
                 theme="outline"
                 size="large"

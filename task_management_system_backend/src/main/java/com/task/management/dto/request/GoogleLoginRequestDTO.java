@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GoogleLoginRequestDTO {
 
-    @NotBlank(message = "Google ID Token không được để trống")
+    @NotBlank(message = "Google ID token cannot be blank")
     private String idToken;
 }

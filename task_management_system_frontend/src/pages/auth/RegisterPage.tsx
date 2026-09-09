@@ -55,7 +55,7 @@ export const RegisterPage: React.FC = () => {
     setSuccess(null);
 
     if (!username.trim() || !email.trim() || !password.trim()) {
-      setError('Vui lòng điền đầy đủ tất cả các trường!');
+      setError('Please fill in all fields!');
       return;
     }
 
@@ -69,7 +69,7 @@ export const RegisterPage: React.FC = () => {
         role,
       });
 
-      setSuccess('Đăng ký tài khoản thành công! Đang chuyển hướng đến trang nhập mã OTP xác thực...');
+      setSuccess('Account registered successfully! Redirecting to OTP verification page...');
       setTimeout(() => {
         navigate('/verify-otp', { state: { email } });
       }, 1200);
@@ -78,7 +78,7 @@ export const RegisterPage: React.FC = () => {
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Đăng ký thất bại. Vui lòng kiểm tra lại thông tin!');
+        setError('Registration failed. Please check your information!');
       }
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ export const RegisterPage: React.FC = () => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse.credential) {
-      setError('Không thể lấy Token xác thực từ Google!');
+      setError('Failed to retrieve authentication token from Google!');
       return;
     }
 
@@ -102,7 +102,7 @@ export const RegisterPage: React.FC = () => {
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Đăng ký / Đăng nhập Google thất bại!');
+        setError('Google sign up / sign in failed!');
       }
     } finally {
       setLoading(false);
@@ -225,7 +225,7 @@ export const RegisterPage: React.FC = () => {
             <div className="w-full flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setError('Đăng nhập bằng Google không thành công!')}
+                onError={() => setError('Google sign up was unsuccessful!')}
                 shape="rectangular"
                 theme="outline"
                 size="large"

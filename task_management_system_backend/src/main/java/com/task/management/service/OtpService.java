@@ -47,21 +47,21 @@ public class OtpService {
 
     public void verifyOtp(String email, String otpCode) {
         OtpToken token = otpTokenRepository.findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(email)
-                .orElseThrow(() -> new IllegalArgumentException("Mã OTP không tồn tại hoặc đã được sử dụng!"));
+                .orElseThrow(() -> new IllegalArgumentException("OTP code does not exist or has already been used!"));
 
         if (LocalDateTime.now().isAfter(token.getExpiryTime())) {
-            throw new IllegalArgumentException("Mã OTP đã hết hạn! Vui lòng bấm 'Gửi lại mã'.");
+            throw new IllegalArgumentException("OTP code has expired! Please click 'Resend code'.");
         }
 
         if (!token.getOtpCode().equals(otpCode.trim())) {
-            throw new IllegalArgumentException("Mã OTP không chính xác. Vui lòng kiểm tra lại!");
+            throw new IllegalArgumentException("Incorrect OTP code. Please check and try again!");
         }
 
         token.setUsed(true);
         otpTokenRepository.save(token);
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản người dùng với email: " + email));
+                .orElseThrow(() -> new IllegalArgumentException("User account not found with email: " + email));
 
         user.setVerified(true);
         userRepository.save(user);
@@ -70,10 +70,10 @@ public class OtpService {
 
     public void resendOtp(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản người dùng với email: " + email));
+                .orElseThrow(() -> new IllegalArgumentException("User account not found with email: " + email));
 
         if (user.isVerified()) {
-            throw new IllegalArgumentException("Tài khoản này đã được xác thực trước đó!");
+            throw new IllegalArgumentException("This account has already been verified!");
         }
 
         generateAndSendOtp(email);
@@ -81,14 +81,14 @@ public class OtpService {
 
     public void verifyOnlyOtp(String email, String otpCode) {
         OtpToken token = otpTokenRepository.findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(email)
-                .orElseThrow(() -> new IllegalArgumentException("Mã OTP không tồn tại hoặc đã được sử dụng!"));
+                .orElseThrow(() -> new IllegalArgumentException("OTP code does not exist or has already been used!"));
 
         if (LocalDateTime.now().isAfter(token.getExpiryTime())) {
-            throw new IllegalArgumentException("Mã OTP đã hết hạn! Vui lòng gửi lại mã OTP mới.");
+            throw new IllegalArgumentException("OTP code has expired! Please resend a new OTP code.");
         }
 
         if (!token.getOtpCode().equals(otpCode.trim())) {
-            throw new IllegalArgumentException("Mã OTP không chính xác. Vui lòng kiểm tra lại!");
+            throw new IllegalArgumentException("Incorrect OTP code. Please check and try again!");
         }
 
         token.setUsed(true);

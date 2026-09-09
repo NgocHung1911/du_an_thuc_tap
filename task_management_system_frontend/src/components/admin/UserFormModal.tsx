@@ -49,15 +49,15 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     setError(null);
 
     if (!username.trim()) {
-      setError('Username không được để trống.');
+      setError('Username cannot be empty.');
       return;
     }
     if (!email.trim()) {
-      setError('Email không được để trống.');
+      setError('Email cannot be empty.');
       return;
     }
     if (!userToEdit && !password.trim()) {
-      setError('Mật khẩu không được để trống khi tạo mới người dùng.');
+      setError('Password cannot be empty for new users.');
       return;
     }
 
@@ -77,8 +77,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       await onSubmit(payload, userToEdit?.id);
       onClose();
     } catch (err: any) {
-      console.error('Lỗi khi lưu người dùng:', err);
-      const msg = err.response?.data?.message || err.response?.data || err.message || 'Không thể lưu người dùng.';
+      console.error('Error saving user:', err);
+      const msg = err.response?.data?.message || err.response?.data || err.message || 'Unable to save user.';
       setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
       setSubmitting(false);
@@ -96,10 +96,10 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900">
-                {userToEdit ? 'Chỉnh Sửa Người Dùng' : 'Thêm Người Dùng Mới'}
+                {userToEdit ? 'Edit User' : 'Add New User'}
               </h2>
               <p className="text-xs text-slate-500">
-                {userToEdit ? `Cập nhật thông tin tài khoản #${userToEdit.id}` : 'Nhập thông tin để tạo tài khoản mới trong hệ thống'}
+                {userToEdit ? `Update account details for #${userToEdit.id}` : 'Enter details to create a new user account'}
               </p>
             </div>
           </div>
@@ -123,7 +123,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           {/* Username */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Tên đăng nhập (Username) <span className="text-red-500">*</span>
+              Username <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
@@ -133,7 +133,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="vd: john_doe"
+                placeholder="e.g. john_doe"
                 disabled={Boolean(userToEdit)}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all disabled:opacity-60"
               />
@@ -143,7 +143,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           {/* Full Name */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Họ và Tên (Full Name)
+              Full Name
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
@@ -153,7 +153,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="vd: Nguyễn Văn A"
+                placeholder="e.g. John Doe"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
               />
             </div>
@@ -172,7 +172,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="vd: user@example.com"
+                placeholder="e.g. user@example.com"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
               />
             </div>
@@ -182,7 +182,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           {!userToEdit && (
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Mật khẩu <span className="text-red-500">*</span>
+                Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
@@ -192,7 +192,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Ít nhất 6 ký tự"
+                  placeholder="At least 6 characters"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
                 />
               </div>
@@ -202,7 +202,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           {/* Role */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Vai trò (Role) <span className="text-red-500">*</span>
+              Role <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
@@ -213,8 +213,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 onChange={(e) => setRole(e.target.value as 'ADMIN' | 'MEMBER')}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all font-semibold cursor-pointer"
               >
-                <option value="MEMBER">MEMBER (Thành viên)</option>
-                <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                <option value="MEMBER">MEMBER</option>
+                <option value="ADMIN">ADMIN</option>
               </select>
             </div>
           </div>
@@ -226,7 +226,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
@@ -234,7 +234,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50"
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
-              <span>{userToEdit ? 'Lưu Thay Đổi' : 'Tạo Người Dùng'}</span>
+              <span>{userToEdit ? 'Save Changes' : 'Create User'}</span>
             </button>
           </div>
         </form>

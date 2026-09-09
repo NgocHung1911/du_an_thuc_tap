@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateMemberRoleRequestDTO {
 
-    @NotNull(message = "Vai trò (role) không được để trống")
+    @NotNull(message = "Role cannot be blank")
     private ProjectRole role;
 }

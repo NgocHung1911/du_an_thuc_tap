@@ -16,18 +16,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserRequest {
 
-    @NotBlank(message = "Username không được để trống")
-    @Size(min = 3, max = 50, message = "Username phải từ 3 đến 50 ký tự")
+    @NotBlank(message = "Username cannot be blank")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
     private String password;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Invalid email format")
     private String email;
 
     private String fullName;
 
-    @NotNull(message = "Role không được để trống")
+    @NotNull(message = "Role cannot be blank")
     private Role role;
 }

@@ -37,13 +37,13 @@ public class InvitationService {
     @Transactional
     public AcceptInvitationResponseDTO sendInvitation(Long projectId, InviteMemberRequestDTO request) {
         if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            throw new BadRequestException("Email người được mời không được để trống!");
+            throw new BadRequestException("Invitee email cannot be blank!");
         }
 
         String recipientEmail = request.getEmail().trim().toLowerCase();
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
         // 1. Kiểm tra xem người được mời có phải là Chủ sở hữu (Owner) dự án hay không
         if (project.getUser() != null) {
@@ -51,7 +51,7 @@ public class InvitationService {
             String ownerUsername = project.getUser().getUsername();
             if ((ownerEmail != null && recipientEmail.equalsIgnoreCase(ownerEmail)) ||
                 (ownerUsername != null && recipientEmail.equalsIgnoreCase(ownerUsername))) {
-                throw new BadRequestException("Email " + recipientEmail + " chính là Chủ sở hữu (Owner) của dự án này!");
+                throw new BadRequestException("Email " + recipientEmail + " is the Project Owner of this project!");
             }
         }
 
@@ -62,7 +62,7 @@ public class InvitationService {
                                    ((m.getUser().getEmail() != null && recipientEmail.equalsIgnoreCase(m.getUser().getEmail())) ||
                                     (m.getUser().getUsername() != null && recipientEmail.equalsIgnoreCase(m.getUser().getUsername()))));
             if (isAlreadyMember) {
-                throw new BadRequestException("Thành viên (" + recipientEmail + ") đã tham gia vào dự án này rồi!");
+                throw new BadRequestException("Member (" + recipientEmail + ") has already joined this project!");
             }
         }
 
@@ -92,9 +92,9 @@ public class InvitationService {
 
         String message;
         if (mailSent) {
-            message = "Đã gửi email lời mời thành công đến " + recipientEmail + "!";
+            message = "Invitation email sent successfully to " + recipientEmail + "!";
         } else {
-            message = "Đã tạo lời mời thành công! (Lưu ý: Mail chưa gửi được do Sender chưa xác thực trên Brevo/SMTP. Bạn có thể sử dụng liên kết trực tiếp này để thử nghiệm: " + inviteLink + ")";
+            message = "Invitation created successfully! (Note: Email was not sent because the sender is not verified on Brevo/SMTP. You can use this direct link to test: " + inviteLink + ")";
         }
 
         return AcceptInvitationResponseDTO.builder()
@@ -110,11 +110,11 @@ public class InvitationService {
         log.info(">>> [VERIFY INVITATION] Checking token: '{}'", cleanToken);
 
         if (cleanToken.isEmpty()) {
-            throw new BadRequestException("Token xác nhận lời mời không hợp lệ!");
+            throw new BadRequestException("Invalid invitation verification token!");
         }
 
         ProjectInvitation invitation = projectInvitationRepository.findByToken(cleanToken)
-                .orElseThrow(() -> new ResourceNotFoundException("Mã lời mời không tồn tại hoặc không hợp lệ!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation code does not exist or is invalid!"));
 
         LocalDateTime now = LocalDateTime.now();
         boolean isExpired = invitation.getExpiresAt() != null && now.isAfter(invitation.getExpiresAt());
@@ -160,16 +160,16 @@ public class InvitationService {
         log.info(">>> [ACCEPT INVITATION] Processing token: '{}'", cleanToken);
 
         if (cleanToken.isEmpty()) {
-            throw new BadRequestException("Token lời mời không được để trống!");
+            throw new BadRequestException("Invitation token cannot be blank!");
         }
 
         ProjectInvitation invitation = projectInvitationRepository.findByToken(cleanToken)
-                .orElseThrow(() -> new ResourceNotFoundException("Mã lời mời không tồn tại hoặc không hợp lệ!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation code does not exist or is invalid!"));
 
         if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
             log.info(">>> [ACCEPT INVITATION] Token ID={} is ALREADY ACCEPTED.", invitation.getId());
             return AcceptInvitationResponseDTO.builder()
-                    .message("Lời mời này đã được chấp nhận trước đó.")
+                    .message("This invitation has already been accepted.")
                     .projectId(invitation.getProject().getId())
                     .projectName(invitation.getProject().getName())
                     .build();
@@ -178,7 +178,7 @@ public class InvitationService {
         if (LocalDateTime.now().isAfter(invitation.getExpiresAt()) || invitation.getStatus() == InvitationStatus.EXPIRED) {
             invitation.setStatus(InvitationStatus.EXPIRED);
             projectInvitationRepository.save(invitation);
-            throw new BadRequestException("Lời mời này đã hết hạn! Vui lòng liên hệ Admin để gửi lại lời mời mới.");
+            throw new BadRequestException("This invitation has expired! Please contact an Admin to resend a new invitation.");
         }
 
         // Tối ưu: Ưu tiên lấy User đang ĐĂNG NHẬP từ SecurityContext
@@ -196,7 +196,7 @@ public class InvitationService {
         }
 
         if (currentUser == null) {
-            throw new BadRequestException("Không tìm thấy tài khoản người dùng tương ứng. Vui lòng Đăng ký / Đăng nhập tài khoản trước khi nhận lời mời!");
+            throw new BadRequestException("Corresponding user account not found. Please Register / Log in to an account before accepting the invitation!");
         }
 
         Project project = invitation.getProject();
@@ -224,7 +224,7 @@ public class InvitationService {
                 currentUser.getId(), currentUser.getEmail(), project.getId(), project.getName());
 
         return AcceptInvitationResponseDTO.builder()
-                .message("Chấp nhận lời mời thành công! Bạn đã tham gia vào dự án.")
+                .message("Successfully accepted invitation! You have joined the project.")
                 .projectId(project.getId())
                 .projectName(project.getName())
                 .build();

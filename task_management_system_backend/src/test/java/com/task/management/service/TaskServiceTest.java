@@ -105,7 +105,7 @@ class TaskServiceTest {
             taskService.assignTaskToUser(100L, 99L);
         });
 
-        assertEquals("Người dùng không thuộc dự án này!", exception.getMessage());
+        assertEquals("User does not belong to this project!", exception.getMessage());
         verify(taskRepository, never()).save(any());
     }
 
@@ -121,6 +121,21 @@ class TaskServiceTest {
         assertNotNull(result);
         assertNull(result.getUserId());
         assertNull(result.getAssignedUser());
+        verify(taskRepository, times(1)).save(testTask);
+    }
+
+    @Test
+    @DisplayName("Đổi reporter thành công cho người dùng thuộc dự án")
+    void testAssignTaskToReporter_Success() {
+        when(taskRepository.findById(100L)).thenReturn(Optional.of(testTask));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(validMember));
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        TaskDTO result = taskService.assignTaskToReporter(100L, 10L);
+
+        assertNotNull(result);
+        assertEquals(10L, result.getReporterId());
+        assertEquals("valid_member", result.getReporterFullName());
         verify(taskRepository, times(1)).save(testTask);
     }
 }

@@ -87,12 +87,14 @@ export const ProjectDetailPage: React.FC = () => {
     deadline: string;
     priority: TaskPriority;
     userId: number | null;
+    reporterId: number | null;
   }>({
     title: '',
     description: '',
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     priority: 'MEDIUM',
     userId: null,
+    reporterId: null,
   });
   const [creating, setCreating] = useState<boolean>(false);
 
@@ -116,8 +118,8 @@ export const ProjectDetailPage: React.FC = () => {
         } catch {
           setProject({
             id: projectId,
-            name: `Dự án #${projectId}`,
-            description: 'Chi tiết quản lý dự án và phân công nhiệm vụ.',
+            name: `Project #${projectId}`,
+            description: 'Project management details and task assignments.',
             status: 'IN_PROGRESS',
           });
         }
@@ -139,8 +141,8 @@ export const ProjectDetailPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      console.error('Lỗi khi tải thông tin dự án:', err);
-      setError('Không thể tải dữ liệu từ máy chủ.');
+      console.error('Error loading project details:', err);
+      setError('Failed to load data from server.');
       setTasks([]);
     } finally {
       setLoading(false);
@@ -149,7 +151,7 @@ export const ProjectDetailPage: React.FC = () => {
 
   const handleMemberInvited = (newMember: UserDTO) => {
     setProjectMembers((prev) => [...prev.filter((m) => m.id !== newMember.id), newMember]);
-    showToast(`Đã thêm thành viên ${newMember.username} vào dự án thành công!`, 'success');
+    showToast(`Member ${newMember.fullName || newMember.username} successfully added to the project!`, 'success');
   };
 
   useEffect(() => {
@@ -186,7 +188,7 @@ export const ProjectDetailPage: React.FC = () => {
           prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
         );
       }
-      showToast(`Đã chuyển trạng thái công việc sang ${newStatus}`, 'success');
+      showToast(`Task status updated to ${newStatus}`, 'success');
 
       // Requirement 3: Auto close modal ONLY when API succeeds
       if (fromModal) {
@@ -200,7 +202,7 @@ export const ProjectDetailPage: React.FC = () => {
       if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
         setSelectedTaskDetail((prev) => (prev ? { ...prev, status: previousStatus } : null));
       }
-      const errMsg = err.response?.data?.message || err.message || 'Không thể thay đổi trạng thái công việc!';
+      const errMsg = err.response?.data?.message || err.message || 'Unable to update task status!';
       showToast(errMsg, 'error');
       // DO NOT close modal if API failed!
     }
@@ -230,14 +232,14 @@ export const ProjectDetailPage: React.FC = () => {
           prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
         );
       }
-      showToast(`Đã cập nhật mức độ ưu tiên sang ${newPriority}`, 'success');
+      showToast(`Task priority updated to ${newPriority}`, 'success');
     } catch (err: any) {
       console.error('API error updating priority:', err);
       setTasks(snapshotTasks);
       if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
         setSelectedTaskDetail((prev) => (prev ? { ...prev, priority: previousPriority } : null));
       }
-      const errMsg = err.response?.data?.message || err.message || 'Không thể thay đổi mức độ ưu tiên!';
+      const errMsg = err.response?.data?.message || err.message || 'Unable to update task priority!';
       showToast(errMsg, 'error');
     }
   };
@@ -276,7 +278,7 @@ export const ProjectDetailPage: React.FC = () => {
           prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
         );
       }
-      showToast(`Đã lưu nội dung công việc thành công!`, 'success');
+      showToast(`Task content saved successfully!`, 'success');
     } catch (err: any) {
       console.error('API error updating description:', err);
       setTasks((prev) =>
@@ -289,7 +291,7 @@ export const ProjectDetailPage: React.FC = () => {
           prev ? { ...prev, title: previousTitle, description: previousDesc } : null
         );
       }
-      const errMsg = err.response?.data?.message || err.message || 'Không thể lưu nội dung công việc!';
+      const errMsg = err.response?.data?.message || err.message || 'Unable to save task content!';
       showToast(errMsg, 'error');
     }
   };
@@ -354,7 +356,7 @@ export const ProjectDetailPage: React.FC = () => {
             ...t,
             userId: newUserId || undefined,
             assignedUser: assignedMember ? assignedMember : undefined,
-            userFullName: assignedMember ? assignedMember.username : undefined,
+            userFullName: assignedMember ? (assignedMember.fullName || assignedMember.username) : undefined,
           }
           : t
       )
@@ -367,7 +369,7 @@ export const ProjectDetailPage: React.FC = () => {
             ...prev,
             userId: newUserId || undefined,
             assignedUser: assignedMember ? assignedMember : undefined,
-            userFullName: assignedMember ? assignedMember.username : undefined,
+            userFullName: assignedMember ? (assignedMember.fullName || assignedMember.username) : undefined,
           }
           : null
       );
@@ -382,13 +384,13 @@ export const ProjectDetailPage: React.FC = () => {
       }
       showToast(
         newUserId
-          ? `Đã gán người thực hiện: ${assignedMember?.username || 'Thành viên'}`
-          : 'Đã bỏ gán người thực hiện công việc',
+          ? `Assigned to: ${assignedMember?.fullName || assignedMember?.username || 'Member'}`
+          : 'Unassigned task assignee',
         'success'
       );
     } catch (err: any) {
-      console.warn('Lỗi API gán người thực hiện:', err);
-      const errMsg = err.response?.data?.message || 'Lỗi máy chủ khi gán người thực hiện!';
+      console.warn('API error assigning member:', err);
+      const errMsg = err.response?.data?.message || 'Server error when assigning member!';
       setTasks(snapshotTasks);
       if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
         setSelectedTaskDetail((prev) =>
@@ -397,7 +399,7 @@ export const ProjectDetailPage: React.FC = () => {
               ...prev,
               userId: previousUserId,
               assignedUser: previousUser,
-              userFullName: previousUser?.username,
+              userFullName: previousUser?.fullName || previousUser?.username,
             }
             : null
         );
@@ -415,6 +417,7 @@ export const ProjectDetailPage: React.FC = () => {
       deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       priority: 'MEDIUM',
       userId: null,
+      reporterId: currentUserMember?.id || null,
     });
     setIsCreateModalOpen(true);
   };
@@ -434,6 +437,7 @@ export const ProjectDetailPage: React.FC = () => {
         status: newTaskStatus,
         projectId: projectId,
         userId: taskForm.userId,
+        reporterId: taskForm.reporterId,
       });
 
       if (createdTask && createdTask.id) {
@@ -441,14 +445,84 @@ export const ProjectDetailPage: React.FC = () => {
       } else {
         await fetchData();
       }
-      showToast('Đã tạo task mới thành công!', 'success');
+      showToast('New task created successfully!', 'success');
     } catch (err: any) {
-      console.error('Lỗi khi tạo task:', err);
-      const errMsg = err.response?.data?.message || 'Không thể kết nối máy chủ để tạo task!';
+      console.error('Error creating task:', err);
+      const errMsg = err.response?.data?.message || 'Cannot connect to server to create task!';
       showToast(errMsg, 'error');
     } finally {
       setCreating(false);
       setIsCreateModalOpen(false);
+    }
+  };
+
+  // Handle Reporter change with Optimistic update & Real-time Sync
+  const handleReporterChange = async (taskId: number, newReporterId: number | null) => {
+    const currentTask = tasks.find((t) => t.id === taskId);
+    if (!currentTask) return;
+
+    const reporterMember = newReporterId ? projectMembers.find((m) => m.id === newReporterId) : undefined;
+    const previousReporter = currentTask.reporter;
+    const previousReporterId = currentTask.reporterId;
+    const snapshotTasks = [...tasks];
+
+    // Optimistic State Update
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              reporterId: newReporterId || undefined,
+              reporter: reporterMember ? reporterMember : undefined,
+              reporterFullName: reporterMember ? (reporterMember.fullName || reporterMember.username) : undefined,
+            }
+          : t
+      )
+    );
+
+    if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+      setSelectedTaskDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              reporterId: newReporterId || undefined,
+              reporter: reporterMember ? reporterMember : undefined,
+              reporterFullName: reporterMember ? (reporterMember.fullName || reporterMember.username) : undefined,
+            }
+          : null
+      );
+    }
+
+    try {
+      const updatedTask = await taskApi.updateTaskReporter(taskId, newReporterId);
+      if (updatedTask && updatedTask.id) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
+        );
+      }
+      showToast(
+        newReporterId
+          ? `Updated task reporter: ${reporterMember?.fullName || reporterMember?.username || 'Member'}`
+          : 'Reset task reporter to default',
+        'success'
+      );
+    } catch (err: any) {
+      console.warn('API error updating reporter:', err);
+      const errMsg = err.response?.data?.message || 'Server error when updating reporter!';
+      setTasks(snapshotTasks);
+      if (selectedTaskDetail && selectedTaskDetail.id === taskId) {
+        setSelectedTaskDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                reporterId: previousReporterId,
+                reporter: previousReporter,
+                reporterFullName: previousReporter?.fullName || previousReporter?.username,
+              }
+            : null
+        );
+      }
+      showToast(errMsg, 'error');
     }
   };
 
@@ -475,9 +549,9 @@ export const ProjectDetailPage: React.FC = () => {
 
     try {
       await taskApi.deleteTask(taskId);
-      showToast(`Đã xóa công việc thành công!`, 'success');
+      showToast(`Task deleted successfully!`, 'success');
     } catch (err) {
-      showToast(`Đã xóa công việc khỏi giao diện!`, 'success');
+      showToast(`Task removed from view!`, 'success');
     } finally {
       setDeleting(false);
       setTaskToDelete(null);
@@ -501,7 +575,7 @@ export const ProjectDetailPage: React.FC = () => {
     return { total, todo, doing, review, done, overdue };
   }, [tasks]);
 
-  const projectTitle = project?.name || `Dự án #${projectId || 1}`;
+  const projectTitle = project?.name || `Project #${projectId || 1}`;
 
   return (
     <div className="space-y-5 max-w-[1600px] mx-auto pb-10 font-sans relative">
@@ -512,7 +586,7 @@ export const ProjectDetailPage: React.FC = () => {
             <button
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-xl border border-slate-200 transition-colors shrink-0 mt-0.5 sm:mt-0"
-              title="Quay lại danh sách dự án"
+              title="Back to project list"
             >
               <ArrowLeft size={18} />
             </button>
@@ -646,10 +720,10 @@ export const ProjectDetailPage: React.FC = () => {
             </span>
             {projectMembers.length > 0 &&
               projectMembers.map((mem, idx) => {
-                const initials = mem.username
-                  ? mem.username.substring(0, 2).toUpperCase()
-                  : 'MB';
-                const isSelected = selectedAssignee === mem.username || selectedAssignee === initials;
+                const displayName = mem.fullName || mem.username;
+                const parts = displayName.trim().split(' ');
+                const initials = parts.length === 1 ? parts[0].substring(0, 2).toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                const isSelected = selectedAssignee === displayName || selectedAssignee === mem.username || selectedAssignee === initials;
                 const colors = ['bg-blue-600', 'bg-red-500', 'bg-amber-500', 'bg-emerald-600', 'bg-purple-600'];
                 const bgColor = colors[idx % colors.length];
 
@@ -657,13 +731,13 @@ export const ProjectDetailPage: React.FC = () => {
                   <button
                     key={mem.id}
                     onClick={() =>
-                      setSelectedAssignee((prev) => (prev === mem.username ? null : mem.username))
+                      setSelectedAssignee((prev) => (prev === displayName ? null : displayName))
                     }
                     className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${bgColor} ${isSelected
                         ? 'ring-2 ring-blue-600 ring-offset-2 scale-110 shadow-md'
                         : 'hover:scale-105 opacity-90 hover:opacity-100'
                       }`}
-                    title={`${mem.username} (${mem.email || 'Member'})`}
+                    title={`${displayName} (${mem.email || 'Member'})`}
                   >
                     {initials}
                   </button>
@@ -794,6 +868,7 @@ export const ProjectDetailPage: React.FC = () => {
               onStatusChange={handleStatusChange}
               onPriorityChange={handlePriorityChange}
               onAssigneeChange={handleAssigneeChange}
+              onReporterChange={handleReporterChange}
               onDeleteTask={handleRequestDelete}
             />
           )}
@@ -813,6 +888,7 @@ export const ProjectDetailPage: React.FC = () => {
         onStatusChange={handleStatusChange}
         onPriorityChange={handlePriorityChange}
         onAssigneeChange={handleAssigneeChange}
+        onReporterChange={handleReporterChange}
         onUpdateDescription={handleUpdateDescription}
         onDeleteTask={handleRequestDelete}
       />
@@ -827,19 +903,19 @@ export const ProjectDetailPage: React.FC = () => {
                 <AlertTriangle size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-base text-red-900">Xác Nhận Xóa Công Việc</h3>
-                <p className="text-xs text-red-700">Thao tác này không thể hoàn tác!</p>
+                <h3 className="font-bold text-base text-red-900">Confirm Delete Task</h3>
+                <p className="text-xs text-red-700">This action cannot be undone!</p>
               </div>
             </div>
 
             {/* Modal Body */}
             <div className="p-5 text-sm text-[#172B4D] space-y-3">
               <p>
-                Bạn có chắc chắn muốn xóa công việc{' '}
+                Are you sure you want to delete task{' '}
                 <strong className="text-red-600 font-mono">
                   PROJ-{projectId || 1}-{taskToDelete.id}
-                </strong>{' '}
-                không?
+                </strong>
+                ?
               </p>
               <div className="p-3 bg-[#F4F5F7] rounded-xl border border-[#DFE1E6] text-xs font-medium text-[#172B4D]">
                 "{taskToDelete.title}"
@@ -854,7 +930,7 @@ export const ProjectDetailPage: React.FC = () => {
                 disabled={deleting}
                 className="px-4 py-2 bg-white hover:bg-gray-100 text-[#172B4D] border border-[#DFE1E6] text-xs font-semibold rounded-lg transition-colors"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="button"
@@ -863,7 +939,7 @@ export const ProjectDetailPage: React.FC = () => {
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
               >
                 {deleting ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                <span>Xóa Công Việc</span>
+                <span>Delete Task</span>
               </button>
             </div>
           </div>
@@ -891,7 +967,7 @@ export const ProjectDetailPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-xl border border-[#DFE1E6] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150">
             <div className="px-5 py-4 bg-[#F4F5F7] border-b border-[#DFE1E6] flex items-center justify-between">
-              <h3 className="font-bold text-base text-[#172B4D]">Tạo Công Việc Mới</h3>
+              <h3 className="font-bold text-base text-[#172B4D]">Create New Task</h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
                 className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200"
@@ -903,12 +979,12 @@ export const ProjectDetailPage: React.FC = () => {
             <form onSubmit={handleCreateTaskSubmit} className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#172B4D] mb-1">
-                  Tiêu đề công việc <span className="text-red-500">*</span>
+                  Task Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Nhập tên task..."
+                  placeholder="Enter task title..."
                   value={taskForm.title}
                   onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
                   className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-sm focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC]"
@@ -917,7 +993,7 @@ export const ProjectDetailPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Trạng thái (Status)</label>
+                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Status</label>
                   <select
                     value={newTaskStatus}
                     onChange={(e) => setNewTaskStatus(e.target.value as TaskStatus)}
@@ -931,7 +1007,7 @@ export const ProjectDetailPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Độ ưu tiên (Priority)</label>
+                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Priority</label>
                   <select
                     value={taskForm.priority}
                     onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value as TaskPriority })}
@@ -945,7 +1021,7 @@ export const ProjectDetailPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#172B4D] mb-1">Hạn chót</label>
+                <label className="block text-xs font-bold text-[#172B4D] mb-1">Deadline</label>
                 <input
                   type="date"
                   value={taskForm.deadline}
@@ -954,29 +1030,49 @@ export const ProjectDetailPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#172B4D] mb-1">Người thực hiện</label>
-                <select
-                  value={taskForm.userId || ''}
-                  onChange={(e) =>
-                    setTaskForm({ ...taskForm, userId: e.target.value ? Number(e.target.value) : null })
-                  }
-                  className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-medium focus:outline-none focus:border-[#0052CC]"
-                >
-                  <option value="">-- Chưa phân công --</option>
-                  {projectMembers.map((mem) => (
-                    <option key={mem.id} value={mem.id}>
-                      {mem.username} ({mem.email || 'Member'})
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Assignee</label>
+                  <select
+                    value={taskForm.userId || ''}
+                    onChange={(e) =>
+                      setTaskForm({ ...taskForm, userId: e.target.value ? Number(e.target.value) : null })
+                    }
+                    className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-medium focus:outline-none focus:border-[#0052CC]"
+                  >
+                    <option value="">-- Unassigned --</option>
+                    {projectMembers.map((mem) => (
+                      <option key={mem.id} value={mem.id}>
+                        {mem.fullName || mem.username}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#172B4D] mb-1">Reporter</label>
+                  <select
+                    value={taskForm.reporterId || ''}
+                    onChange={(e) =>
+                      setTaskForm({ ...taskForm, reporterId: e.target.value ? Number(e.target.value) : null })
+                    }
+                    className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-medium focus:outline-none focus:border-[#0052CC]"
+                  >
+                    <option value="">-- Default --</option>
+                    {projectMembers.map((mem) => (
+                      <option key={mem.id} value={mem.id}>
+                        {mem.fullName || mem.username}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#172B4D] mb-1">Mô tả công việc</label>
+                <label className="block text-xs font-bold text-[#172B4D] mb-1">Task Description</label>
                 <textarea
                   rows={3}
-                  placeholder="Mô tả chi tiết nội dung task..."
+                  placeholder="Task Description..."
                   value={taskForm.description}
                   onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
                   className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs focus:outline-none focus:border-[#0052CC]"
@@ -989,7 +1085,7 @@ export const ProjectDetailPage: React.FC = () => {
                   onClick={() => setIsCreateModalOpen(false)}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -997,7 +1093,7 @@ export const ProjectDetailPage: React.FC = () => {
                   className="px-4 py-2 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5"
                 >
                   {creating && <RefreshCw size={14} className="animate-spin" />}
-                  <span>Tạo Task</span>
+                  <span>Create Task</span>
                 </button>
               </div>
             </form>
@@ -1005,7 +1101,7 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Mời Thành Viên Vào Dự Án */}
+      {/* Invite Member Modal */}
       <InviteMemberModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
@@ -1014,7 +1110,7 @@ export const ProjectDetailPage: React.FC = () => {
         onMemberInvited={handleMemberInvited}
       />
 
-      {/* Modal Quản Lý Thành Viên & Phân Quyền */}
+      {/* Manage Members & Roles Modal */}
       <ProjectMembersModal
         isOpen={isMembersModalOpen}
         onClose={() => setIsMembersModalOpen(false)}

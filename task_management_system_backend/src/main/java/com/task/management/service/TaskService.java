@@ -37,8 +37,16 @@ public class TaskService {
                 project.getMembers().stream().anyMatch(m -> m.getUser() != null && m.getUser().getId().equals(user.getId()));
         boolean isOwner = project.getUser() != null && project.getUser().getId().equals(user.getId());
         if (!isMember && !isOwner) {
-            throw new BadRequestException("Người dùng không thuộc dự án này!");
+            throw new BadRequestException("User does not belong to this project!");
         }
+    }
+
+    private String resolveFullName(User user) {
+        if (user == null) return null;
+        if (user.getFullName() != null && !user.getFullName().isBlank()) {
+            return user.getFullName();
+        }
+        return user.getUsername();
     }
 
     private TaskDTO mapToDTO(Task task) {
@@ -57,14 +65,37 @@ public class TaskService {
                     .id(task.getUser().getId())
                     .username(task.getUser().getUsername())
                     .email(task.getUser().getEmail())
+                    .fullName(resolveFullName(task.getUser()))
                     .role(task.getUser().getRole())
+                    .build();
+        }
+
+        User effectiveReporter = task.getReporter();
+        if (effectiveReporter == null) {
+            if (task.getProject() != null && task.getProject().getUser() != null) {
+                effectiveReporter = task.getProject().getUser();
+            } else if (task.getUser() != null) {
+                effectiveReporter = task.getUser();
+            }
+        }
+
+        UserDTO reporterDTO = null;
+        if (effectiveReporter != null) {
+            reporterDTO = UserDTO.builder()
+                    .id(effectiveReporter.getId())
+                    .username(effectiveReporter.getUsername())
+                    .email(effectiveReporter.getEmail())
+                    .fullName(resolveFullName(effectiveReporter))
+                    .role(effectiveReporter.getRole())
                     .build();
         }
 
         Long projId = task.getProject() != null ? task.getProject().getId() : null;
         String projName = task.getProject() != null ? task.getProject().getName() : null;
         Long uId = task.getUser() != null ? task.getUser().getId() : null;
-        String uFullName = task.getUser() != null ? task.getUser().getUsername() : null;
+        String uFullName = task.getUser() != null ? resolveFullName(task.getUser()) : null;
+        Long rId = effectiveReporter != null ? effectiveReporter.getId() : null;
+        String rFullName = effectiveReporter != null ? resolveFullName(effectiveReporter) : null;
 
         return TaskDTO.builder()
                 .id(task.getId())
@@ -75,10 +106,13 @@ public class TaskService {
                 .status(task.getStatus())
                 .project(projectDTO)
                 .assignedUser(userDTO)
+                .reporter(reporterDTO)
                 .projectId(projId)
                 .projectName(projName)
                 .userId(uId)
                 .userFullName(uFullName)
+                .reporterId(rId)
+                .reporterFullName(rFullName)
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();
@@ -103,7 +137,7 @@ public class TaskService {
     @Transactional(readOnly = true)
     public TaskDTO getTaskById(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Task với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
         return mapToDTO(task);
     }
 
@@ -127,13 +161,13 @@ public class TaskService {
     @Transactional
     public TaskDTO createTask(TaskRequest request, String username) {
         Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Project với ID: " + request.getProjectId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + request.getProjectId()));
 
         String effectiveUsername = resolveUsername(username);
         if (effectiveUsername != null) {
             ProjectRole role = projectService.getUserRoleInProject(request.getProjectId(), effectiveUsername);
             if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Thành viên (MEMBER) không có quyền tạo task mới!");
+                throw new BadRequestException("Members (MEMBER) do not have permission to create a new task!");
             }
         }
 
@@ -147,10 +181,27 @@ public class TaskService {
 
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User với ID: " + request.getUserId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + request.getUserId()));
             validateUserBelongsToProject(user, project);
             task.setUser(user);
         }
+
+        // Set Reporter (Default to task creator/logged-in user if not provided)
+        User reporterUser = null;
+        if (request.getReporterId() != null) {
+            reporterUser = userRepository.findById(request.getReporterId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Reporter not found with ID: " + request.getReporterId()));
+            validateUserBelongsToProject(reporterUser, project);
+        } else if (effectiveUsername != null) {
+            reporterUser = userRepository.findByUsername(effectiveUsername).orElse(null);
+            if (reporterUser != null) {
+                validateUserBelongsToProject(reporterUser, project);
+            }
+        }
+        if (reporterUser == null && project.getUser() != null) {
+            reporterUser = project.getUser();
+        }
+        task.setReporter(reporterUser);
 
         Task savedTask = taskRepository.save(task);
         return mapToDTO(savedTask);
@@ -164,16 +215,16 @@ public class TaskService {
     @Transactional
     public TaskDTO updateTask(Long id, TaskRequest request, String username) {
         Task existingTask = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Task với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
 
         Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Project với ID: " + request.getProjectId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + request.getProjectId()));
 
         String effectiveUsername = resolveUsername(username);
         if (effectiveUsername != null) {
             ProjectRole role = projectService.getUserRoleInProject(project.getId(), effectiveUsername);
             if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Thành viên (MEMBER) không có quyền sửa nội dung task!");
+                throw new BadRequestException("Members (MEMBER) do not have permission to edit task details!");
             }
         }
 
@@ -186,11 +237,28 @@ public class TaskService {
 
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User với ID: " + request.getUserId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + request.getUserId()));
             validateUserBelongsToProject(user, project);
             existingTask.setUser(user);
         } else {
             existingTask.setUser(null);
+        }
+
+        // Update Reporter if specified, or auto-assign creator if reporter was missing
+        if (request.getReporterId() != null) {
+            User reporterUser = userRepository.findById(request.getReporterId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Reporter not found with ID: " + request.getReporterId()));
+            validateUserBelongsToProject(reporterUser, project);
+            existingTask.setReporter(reporterUser);
+        } else if (existingTask.getReporter() == null) {
+            User creatorUser = null;
+            if (effectiveUsername != null) {
+                creatorUser = userRepository.findByUsername(effectiveUsername).orElse(null);
+            }
+            if (creatorUser == null && project.getUser() != null) {
+                creatorUser = project.getUser();
+            }
+            existingTask.setReporter(creatorUser);
         }
 
         Task updatedTask = taskRepository.save(existingTask);
@@ -205,13 +273,13 @@ public class TaskService {
     @Transactional
     public TaskDTO updateTaskStatus(Long id, TaskStatus status, String username) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Task với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
 
         String effectiveUsername = resolveUsername(username);
         if (effectiveUsername != null) {
             ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
             if (role == null) {
-                throw new BadRequestException("Bạn không thuộc dự án này nên không thể chuyển trạng thái task!");
+                throw new BadRequestException("You are not a member of this project, so you cannot change the task status!");
             }
         }
 
@@ -228,13 +296,13 @@ public class TaskService {
     @Transactional
     public TaskDTO updateTaskPriority(Long id, TaskPriority priority, String username) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Task với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
 
         String effectiveUsername = resolveUsername(username);
         if (effectiveUsername != null) {
             ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
             if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Thành viên (MEMBER) không có quyền thay đổi độ ưu tiên của task!");
+                throw new BadRequestException("Members (MEMBER) do not have permission to change task priority!");
             }
         }
 
@@ -251,13 +319,13 @@ public class TaskService {
     @Transactional
     public TaskDTO assignTaskToUser(Long taskId, Long userId, String username) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Task với ID: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
 
         String effectiveUsername = resolveUsername(username);
         if (effectiveUsername != null) {
             ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
             if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Thành viên (MEMBER) không có quyền gán hoặc bỏ gán người thực hiện!");
+                throw new BadRequestException("Members (MEMBER) do not have permission to assign or unassign team members!");
             }
         }
 
@@ -265,10 +333,48 @@ public class TaskService {
             task.setUser(null);
         } else {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User với ID: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
             validateUserBelongsToProject(user, task.getProject());
             task.setUser(user);
+        }
+
+        Task updatedTask = taskRepository.save(task);
+        return mapToDTO(updatedTask);
+    }
+
+    @Transactional
+    public TaskDTO assignTaskToReporter(Long taskId, Long reporterId) {
+        return assignTaskToReporter(taskId, reporterId, null);
+    }
+
+    @Transactional
+    public TaskDTO assignTaskToReporter(Long taskId, Long reporterId, String username) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        String effectiveUsername = resolveUsername(username);
+        if (effectiveUsername != null) {
+            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
+            if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
+                throw new BadRequestException("Members (MEMBER) do not have permission to change the reporter!");
+            }
+        }
+
+        if (reporterId == null) {
+            User defaultReporter = null;
+            if (effectiveUsername != null) {
+                defaultReporter = userRepository.findByUsername(effectiveUsername).orElse(null);
+            }
+            if (defaultReporter == null && task.getProject().getUser() != null) {
+                defaultReporter = task.getProject().getUser();
+            }
+            task.setReporter(defaultReporter);
+        } else {
+            User reporterUser = userRepository.findById(reporterId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + reporterId));
+            validateUserBelongsToProject(reporterUser, task.getProject());
+            task.setReporter(reporterUser);
         }
 
         Task updatedTask = taskRepository.save(task);
@@ -283,13 +389,13 @@ public class TaskService {
     @Transactional
     public void deleteTask(Long id, String username) {
         Task existingTask = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Task với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
 
         String effectiveUsername = resolveUsername(username);
         if (effectiveUsername != null) {
             ProjectRole role = projectService.getUserRoleInProject(existingTask.getProject().getId(), effectiveUsername);
             if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Thành viên (MEMBER) không có quyền xóa task!");
+                throw new BadRequestException("Members (MEMBER) do not have permission to delete tasks!");
             }
         }
 

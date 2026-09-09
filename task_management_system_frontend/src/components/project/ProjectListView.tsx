@@ -11,6 +11,7 @@ interface ProjectListViewProps {
   onStatusChange?: (taskId: number, newStatus: TaskStatus) => void;
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
   onAssigneeChange?: (taskId: number, userId: number | null) => void;
+  onReporterChange?: (taskId: number, reporterId: number | null) => void;
   onDeleteTask?: (taskId: number) => void;
 }
 
@@ -22,6 +23,7 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
   onStatusChange,
   onPriorityChange,
   onAssigneeChange,
+  onReporterChange,
   onDeleteTask,
 }) => {
   const renderStatusBadge = (status: TaskStatus) => {
@@ -85,6 +87,7 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
               <th className="py-3.5 px-4 w-36">Status</th>
               <th className="py-3.5 px-4 w-36">Priority</th>
               <th className="py-3.5 px-4 w-44">Assignee</th>
+              <th className="py-3.5 px-4 w-44">Reporter</th>
               <th className="py-3.5 px-4 w-36">Due Date</th>
               <th className="py-3.5 px-4 w-24 text-right">Actions</th>
             </tr>
@@ -92,7 +95,7 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
           <tbody className="divide-y divide-slate-100">
             {tasks.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
+                <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
                   No tasks found in list.
                 </td>
               </tr>
@@ -179,17 +182,48 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                           <option value="">Unassigned</option>
                           {projectMembers.map((mem) => (
                             <option key={mem.id} value={mem.id}>
-                              {mem.username}
+                              {mem.fullName || mem.username}
                             </option>
                           ))}
                         </select>
                       ) : (
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
-                            {getInitials(task.assignedUser?.username)}
+                            {getInitials(task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username)}
                           </div>
                           <span className="text-xs text-slate-800 font-medium line-clamp-1">
-                            {task.assignedUser?.username || 'Unassigned'}
+                            {task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned'}
+                          </span>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Reporter */}
+                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
+                      {isAdmin && projectMembers.length > 0 && onReporterChange ? (
+                        <select
+                          value={task.reporterId || task.reporter?.id || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const newReporterId = val ? Number(val) : null;
+                            onReporterChange(task.id, newReporterId);
+                          }}
+                          className="text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer max-w-[140px] truncate"
+                        >
+                          <option value="">Default</option>
+                          {projectMembers.map((mem) => (
+                            <option key={mem.id} value={mem.id}>
+                              {mem.fullName || mem.username}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-600 text-white text-[10px] font-bold flex items-center justify-center">
+                            {getInitials(task.reporterFullName || task.reporter?.fullName || task.reporter?.username)}
+                          </div>
+                          <span className="text-xs text-slate-800 font-medium line-clamp-1">
+                            {task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System'}
                           </span>
                         </div>
                       )}

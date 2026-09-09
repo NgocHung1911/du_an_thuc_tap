@@ -13,6 +13,7 @@ interface TaskDetailModalProps {
   onStatusChange?: (taskId: number, newStatus: TaskStatus, fromModal?: boolean) => void;
   onPriorityChange?: (taskId: number, newPriority: TaskPriority) => void;
   onAssigneeChange?: (taskId: number, userId: number | null) => void;
+  onReporterChange?: (taskId: number, reporterId: number | null) => void;
   onUpdateDescription?: (taskId: number, newDescription: string, newTitle: string) => void;
   onDeleteTask?: (taskId: number) => void;
 }
@@ -26,6 +27,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onStatusChange,
   onPriorityChange,
   onAssigneeChange,
+  onReporterChange,
   onUpdateDescription,
   onDeleteTask,
 }) => {
@@ -124,7 +126,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   };
 
   const projectName = task.projectName || task.project?.name || 'Project';
-  const assigneeName = task.userFullName || task.assignedUser?.username || 'Unassigned';
+  const assigneeName = task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned';
+  const reporterName = task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System';
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -302,7 +305,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   <option value="">Unassigned</option>
                   {projectMembers && projectMembers.map((mem) => (
                     <option key={mem.id} value={mem.id}>
-                      {mem.username} ({mem.email || 'Member'})
+                      {mem.fullName || mem.username}
                     </option>
                   ))}
                 </select>
@@ -317,6 +320,44 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   </div>
                   <span className="text-xs font-semibold text-slate-900">
                     {assigneeName}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Reporter User */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 block">Reporter</label>
+              {isAdmin ? (
+                <select
+                  value={task.reporterId || task.reporter?.id || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const selectedReporterId = val ? Number(val) : null;
+                    if (onReporterChange) {
+                      onReporterChange(task.id, selectedReporterId);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white text-xs font-bold text-slate-900 border border-slate-200 rounded-xl shadow-2xs focus:outline-none focus:border-blue-600 cursor-pointer"
+                >
+                  <option value="">-- Default --</option>
+                  {projectMembers && projectMembers.map((mem) => (
+                    <option key={mem.id} value={mem.id}>
+                      {mem.fullName || mem.username}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
+                  <div
+                    className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
+                      reporterName
+                    )}`}
+                  >
+                    {getInitials(reporterName)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-900">
+                    {reporterName}
                   </span>
                 </div>
               )}

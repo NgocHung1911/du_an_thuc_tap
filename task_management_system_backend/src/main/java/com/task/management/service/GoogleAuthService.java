@@ -52,7 +52,7 @@ public class GoogleAuthService {
             }
 
             if (payload == null || payload.getEmail() == null) {
-                throw new IllegalArgumentException("Token Google không hợp lệ hoặc không chứa email!");
+                throw new IllegalArgumentException("Invalid Google token or email missing!");
             }
 
             String email = payload.getEmail();
@@ -131,7 +131,7 @@ public class GoogleAuthService {
                     .build();
 
         } catch (Exception e) {
-            throw new RuntimeException("Xác thực Token Google thất bại: " + e.getMessage(), e);
+            throw new RuntimeException("Google Token verification failed: " + e.getMessage(), e);
         }
     }
 

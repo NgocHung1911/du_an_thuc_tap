@@ -64,11 +64,11 @@ export const OtpVerificationPage: React.FC = () => {
 
     const otpCode = otpDigits.join('');
     if (!email.trim()) {
-      setError('Vui lòng nhập Email xác thực!');
+      setError('Please enter verification email!');
       return;
     }
     if (otpCode.length < 6) {
-      setError('Vui lòng nhập đủ 6 chữ số OTP!');
+      setError('Please enter full 6-digit OTP!');
       return;
     }
 
@@ -76,7 +76,7 @@ export const OtpVerificationPage: React.FC = () => {
 
     try {
       const response = await authApi.verifyOtp({ email, otpCode });
-      setSuccess(response.message || 'Xác thực OTP thành công! Đang chuyển hướng về trang Đăng nhập...');
+      setSuccess(response.message || 'OTP verified successfully! Redirecting to login page...');
       setTimeout(() => {
         navigate('/login', { state: { emailVerified: true, email } });
       }, 1500);
@@ -85,7 +85,7 @@ export const OtpVerificationPage: React.FC = () => {
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Xác thực OTP thất bại. Vui lòng kiểm tra lại!');
+        setError('OTP verification failed. Please try again!');
       }
     } finally {
       setLoading(false);
@@ -96,7 +96,7 @@ export const OtpVerificationPage: React.FC = () => {
     if (countdown > 0 || resendLoading) return;
 
     if (!email.trim()) {
-      setError('Vui lòng nhập địa chỉ Email!');
+      setError('Please enter email address!');
       return;
     }
 
@@ -105,14 +105,14 @@ export const OtpVerificationPage: React.FC = () => {
 
     try {
       const res = await authApi.resendOtp(email);
-      setSuccess(res.message || 'Mã OTP mới đã được gửi tới Email của bạn!');
+      setSuccess(res.message || 'A new OTP code has been sent to your email!');
       setCountdown(60);
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Gửi lại mã OTP thất bại!');
+        setError('Failed to resend OTP code!');
       }
     } finally {
       setResendLoading(false);
@@ -127,9 +127,9 @@ export const OtpVerificationPage: React.FC = () => {
           <div className="w-12 h-12 bg-[#0052CC] rounded-lg flex items-center justify-center text-white mb-3 shadow-sm">
             <ShieldCheck size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-[#172B4D]">Xác Thực Email OTP</h1>
+          <h1 className="text-2xl font-bold text-[#172B4D]">Verify Email OTP</h1>
           <p className="text-sm text-[#5E6C84] mt-1 text-center">
-            Mã OTP 6 số đã được gửi tới email của bạn qua Brevo REST API
+            A 6-digit OTP code has been sent to your email
           </p>
         </div>
 
@@ -150,7 +150,7 @@ export const OtpVerificationPage: React.FC = () => {
         <form onSubmit={handleVerify} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-[#5E6C84] uppercase tracking-wider mb-1.5">
-              Địa chỉ Email xác thực
+              Verification Email Address
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#6B778C]">
@@ -160,7 +160,7 @@ export const OtpVerificationPage: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Nhập email của bạn"
+                placeholder="Enter your email"
                 className="w-full pl-10 pr-3 py-2 bg-[#FAFBFC] border border-[#DFE1E6] rounded text-[#172B4D] text-sm focus:bg-white focus:border-[#4C9AFF] focus:ring-2 focus:ring-[#4C9AFF]/20 focus:outline-none"
                 required
               />
@@ -169,7 +169,7 @@ export const OtpVerificationPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-[#5E6C84] uppercase tracking-wider mb-2 text-center">
-              Nhập mã OTP 6 chữ số
+              Enter 6-digit OTP code
             </label>
             <div className="flex justify-between gap-2">
               {otpDigits.map((digit, idx) => (
@@ -198,7 +198,7 @@ export const OtpVerificationPage: React.FC = () => {
             ) : (
               <>
                 <ShieldCheck size={18} />
-                <span>Xác nhận mã OTP</span>
+                <span>Verify OTP Code</span>
               </>
             )}
           </button>
@@ -206,20 +206,20 @@ export const OtpVerificationPage: React.FC = () => {
 
         <div className="mt-6 pt-5 border-t border-[#EBECF0] flex flex-col items-center gap-3">
           <div className="text-sm text-[#5E6C84] flex items-center gap-2">
-            <span>Chưa nhận được mã?</span>
+            <span>Didn't receive the code?</span>
             <button
               onClick={handleResendOtp}
               disabled={countdown > 0 || resendLoading}
               className="text-[#0052CC] font-semibold hover:underline flex items-center gap-1 disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed"
             >
               <RefreshCw size={14} className={resendLoading ? 'animate-spin' : ''} />
-              {countdown > 0 ? `Gửi lại mã (${countdown}s)` : 'Gửi lại mã OTP'}
+              {countdown > 0 ? `Resend code (${countdown}s)` : 'Resend OTP'}
             </button>
           </div>
 
           <Link to="/login" className="text-xs text-[#5E6C84] hover:text-[#172B4D] flex items-center gap-1 mt-1">
             <ArrowLeft size={14} />
-            Quay lại trang Đăng nhập
+            Back to Sign In
           </Link>
         </div>
       </div>

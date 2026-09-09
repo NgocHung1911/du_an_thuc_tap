@@ -52,7 +52,7 @@ public class UserService {
     // Lấy thông tin user hiện tại đang đăng nhập
     public UserDTO getCurrentUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng!"));
+                .orElseThrow(() -> new RuntimeException("User details not found!"));
         return mapToDTO(user);
     }
 
@@ -67,23 +67,23 @@ public class UserService {
     // Lấy chi tiết User theo ID
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy User với ID: " + id));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
         return mapToDTO(user);
     }
 
     // Tạo mới User
     public UserDTO createUser(UserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username đã tồn tại!");
+            throw new RuntimeException("Username already exists!");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email đã tồn tại!");
+            throw new RuntimeException("Email already exists!");
         }
         if (request.getPassword() == null || request.getPassword().isBlank()) {
-            throw new RuntimeException("Password không được để trống!");
+            throw new RuntimeException("Password cannot be blank!");
         }
         if (request.getPassword().length() < 6) {
-            throw new RuntimeException("Password phải có ít nhất 6 ký tự!");
+            throw new RuntimeException("Password must be at least 6 characters!");
         }
 
         User user = mapToEntity(request);
@@ -94,7 +94,7 @@ public class UserService {
     // Cập nhật User
     public UserDTO updateUser(Long id, UserRequest request) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy User với ID: " + id));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
 
         existingUser.setUsername(request.getUsername());
         existingUser.setEmail(request.getEmail());
@@ -105,7 +105,7 @@ public class UserService {
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             if (request.getPassword().length() < 6) {
-                throw new RuntimeException("Password phải có ít nhất 6 ký tự!");
+                throw new RuntimeException("Password must be at least 6 characters!");
             }
             existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
         }
@@ -117,14 +117,14 @@ public class UserService {
     // Xóa User
     public void deleteUser(Long id) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy User với ID: " + id));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
         userRepository.delete(existingUser);
     }
 
     // Cập nhật ảnh đại diện (Avatar) lên Cloudflare R2
     public UserDTO updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng!"));
+                .orElseThrow(() -> new RuntimeException("User details not found!"));
         String avatarUrl = cloudflareR2Service.uploadAvatar(file, user.getId());
         user.setAvatarUrl(avatarUrl);
         User savedUser = userRepository.save(user);

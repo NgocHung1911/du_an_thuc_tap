@@ -74,14 +74,14 @@ export const ManagerProjectsPage: React.FC = () => {
         endDate: currentProject.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: newStatus,
       });
-      showToast(`Đã thay đổi trạng thái dự án sang ${newStatus}!`, 'success');
+      showToast(`Project status updated to ${newStatus}!`, 'success');
     } catch (err: any) {
-      console.error('Lỗi khi đổi trạng thái dự án:', err);
+      console.error('Error changing project status:', err);
       // Revert optimistic update
       setProjects((prev) =>
         prev.map((p) => (p.id === projectId ? { ...p, status: previousStatus } : p))
       );
-      const msg = err.response?.data?.message || err.message || 'Không thể thay đổi trạng thái dự án!';
+      const msg = err.response?.data?.message || err.message || 'Unable to update project status!';
       showToast(msg, 'error');
     }
   };

@@ -31,12 +31,21 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
 
+    private String resolveFullName(User user) {
+        if (user == null) return null;
+        if (user.getFullName() != null && !user.getFullName().isBlank()) {
+            return user.getFullName();
+        }
+        return user.getUsername();
+    }
+
     private UserDTO mapProjectMemberToDTO(ProjectMember member) {
         if (member == null || member.getUser() == null) return null;
         return UserDTO.builder()
                 .id(member.getUser().getId())
                 .username(member.getUser().getUsername())
                 .email(member.getUser().getEmail())
+                .fullName(resolveFullName(member.getUser()))
                 .role(member.getUser().getRole())
                 .projectRole(member.getRole())
                 .build();
@@ -119,14 +128,14 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public ProjectDTO getProjectById(Long id) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
         return mapToDTO(project);
     }
 
     @Transactional(readOnly = true)
     public ProjectDTO getProjectById(Long id, String username) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
         if (username != null && !username.trim().isEmpty()) {
             User currentUser = userRepository.findByUsername(username)
@@ -135,7 +144,7 @@ public class ProjectService {
             if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
                 ProjectRole callerRole = getUserRoleInProject(id, username);
                 if (callerRole == null) {
-                    throw new BadRequestException("Bạn không phải là thành viên của dự án này!");
+                    throw new BadRequestException("You are not a member of this project!");
                 }
             }
         }
@@ -150,7 +159,7 @@ public class ProjectService {
     @Transactional
     public ProjectDTO createProject(ProjectRequest request, String username) {
         if (projectRepository.existsByName(request.getName().trim())) {
-            throw new BadRequestException("Tên dự án đã tồn tại!");
+            throw new BadRequestException("Project name already exists!");
         }
         Project project = mapToEntity(request);
 
@@ -182,7 +191,7 @@ public class ProjectService {
     @Transactional
     public ProjectDTO updateProject(Long id, ProjectRequest request, String username) {
         Project existingProject = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
         if (username != null && !username.trim().isEmpty()) {
             User currentUser = userRepository.findByUsername(username)
@@ -191,14 +200,14 @@ public class ProjectService {
             if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
                 ProjectRole callerRole = getUserRoleInProject(id, username);
                 if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
-                    throw new BadRequestException("Bạn không có quyền cập nhật dự án này!");
+                    throw new BadRequestException("You do not have permission to update this project!");
                 }
             }
         }
 
         String newName = request.getName().trim();
         if (!existingProject.getName().equalsIgnoreCase(newName) && projectRepository.existsByName(newName)) {
-            throw new BadRequestException("Tên dự án mới đã trùng với dự án khác!");
+            throw new BadRequestException("New project name conflicts with another project!");
         }
 
         existingProject.setName(newName);
@@ -221,7 +230,7 @@ public class ProjectService {
     @Transactional
     public void deleteProject(Long id, String username) {
         Project existingProject = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
         if (username != null && !username.trim().isEmpty()) {
             User currentUser = userRepository.findByUsername(username)
@@ -230,7 +239,7 @@ public class ProjectService {
             if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
                 ProjectRole callerRole = getUserRoleInProject(id, username);
                 if (callerRole != ProjectRole.OWNER) {
-                    throw new BadRequestException("Chỉ Owner mới có quyền xóa dự án!");
+                    throw new BadRequestException("Only the Project Owner can delete the project!");
                 }
             }
         }
@@ -246,13 +255,13 @@ public class ProjectService {
     @Transactional
     public UserDTO addMemberToProject(Long projectId, InviteMemberRequestDTO request, String currentUsername) {
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            throw new BadRequestException("Email hoặc Username không được để trống!");
+            throw new BadRequestException("Email or Username cannot be blank!");
         }
 
         if (currentUsername != null && !currentUsername.trim().isEmpty()) {
             ProjectRole callerRole = getUserRoleInProject(projectId, currentUsername);
             if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
-                throw new BadRequestException("Bạn không có quyền mời/thêm thành viên vào dự án này!");
+                throw new BadRequestException("You do not have permission to invite/add members to this project!");
             }
         }
 
@@ -262,16 +271,16 @@ public class ProjectService {
                 .orElseGet(() -> userRepository.findByUsername(identifier).orElse(null));
 
         if (user == null) {
-            throw new ResourceNotFoundException("Tài khoản người dùng không tồn tại trong hệ thống.");
+            throw new ResourceNotFoundException("User account does not exist in the system.");
         }
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
         boolean isAlreadyMember = projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId());
 
         if (isAlreadyMember) {
-            throw new BadRequestException("Thành viên đã ở trong dự án");
+            throw new BadRequestException("Member is already in the project");
         }
 
         ProjectMember newMember = ProjectMember.builder()
@@ -294,12 +303,12 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<UserDTO> getProjectMembers(Long projectId, String username) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
         if (username != null && !username.trim().isEmpty()) {
             ProjectRole callerRole = getUserRoleInProject(projectId, username);
             if (callerRole == null) {
-                throw new BadRequestException("Bạn không có quyền xem danh sách thành viên của dự án này!");
+                throw new BadRequestException("You do not have permission to view members of this project!");
             }
         }
 
@@ -315,31 +324,31 @@ public class ProjectService {
     @Transactional
     public UserDTO updateMemberRole(Long projectId, Long userId, ProjectRole newRole, String currentUsername) {
         if (newRole == null) {
-            throw new BadRequestException("Vai trò không được để trống!");
+            throw new BadRequestException("Role cannot be blank!");
         }
         if (newRole == ProjectRole.OWNER) {
-            throw new BadRequestException("Chỉ có thể cấp vai trò ADMIN hoặc MEMBER cho thành viên!");
+            throw new BadRequestException("Can only grant ADMIN or MEMBER role to project members!");
         }
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
         if (currentUsername != null && !currentUsername.trim().isEmpty()) {
             ProjectRole callerRole = getUserRoleInProject(projectId, currentUsername);
             if (callerRole != ProjectRole.OWNER) {
-                throw new BadRequestException("Chỉ Owner mới có quyền cấp hoặc thu hồi quyền ADMIN của thành viên!");
+                throw new BadRequestException("Only the Owner can grant or revoke ADMIN rights for members!");
             }
         }
 
         ProjectMember targetMember = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Thành viên không thuộc dự án này"));
+                .orElseThrow(() -> new ResourceNotFoundException("Member does not belong to this project"));
 
         if (project.getUser() != null && project.getUser().getId().equals(userId)) {
-            throw new BadRequestException("Owner không thể bị thu hồi quyền hoặc thay đổi vai trò!");
+            throw new BadRequestException("Owner rights cannot be revoked or role changed!");
         }
 
         if (targetMember.getRole() == ProjectRole.OWNER) {
-            throw new BadRequestException("Owner không thể bị thu hồi quyền hoặc thay đổi vai trò!");
+            throw new BadRequestException("Owner rights cannot be revoked or role changed!");
         }
 
         targetMember.setRole(newRole);
@@ -355,29 +364,29 @@ public class ProjectService {
     @Transactional
     public void removeMemberFromProject(Long projectId, Long userId, String currentUsername) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
         ProjectRole callerRole = null;
         if (currentUsername != null && !currentUsername.trim().isEmpty()) {
             callerRole = getUserRoleInProject(projectId, currentUsername);
             if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
-                throw new BadRequestException("Bạn không có quyền xóa thành viên khỏi dự án này!");
+                throw new BadRequestException("You do not have permission to remove members from this project!");
             }
         }
 
         if (project.getUser() != null && project.getUser().getId().equals(userId)) {
-            throw new BadRequestException("Owner không thể bị xóa khỏi dự án!");
+            throw new BadRequestException("Owner cannot be removed from the project!");
         }
 
         ProjectMember targetMember = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Thành viên không thuộc dự án này"));
+                .orElseThrow(() -> new ResourceNotFoundException("Member does not belong to this project"));
 
         if (targetMember.getRole() == ProjectRole.OWNER) {
-            throw new BadRequestException("Owner không thể bị xóa khỏi dự án!");
+            throw new BadRequestException("Owner cannot be removed from the project!");
         }
 
         if (callerRole == ProjectRole.ADMIN && targetMember.getRole() == ProjectRole.ADMIN) {
-            throw new BadRequestException("Admin không có quyền xóa Admin khác!");
+            throw new BadRequestException("Admins do not have permission to remove another Admin!");
         }
 
         project.getMembers().remove(targetMember);

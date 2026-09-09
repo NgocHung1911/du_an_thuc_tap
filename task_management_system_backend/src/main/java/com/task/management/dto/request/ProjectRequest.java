@@ -17,18 +17,18 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ProjectRequest {
 
-    @NotBlank(message = "Tên dự án không được để trống")
-    @Size(max = 100, message = "Tên dự án không được vượt quá 100 ký tự")
+    @NotBlank(message = "Project name cannot be blank")
+    @Size(max = 100, message = "Project name cannot exceed 100 characters")
     private String name;
 
     private String description;
 
-    @NotNull(message = "Ngày bắt đầu không được để trống")
+    @NotNull(message = "Start date cannot be blank")
     private LocalDate startDate;
 
-    @NotNull(message = "Ngày kết thúc không được để trống")
+    @NotNull(message = "End date cannot be blank")
     private LocalDate endDate;
 
-    @NotNull(message = "Trạng thái không được để trống")
+    @NotNull(message = "Status cannot be blank")
     private ProjectStatus status;
 }
