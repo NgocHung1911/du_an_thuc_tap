@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Crown, User, Trash2, UserPlus, RefreshCw } from 'lucide-react';
+import { X, Shield, Crown, User, Trash2, UserPlus, RefreshCw, AlertTriangle } from 'lucide-react';
 import { UserDTO } from '../../services/taskApi';
 import { projectApi } from '../../services/projectApi';
 
@@ -30,6 +30,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
   onShowToast,
 }) => {
   const [loadingUserId, setLoadingUserId] = useState<number | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<{ id: number; name: string } | null>(null);
 
   if (!isOpen) return null;
 
@@ -58,16 +59,19 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
     }
   };
 
-  const handleRemoveMember = async (targetUserId: number, memberName: string) => {
-    if (!window.confirm(`Are you sure you want to remove member "${memberName}" from the project?`)) {
-      return;
-    }
+  const handleRemoveMember = (targetUserId: number, memberName: string) => {
+    setMemberToRemove({ id: targetUserId, name: memberName });
+  };
 
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    const { id: targetUserId, name: memberName } = memberToRemove;
     try {
       setLoadingUserId(targetUserId);
       await projectApi.removeMemberFromProject(projectId, targetUserId);
       onRemoveMemberSuccess(targetUserId);
       onShowToast(`Removed member ${memberName} from the project!`, 'success');
+      setMemberToRemove(null);
     } catch (err: any) {
       console.error('Error removing member:', err);
       const msg = err.response?.data?.message || 'Could not remove member from the project!';
@@ -234,6 +238,47 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Remove Member Custom Confirmation Modal */}
+      {memberToRemove && (
+        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in duration-150 font-sans">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h4 className="font-bold text-base text-slate-900">Remove Member</h4>
+                <p className="text-xs text-slate-500">Revoke member access to this project</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 leading-relaxed">
+              Are you sure you want to remove member <span className="font-bold text-slate-900">"{memberToRemove.name}"</span> from the project?
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setMemberToRemove(null)}
+                disabled={loadingUserId === memberToRemove.id}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoveMember}
+                disabled={loadingUserId === memberToRemove.id}
+                className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl shadow-2xs transition-colors disabled:opacity-50"
+              >
+                {loadingUserId === memberToRemove.id && <RefreshCw size={14} className="animate-spin" />}
+                <span>Remove Member</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
