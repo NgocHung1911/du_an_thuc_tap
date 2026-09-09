@@ -311,13 +311,21 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </select>
               ) : (
                 <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
-                  <div
-                    className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
-                      assigneeName
-                    )}`}
-                  >
-                    {getInitials(assigneeName)}
-                  </div>
+                  {task.assignedUser?.avatarUrl ? (
+                    <img
+                      src={task.assignedUser.avatarUrl}
+                      alt={assigneeName}
+                      className="w-7 h-7 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
+                        assigneeName
+                      )}`}
+                    >
+                      {getInitials(assigneeName)}
+                    </div>
+                  )}
                   <span className="text-xs font-semibold text-slate-900">
                     {assigneeName}
                   </span>
@@ -349,13 +357,21 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </select>
               ) : (
                 <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
-                  <div
-                    className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
-                      reporterName
-                    )}`}
-                  >
-                    {getInitials(reporterName)}
-                  </div>
+                  {task.reporter?.avatarUrl ? (
+                    <img
+                      src={task.reporter.avatarUrl}
+                      alt={reporterName}
+                      className="w-7 h-7 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
+                        reporterName
+                      )}`}
+                    >
+                      {getInitials(reporterName)}
+                    </div>
+                  )}
                   <span className="text-xs font-semibold text-slate-900">
                     {reporterName}
                   </span>

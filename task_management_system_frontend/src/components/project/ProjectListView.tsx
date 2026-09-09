@@ -188,9 +188,17 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                         </select>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
-                            {getInitials(task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username)}
-                          </div>
+                          {task.assignedUser?.avatarUrl ? (
+                            <img
+                              src={task.assignedUser.avatarUrl}
+                              alt="Assignee Avatar"
+                              className="w-6 h-6 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                              {getInitials(task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username)}
+                            </div>
+                          )}
                           <span className="text-xs text-slate-800 font-medium line-clamp-1">
                             {task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned'}
                           </span>
@@ -219,9 +227,17 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                         </select>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-600 text-white text-[10px] font-bold flex items-center justify-center">
-                            {getInitials(task.reporterFullName || task.reporter?.fullName || task.reporter?.username)}
-                          </div>
+                          {task.reporter?.avatarUrl ? (
+                            <img
+                              src={task.reporter.avatarUrl}
+                              alt="Reporter Avatar"
+                              className="w-6 h-6 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-slate-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                              {getInitials(task.reporterFullName || task.reporter?.fullName || task.reporter?.username)}
+                            </div>
+                          )}
                           <span className="text-xs text-slate-800 font-medium line-clamp-1">
                             {task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System'}
                           </span>

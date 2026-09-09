@@ -272,6 +272,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               ))}
             </select>
           </div>
+        ) : task.assignedUser?.avatarUrl ? (
+          <img
+            src={task.assignedUser.avatarUrl}
+            alt={assigneeName}
+            className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-xs shrink-0"
+            title={`Assigned to: ${assigneeName}`}
+          />
         ) : (
           <div
             className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
