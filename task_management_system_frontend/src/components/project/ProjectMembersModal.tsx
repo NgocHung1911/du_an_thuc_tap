@@ -142,15 +142,25 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
               return (
                 <div key={mem.id} className="py-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-2xs ${
-                      isTargetOwner
-                        ? 'bg-amber-500 ring-2 ring-amber-300'
-                        : isTargetAdmin
-                        ? 'bg-blue-600'
-                        : 'bg-slate-500'
-                    }`}>
-                      {getInitials(displayName)}
-                    </div>
+                    {mem.avatarUrl ? (
+                      <img
+                        src={mem.avatarUrl}
+                        alt={displayName}
+                        className={`w-9 h-9 rounded-full object-cover shrink-0 shadow-2xs ${
+                          isTargetOwner ? 'ring-2 ring-amber-300' : ''
+                        }`}
+                      />
+                    ) : (
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-2xs ${
+                        isTargetOwner
+                          ? 'bg-amber-500 ring-2 ring-amber-300'
+                          : isTargetAdmin
+                          ? 'bg-blue-600'
+                          : 'bg-slate-500'
+                      }`}>
+                        {getInitials(displayName)}
+                      </div>
+                    )}
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-slate-900">{displayName}</span>

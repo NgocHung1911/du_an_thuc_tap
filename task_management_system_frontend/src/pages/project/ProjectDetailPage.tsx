@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Search, Filter, Layers, Plus, ArrowLeft, RefreshCw, AlertCircle, Columns, List,
-  CheckCircle2, X, Trash2, AlertTriangle, Inbox, UserPlus, Users
+  CheckCircle2, Check, X, Trash2, AlertTriangle, Inbox, UserPlus, Users
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -74,7 +74,7 @@ export const ProjectDetailPage: React.FC = () => {
 
   // Search & Filter state
   const [searchKeyword, setSearchKeyword] = useState<string>('');
-  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<number[]>([]);
   const [filterPriority, setFilterPriority] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -308,18 +308,10 @@ export const ProjectDetailPage: React.FC = () => {
         if (!matchesTitle && !matchesKey && !matchesDesc) return false;
       }
 
-      // Assignee Avatar Filter
-      if (selectedAssignee) {
-        if (!task.assignedUser) return false;
-        const uName = task.assignedUser.username.toLowerCase();
-        const sel = selectedAssignee.toLowerCase();
-        const initials = task.assignedUser.username
-          .split(' ')
-          .map((n) => n[0])
-          .join('')
-          .toLowerCase();
-
-        if (!uName.includes(sel) && !initials.includes(sel) && task.assignedUser.initials?.toLowerCase() !== sel) {
+      // Assignee Avatar Filter (Multi-select / Checkbox behavior)
+      if (selectedAssigneeIds.length > 0) {
+        const assignedId = task.userId || task.assignedUser?.id;
+        if (!assignedId || !selectedAssigneeIds.includes(assignedId)) {
           return false;
         }
       }
@@ -336,7 +328,7 @@ export const ProjectDetailPage: React.FC = () => {
 
       return true;
     });
-  }, [tasks, searchKeyword, selectedAssignee, filterStatus, filterPriority]);
+  }, [tasks, searchKeyword, selectedAssigneeIds, filterStatus, filterPriority]);
 
   // Handle Assignee change with Optimistic update & Real-time Sync
   const handleAssigneeChange = async (taskId: number, newUserId: number | null) => {
@@ -723,7 +715,7 @@ export const ProjectDetailPage: React.FC = () => {
                 const displayName = mem.fullName || mem.username;
                 const parts = displayName.trim().split(' ');
                 const initials = parts.length === 1 ? parts[0].substring(0, 2).toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                const isSelected = selectedAssignee === displayName || selectedAssignee === mem.username || selectedAssignee === initials;
+                const isSelected = selectedAssigneeIds.includes(mem.id);
                 const colors = ['bg-blue-600', 'bg-red-500', 'bg-amber-500', 'bg-emerald-600', 'bg-purple-600'];
                 const bgColor = colors[idx % colors.length];
 
@@ -731,50 +723,85 @@ export const ProjectDetailPage: React.FC = () => {
                   <button
                     key={mem.id}
                     onClick={() =>
-                      setSelectedAssignee((prev) => (prev === displayName ? null : displayName))
+                      setSelectedAssigneeIds((prev) =>
+                        prev.includes(mem.id)
+                          ? prev.filter((id) => id !== mem.id)
+                          : [...prev, mem.id]
+                      )
                     }
-                    className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform ${bgColor} ${isSelected
+                    className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center transition-transform overflow-hidden relative ${bgColor} ${isSelected
                         ? 'ring-2 ring-blue-600 ring-offset-2 scale-110 shadow-md'
-                        : 'hover:scale-105 opacity-90 hover:opacity-100'
+                        : 'hover:scale-105 opacity-80 hover:opacity-100'
                       }`}
                     title={`${displayName} (${mem.email || 'Member'})`}
                   >
-                    {initials}
+                    {mem.avatarUrl ? (
+                      <img
+                        src={mem.avatarUrl}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-blue-600/50 flex items-center justify-center">
+                        <Check size={14} className="text-white stroke-[3]" />
+                      </div>
+                    )}
                   </button>
                 );
               })}
 
-            {selectedAssignee && (
+            {selectedAssigneeIds.length > 0 && (
               <button
-                onClick={() => setSelectedAssignee(null)}
+                onClick={() => setSelectedAssigneeIds([])}
                 className="text-xs text-blue-600 hover:underline font-bold ml-1"
               >
-                Clear
+                Clear ({selectedAssigneeIds.length})
               </button>
             )}
           </div>
         </div>
 
-        {/* Right: Priority Filter & Reset Button */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-600">Priority:</span>
-          <select
-            value={filterPriority}
-            onChange={(e) => setFilterPriority(e.target.value)}
-            className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
-          >
-            <option value="ALL">All Priorities</option>
-            <option value="HIGH">HIGH</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="LOW">LOW</option>
-          </select>
+        {/* Right: Status & Priority Filters & Reset Button */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-600">Status:</span>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="TODO">TODO</option>
+              <option value="DOING">DOING</option>
+              <option value="REVIEW">REVIEW</option>
+              <option value="DONE">DONE</option>
+            </select>
+          </div>
 
-          {(searchKeyword || selectedAssignee || filterPriority !== 'ALL') && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-600">Priority:</span>
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
+            >
+              <option value="ALL">All Priorities</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+            </select>
+          </div>
+
+          {(searchKeyword || selectedAssigneeIds.length > 0 || filterPriority !== 'ALL' || filterStatus !== 'ALL') && (
             <button
               onClick={() => {
                 setSearchKeyword('');
-                setSelectedAssignee(null);
+                setSelectedAssigneeIds([]);
                 setFilterPriority('ALL');
+                setFilterStatus('ALL');
               }}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 text-xs font-semibold transition-colors"
             >
@@ -806,12 +833,12 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900">
-              {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
+              {searchKeyword || selectedAssigneeIds.length > 0 || filterPriority !== 'ALL' || filterStatus !== 'ALL'
                 ? 'No tasks found matching your filters'
                 : 'This project currently has no tasks'}
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
-              {searchKeyword || selectedAssignee || filterPriority !== 'ALL'
+              {searchKeyword || selectedAssigneeIds.length > 0 || filterPriority !== 'ALL' || filterStatus !== 'ALL'
                 ? 'Please try changing your search keywords or resetting the filters.'
                 : canManageTasks
                   ? 'Click the "+ Create Task" button to create and assign the first task for this project.'
@@ -820,11 +847,11 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
 
           <div className="pt-2">
-            {searchKeyword || selectedAssignee || filterPriority !== 'ALL' || filterStatus !== 'ALL' ? (
+            {searchKeyword || selectedAssigneeIds.length > 0 || filterPriority !== 'ALL' || filterStatus !== 'ALL' ? (
               <button
                 onClick={() => {
                   setSearchKeyword('');
-                  setSelectedAssignee(null);
+                  setSelectedAssigneeIds([]);
                   setFilterPriority('ALL');
                   setFilterStatus('ALL');
                 }}

@@ -66,6 +66,7 @@ public class TaskService {
                     .username(task.getUser().getUsername())
                     .email(task.getUser().getEmail())
                     .fullName(resolveFullName(task.getUser()))
+                    .avatarUrl(task.getUser().getAvatarUrl())
                     .role(task.getUser().getRole())
                     .build();
         }
@@ -86,6 +87,7 @@ public class TaskService {
                     .username(effectiveReporter.getUsername())
                     .email(effectiveReporter.getEmail())
                     .fullName(resolveFullName(effectiveReporter))
+                    .avatarUrl(effectiveReporter.getAvatarUrl())
                     .role(effectiveReporter.getRole())
                     .build();
         }

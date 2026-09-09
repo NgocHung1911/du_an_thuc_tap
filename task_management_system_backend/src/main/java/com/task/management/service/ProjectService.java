@@ -46,6 +46,7 @@ public class ProjectService {
                 .username(member.getUser().getUsername())
                 .email(member.getUser().getEmail())
                 .fullName(resolveFullName(member.getUser()))
+                .avatarUrl(member.getUser().getAvatarUrl())
                 .role(member.getUser().getRole())
                 .projectRole(member.getRole())
                 .build();
