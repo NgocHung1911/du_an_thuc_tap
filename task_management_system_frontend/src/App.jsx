@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WebSocketProvider } from './context/WebSocketContext';
 import { HomePage } from './pages/public/HomePage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -31,8 +32,9 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-        <BrowserRouter>
-          <PageTitleManager />
+        <WebSocketProvider>
+          <BrowserRouter>
+            <PageTitleManager />
           <Routes>
             {/* Public Landing & Authentication Routes */}
             <Route path="/" element={<HomePage />} />
@@ -67,9 +69,10 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
-    </GoogleOAuthProvider>
-  );
+      </WebSocketProvider>
+    </AuthProvider>
+  </GoogleOAuthProvider>
+);
 }
 
 export default App;

@@ -19,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.task.management.dto.websocket.WebSocketEventType;
+import com.task.management.event.TaskDomainEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,26 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectService projectService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    private void publishTaskEvent(WebSocketEventType eventType, Task task, TaskDTO taskDto, Long targetUserId) {
+        if (eventPublisher == null || task == null) return;
+        String actorUsername = resolveUsername(null);
+        User actor = actorUsername != null ? userRepository.findByUsername(actorUsername).orElse(null) : null;
+        String actorFullName = actor != null ? resolveFullName(actor) : actorUsername;
+
+        Long projId = task.getProject() != null ? task.getProject().getId() : null;
+        eventPublisher.publishEvent(new TaskDomainEvent(
+                this,
+                eventType,
+                projId,
+                task.getId(),
+                actorUsername,
+                actorFullName,
+                taskDto != null ? taskDto : mapToDTO(task),
+                targetUserId
+        ));
+    }
 
     private void validateUserBelongsToProject(User user, Project project) {
         if (user == null || project == null) return;
@@ -206,7 +229,9 @@ public class TaskService {
         task.setReporter(reporterUser);
 
         Task savedTask = taskRepository.save(task);
-        return mapToDTO(savedTask);
+        TaskDTO dto = mapToDTO(savedTask);
+        publishTaskEvent(WebSocketEventType.TASK_CREATED, savedTask, dto, savedTask.getUser() != null ? savedTask.getUser().getId() : null);
+        return dto;
     }
 
     @Transactional
@@ -264,7 +289,9 @@ public class TaskService {
         }
 
         Task updatedTask = taskRepository.save(existingTask);
-        return mapToDTO(updatedTask);
+        TaskDTO dto = mapToDTO(updatedTask);
+        publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
+        return dto;
     }
 
     @Transactional
@@ -287,7 +314,9 @@ public class TaskService {
 
         task.setStatus(status);
         Task updatedTask = taskRepository.save(task);
-        return mapToDTO(updatedTask);
+        TaskDTO dto = mapToDTO(updatedTask);
+        publishTaskEvent(WebSocketEventType.TASK_STATUS_CHANGED, updatedTask, dto, null);
+        return dto;
     }
 
     @Transactional
@@ -310,7 +339,9 @@ public class TaskService {
 
         task.setPriority(priority);
         Task updatedTask = taskRepository.save(task);
-        return mapToDTO(updatedTask);
+        TaskDTO dto = mapToDTO(updatedTask);
+        publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
+        return dto;
     }
 
     @Transactional
@@ -342,7 +373,9 @@ public class TaskService {
         }
 
         Task updatedTask = taskRepository.save(task);
-        return mapToDTO(updatedTask);
+        TaskDTO dto = mapToDTO(updatedTask);
+        publishTaskEvent(WebSocketEventType.TASK_ASSIGNED, updatedTask, dto, updatedTask.getUser() != null ? updatedTask.getUser().getId() : null);
+        return dto;
     }
 
     @Transactional
@@ -380,7 +413,9 @@ public class TaskService {
         }
 
         Task updatedTask = taskRepository.save(task);
-        return mapToDTO(updatedTask);
+        TaskDTO dto = mapToDTO(updatedTask);
+        publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
+        return dto;
     }
 
     @Transactional
@@ -401,6 +436,8 @@ public class TaskService {
             }
         }
 
+        TaskDTO dto = mapToDTO(existingTask);
+        publishTaskEvent(WebSocketEventType.TASK_DELETED, existingTask, dto, null);
         taskRepository.delete(existingTask);
     }
 }

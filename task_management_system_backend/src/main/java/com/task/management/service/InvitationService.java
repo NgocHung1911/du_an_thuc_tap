@@ -16,6 +16,10 @@ import com.task.management.repository.ProjectRepository;
 import com.task.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.task.management.dto.response.UserDTO;
+import com.task.management.dto.websocket.WebSocketEventType;
+import com.task.management.event.ProjectDomainEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,7 @@ public class InvitationService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final BrevoMailService brevoMailService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public AcceptInvitationResponseDTO sendInvitation(Long projectId, InviteMemberRequestDTO request) {
@@ -219,6 +224,28 @@ public class InvitationService {
 
         invitation.setStatus(InvitationStatus.ACCEPTED);
         projectInvitationRepository.save(invitation);
+
+        if (eventPublisher != null) {
+            UserDTO memberDto = UserDTO.builder()
+                    .id(currentUser.getId())
+                    .username(currentUser.getUsername())
+                    .email(currentUser.getEmail())
+                    .fullName(currentUser.getFullName() != null && !currentUser.getFullName().isBlank() ? currentUser.getFullName() : currentUser.getUsername())
+                    .avatarUrl(currentUser.getAvatarUrl())
+                    .role(currentUser.getRole())
+                    .projectRole(ProjectRole.MEMBER)
+                    .build();
+
+            eventPublisher.publishEvent(new ProjectDomainEvent(
+                    this,
+                    WebSocketEventType.PROJECT_MEMBER_ADDED,
+                    project.getId(),
+                    currentUser.getUsername(),
+                    currentUser.getFullName(),
+                    memberDto,
+                    currentUser.getId()
+            ));
+        }
 
         log.info(">>> [ACCEPT INVITATION SUCCESS] Added User ID={} ({}) to project_members for Project ID={} ({}), set status to ACCEPTED",
                 currentUser.getId(), currentUser.getEmail(), project.getId(), project.getName());

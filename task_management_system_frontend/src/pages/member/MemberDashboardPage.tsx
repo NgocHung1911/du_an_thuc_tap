@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckSquare, Clock, AlertTriangle, Calendar, ArrowRight,
@@ -10,6 +10,8 @@ import { taskApi, TaskDTO, TaskStatus, TaskPriority, UserDTO } from '../../servi
 import { projectApi, ProjectDTO } from '../../services/projectApi';
 import { userApi } from '../../services/userApi';
 import { TaskDetailModal } from '../../components/project/TaskDetailModal';
+import { useNotificationWebSocket } from '../../hooks/useWebSocket';
+import { WebSocketEvent } from '../../services/websocketService';
 
 export const MemberDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -47,6 +49,26 @@ export const MemberDashboardPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const fetchDashboardDataSilently = useCallback(async () => {
+    try {
+      const [allTasks, allProjects] = await Promise.all([
+        taskApi.getAllTasks().catch(() => []),
+        projectApi.getAllProjects().catch(() => []),
+      ]);
+      setTasks(allTasks || []);
+      setProjects(allProjects || []);
+    } catch (err) {
+      console.error('Failed to silently refresh dashboard data:', err);
+    }
+  }, []);
+
+  const handleNotification = useCallback((event: WebSocketEvent) => {
+    console.log('User Notification WebSocket Event received:', event);
+    fetchDashboardDataSilently();
+  }, [fetchDashboardDataSilently]);
+
+  useNotificationWebSocket(handleNotification);
 
   useEffect(() => {
     fetchDashboardData();
