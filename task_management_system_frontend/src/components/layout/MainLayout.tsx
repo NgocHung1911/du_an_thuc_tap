@@ -6,6 +6,7 @@ import { MemberSidebar } from './MemberSidebar';
 import { userApi } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
 import { Bell, HelpCircle, Kanban } from 'lucide-react';
+import { WebSocketStatusBadge } from '../common/WebSocketStatusBadge';
 
 export const MainLayout: React.FC = () => {
   const { isAdmin, user } = useAuth();
@@ -36,7 +37,8 @@ export const MainLayout: React.FC = () => {
           <span className="font-bold text-base tracking-tight text-white">Kira Task Management</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <WebSocketStatusBadge />
           <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Notifications">
             <Bell size={18} />
           </button>

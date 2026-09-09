@@ -1,0 +1,16 @@
+package com.task.management.dto.websocket;
+
+public enum WebSocketEventType {
+    TASK_CREATED,
+    TASK_UPDATED,
+    TASK_DELETED,
+    TASK_STATUS_CHANGED,
+    TASK_ASSIGNED,
+    PROJECT_MEMBER_ADDED,
+    PROJECT_MEMBER_REMOVED,
+    PROJECT_MEMBER_UPDATED,
+    NOTIFICATION_CREATED,
+    COMMENT_CREATED,
+    COMMENT_UPDATED,
+    COMMENT_DELETED
+}

@@ -23,6 +23,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.task.management.dto.websocket.WebSocketEventType;
+import com.task.management.event.ProjectDomainEvent;
+import org.springframework.context.ApplicationEventPublisher;
+
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -30,6 +34,26 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    private void publishProjectEvent(WebSocketEventType eventType, Long projectId, UserDTO memberDto, Long targetUserId) {
+        if (eventPublisher == null || projectId == null) return;
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String actorUsername = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) ? auth.getName() : null;
+        User actor = actorUsername != null ? userRepository.findByUsername(actorUsername).orElse(null) : null;
+        String actorFullName = actor != null ? resolveFullName(actor) : actorUsername;
+
+        eventPublisher.publishEvent(new ProjectDomainEvent(
+                this,
+                eventType,
+                projectId,
+                actorUsername,
+                actorFullName,
+                memberDto,
+                targetUserId
+        ));
+    }
 
     private String resolveFullName(User user) {
         if (user == null) return null;
@@ -293,7 +317,9 @@ public class ProjectService {
         project.getMembers().add(newMember);
         projectRepository.save(project);
 
-        return mapProjectMemberToDTO(newMember);
+        UserDTO memberDto = mapProjectMemberToDTO(newMember);
+        publishProjectEvent(WebSocketEventType.PROJECT_MEMBER_ADDED, projectId, memberDto, user.getId());
+        return memberDto;
     }
 
     @Transactional(readOnly = true)
@@ -354,7 +380,9 @@ public class ProjectService {
 
         targetMember.setRole(newRole);
         ProjectMember savedMember = projectMemberRepository.save(targetMember);
-        return mapProjectMemberToDTO(savedMember);
+        UserDTO memberDto = mapProjectMemberToDTO(savedMember);
+        publishProjectEvent(WebSocketEventType.PROJECT_MEMBER_UPDATED, projectId, memberDto, userId);
+        return memberDto;
     }
 
     @Transactional
@@ -389,6 +417,9 @@ public class ProjectService {
         if (callerRole == ProjectRole.ADMIN && targetMember.getRole() == ProjectRole.ADMIN) {
             throw new BadRequestException("Admins do not have permission to remove another Admin!");
         }
+
+        UserDTO memberDto = mapProjectMemberToDTO(targetMember);
+        publishProjectEvent(WebSocketEventType.PROJECT_MEMBER_REMOVED, projectId, memberDto, userId);
 
         project.getMembers().remove(targetMember);
         projectMemberRepository.delete(targetMember);

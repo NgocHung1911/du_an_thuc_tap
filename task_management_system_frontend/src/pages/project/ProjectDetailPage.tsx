@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, Filter, Layers, Plus, ArrowLeft, RefreshCw, AlertCircle, Columns, List,
   CheckCircle2, Check, X, Trash2, AlertTriangle, Inbox, UserPlus, Users
@@ -13,6 +13,8 @@ import { ProjectListView } from '../../components/project/ProjectListView';
 import { TaskDetailModal } from '../../components/project/TaskDetailModal';
 import { InviteMemberModal } from '../../components/project/InviteMemberModal';
 import { ProjectMembersModal } from '../../components/project/ProjectMembersModal';
+import { useProjectWebSocket } from '../../hooks/useWebSocket';
+import { WebSocketEvent } from '../../services/websocketService';
 
 type ViewTab = 'Board' | 'List';
 
@@ -21,6 +23,7 @@ type ViewTab = 'Board' | 'List';
 export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const projectId = Number(id);
   const { user } = useAuth();
 
@@ -153,6 +156,105 @@ export const ProjectDetailPage: React.FC = () => {
     setProjectMembers((prev) => [...prev.filter((m) => m.id !== newMember.id), newMember]);
     showToast(`Member ${newMember.fullName || newMember.username} successfully added to the project!`, 'success');
   };
+
+  const refreshTasksSilently = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const taskList = await taskApi.getTasksByProjectId(projectId);
+      setTasks(taskList || []);
+    } catch (err) {
+      console.error('Failed to silently refresh tasks:', err);
+    }
+  }, [projectId]);
+
+  const refreshMembersSilently = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const members = await projectApi.getProjectMembers(projectId);
+      setProjectMembers(members || []);
+
+      if (user && members) {
+        const isStillMember = members.some(
+          (m) =>
+            (m.username && m.username.toLowerCase() === user.username?.toLowerCase()) ||
+            (m.email && user.email && m.email.toLowerCase() === user.email?.toLowerCase())
+        );
+        const isSystemAdmin = user.email && user.email.includes('admin');
+        if (!isStillMember && !isSystemAdmin) {
+          showToast('You have been removed from this project!', 'error');
+          navigate('/member/projects', { replace: true });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to silently refresh members:', err);
+    }
+  }, [projectId, user, navigate]);
+
+  const handleWebSocketEvent = useCallback((event: WebSocketEvent) => {
+    console.log('Realtime WebSocket Event in ProjectDetailPage:', event);
+    const type = event.eventType || event.type;
+
+    if (
+      type === 'TASK_CREATED' ||
+      type === 'TASK_UPDATED' ||
+      type === 'TASK_STATUS_CHANGED' ||
+      type === 'TASK_PRIORITY_CHANGED' ||
+      type === 'TASK_ASSIGNED'
+    ) {
+      if (event.data && event.data.id) {
+        const updatedTask = event.data as TaskDTO;
+        setTasks((prev) => {
+          const exists = prev.some((t) => Number(t.id) === Number(updatedTask.id));
+          if (exists) {
+            return prev.map((t) => (Number(t.id) === Number(updatedTask.id) ? updatedTask : t));
+          }
+          return [updatedTask, ...prev];
+        });
+      }
+      refreshTasksSilently();
+    } else if (type === 'TASK_DELETED') {
+      if (event.taskId || (event.data && event.data.id)) {
+        const deletedId = Number(event.taskId || event.data.id);
+        setTasks((prev) => prev.filter((t) => Number(t.id) !== deletedId));
+      }
+      refreshTasksSilently();
+    } else if (type === 'PROJECT_MEMBER_REMOVED') {
+      const removedUser = event.data;
+      const currentUsername = user?.username?.toLowerCase();
+      const currentEmail = user?.email?.toLowerCase();
+
+      const isCurrentRemoved =
+        removedUser &&
+        ((removedUser.username && removedUser.username.toLowerCase() === currentUsername) ||
+          (removedUser.email && currentEmail && removedUser.email.toLowerCase() === currentEmail));
+
+      if (isCurrentRemoved) {
+        showToast('You have been removed from this project!', 'error');
+        const targetPath = location.pathname.startsWith('/admin') ? '/admin/my-projects' : '/member/projects';
+        navigate(targetPath, { replace: true });
+        return;
+      }
+      refreshMembersSilently();
+    } else if (
+      type === 'PROJECT_MEMBER_ADDED' ||
+      type === 'PROJECT_MEMBER_UPDATED' ||
+      type === 'PROJECT_MEMBER_ROLE_UPDATED'
+    ) {
+      if (event.data && event.data.id) {
+        const member = event.data as UserDTO;
+        setProjectMembers((prev) => {
+          const exists = prev.some((m) => Number(m.id) === Number(member.id));
+          if (exists) {
+            return prev.map((m) => (Number(m.id) === Number(member.id) ? member : m));
+          }
+          return [...prev, member];
+        });
+      }
+      refreshMembersSilently();
+    }
+  }, [refreshTasksSilently, refreshMembersSilently, user, navigate]);
+
+  useProjectWebSocket(projectId, handleWebSocketEvent);
 
   useEffect(() => {
     fetchData();
@@ -298,7 +400,16 @@ export const ProjectDetailPage: React.FC = () => {
 
   // Filter tasks based on Search Keyword, Selected Assignee, Priority Filter, Status Filter
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    // Guaranteed deduplication by task ID
+    const uniqueMap = new Map<number, TaskDTO>();
+    tasks.forEach((t) => {
+      if (t && t.id != null) {
+        uniqueMap.set(Number(t.id), t);
+      }
+    });
+    const uniqueTasksList = Array.from(uniqueMap.values());
+
+    return uniqueTasksList.filter((task) => {
       // Keyword search
       if (searchKeyword.trim()) {
         const kw = searchKeyword.toLowerCase().trim();
@@ -433,7 +544,13 @@ export const ProjectDetailPage: React.FC = () => {
       });
 
       if (createdTask && createdTask.id) {
-        setTasks((prev) => [createdTask, ...prev]);
+        setTasks((prev) => {
+          const exists = prev.some((t) => Number(t.id) === Number(createdTask.id));
+          if (exists) {
+            return prev.map((t) => (Number(t.id) === Number(createdTask.id) ? createdTask : t));
+          }
+          return [createdTask, ...prev];
+        });
       } else {
         await fetchData();
       }
