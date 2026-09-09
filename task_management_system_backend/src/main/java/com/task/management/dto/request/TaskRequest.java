@@ -19,24 +19,26 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class TaskRequest {
 
-    @NotBlank(message = "Tiêu đề Task không được để trống")
-    @Size(max = 150, message = "Tiêu đề không vượt quá 150 ký tự")
+    @NotBlank(message = "Task title cannot be blank")
+    @Size(max = 150, message = "Task title cannot exceed 150 characters")
     private String title;
 
     private String description;
 
-    @NotNull(message = "Deadline không được để trống")
-    @FutureOrPresent(message = "Deadline phải là ngày hôm nay hoặc trong tương lai")
+    @NotNull(message = "Deadline cannot be blank")
+    @FutureOrPresent(message = "Deadline must be today or in the future")
     private LocalDate deadline;
 
-    @NotNull(message = "Mức độ ưu tiên không được để trống")
+    @NotNull(message = "Priority cannot be blank")
     private TaskPriority priority;
 
-    @NotNull(message = "Trạng thái không được để trống")
+    @NotNull(message = "Status cannot be blank")
     private TaskStatus status;
 
-    @NotNull(message = "Project ID không được để trống")
+    @NotNull(message = "Project ID cannot be blank")
     private Long projectId;
 
-    private Long userId; // ID của User được phân công (Có thể null)
+    private Long userId; // Assignee user ID (Can be null)
+
+    private Long reporterId; // Reporter user ID (Can be null)
 }

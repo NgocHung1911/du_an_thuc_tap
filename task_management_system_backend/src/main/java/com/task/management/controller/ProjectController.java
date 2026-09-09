@@ -61,7 +61,7 @@ public class ProjectController {
     public ResponseEntity<String> deleteProject(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : null;
         projectService.deleteProject(id, username);
-        return ResponseEntity.ok("Xóa dự án thành công với ID: " + id);
+        return ResponseEntity.ok("Successfully deleted project with ID: " + id);
     }
 
     // --- PROJECT MEMBERS API ---
@@ -102,6 +102,6 @@ public class ProjectController {
             Principal principal) {
         String username = principal != null ? principal.getName() : null;
         projectService.removeMemberFromProject(projectId, userId, username);
-        return ResponseEntity.ok("Đã xóa thành viên khỏi dự án thành công.");
+        return ResponseEntity.ok("Successfully removed member from project.");
     }
 }

@@ -29,7 +29,7 @@ export const AcceptInvitePage: React.FC = () => {
 
   useEffect(() => {
     if (!token) {
-      setErrorMessage('Không tìm thấy mã xác nhận lời mời trong liên kết.');
+      setErrorMessage('Invitation token not found in URL link.');
       setLoading(false);
       return;
     }
@@ -62,8 +62,8 @@ export const AcceptInvitePage: React.FC = () => {
 
             const targetProjectId = acceptRes.projectId || data.projectId;
             const projectName = acceptRes.projectName || data.projectName;
-            const successText = `Tham gia dự án "${projectName}" thành công!`;
-            setSuccessMessage(`${successText} Đang chuyển hướng vào dự án...`);
+            const successText = `Joined project "${projectName}" successfully!`;
+            setSuccessMessage(`${successText} Redirecting to project...`);
             showToast(successText, 'success');
 
             // Chuyển hướng trực tiếp tới trang chi tiết dự án (Kanban Board)
@@ -75,7 +75,7 @@ export const AcceptInvitePage: React.FC = () => {
             }, 1200);
           } catch (acceptErr: any) {
             console.error('>>> [ACCEPT INVITE PAGE] Lỗi khi tự động chấp nhận lời mời:', acceptErr.response?.status, acceptErr.response?.data);
-            const msg = acceptErr.response?.data?.message || 'Không thể chấp nhận lời mời. Vui lòng thử lại!';
+            const msg = acceptErr.response?.data?.message || 'Failed to accept invitation. Please try again!';
             setErrorMessage(msg);
             showToast(msg, 'error');
           } finally {
@@ -84,8 +84,8 @@ export const AcceptInvitePage: React.FC = () => {
         }
         // 🟢 KỊCH BẢN 1B: Lời mời ĐÃ ACCEPTED trước đó & Người dùng ĐÃ ĐĂNG NHẬP -> Chuyển thẳng tới Bảng Kanban
         else if (data.isAccepted && userIsLoggedIn) {
-          setSuccessMessage(`Bạn đã là thành viên của dự án "${data.projectName}". Đang chuyển hướng...`);
-          showToast(`Bạn đã là thành viên của dự án "${data.projectName}"`, 'success');
+          setSuccessMessage(`You are already a member of project "${data.projectName}". Redirecting...`);
+          showToast(`You are already a member of project "${data.projectName}"`, 'success');
           setTimeout(() => {
             const isAdminUser = roles?.some((r: string) => r === 'ROLE_ADMIN' || r === 'ADMIN');
             const targetPath = isAdminUser ? `/admin/projects/${data.projectId}` : `/member/projects/${data.projectId}`;
@@ -95,7 +95,7 @@ export const AcceptInvitePage: React.FC = () => {
         }
       } catch (err: any) {
         console.error('>>> [ACCEPT INVITE PAGE] Lỗi verify token lời mời:', err.response?.status, err.response?.data || err.message);
-        const msg = err.response?.data?.message || 'Mã lời mời không tồn tại hoặc đã hết hạn trong vòng 48 giờ.';
+        const msg = err.response?.data?.message || 'Invitation code does not exist or has expired within 48 hours.';
         setErrorMessage(msg);
         showToast(msg, 'error');
       } finally {
@@ -115,13 +115,13 @@ export const AcceptInvitePage: React.FC = () => {
       localStorage.removeItem('pendingInviteToken');
       const targetProjectId = res.projectId || verifyData?.projectId;
       const projectName = res.projectName || verifyData?.projectName;
-      showToast(`Tham gia dự án "${projectName}" thành công!`, 'success');
+      showToast(`Joined project "${projectName}" successfully!`, 'success');
       const isAdminUser = roles?.some((r: string) => r === 'ROLE_ADMIN' || r === 'ADMIN');
       const targetPath = isAdminUser ? `/admin/projects/${targetProjectId}` : `/member/projects/${targetProjectId}`;
       navigate(targetPath, { replace: true });
     } catch (err: any) {
       console.error('Lỗi khi chấp nhận lời mời:', err);
-      const msg = err.response?.data?.message || 'Không thể chấp nhận lời mời!';
+      const msg = err.response?.data?.message || 'Unable to accept invitation!';
       setErrorMessage(msg);
       showToast(msg, 'error');
     } finally {
@@ -139,7 +139,7 @@ export const AcceptInvitePage: React.FC = () => {
       if (token) {
         const acceptRes = await invitationApi.acceptInvitation(token);
         localStorage.removeItem('pendingInviteToken');
-        showToast(`Tham gia dự án "${acceptRes.projectName}" thành công!`, 'success');
+        showToast(`Joined project "${acceptRes.projectName}" successfully!`, 'success');
         const isAdminUser = authData.roles?.some((r: string) => r === 'ROLE_ADMIN' || r === 'ADMIN');
         const targetPath = isAdminUser ? `/admin/projects/${acceptRes.projectId}` : `/member/projects/${acceptRes.projectId}`;
         navigate(targetPath, { replace: true });
@@ -148,8 +148,8 @@ export const AcceptInvitePage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Lỗi Google Auth:', err);
-      setErrorMessage('Đăng nhập Google thất bại. Vui lòng thử lại.');
-      showToast('Đăng nhập Google thất bại.', 'error');
+      setErrorMessage('Google login failed. Please try again.');
+      showToast('Google login failed.', 'error');
     } finally {
       setAccepting(false);
     }
@@ -157,7 +157,7 @@ export const AcceptInvitePage: React.FC = () => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleSuccess,
-    onError: () => setErrorMessage('Đăng nhập bằng Google thất bại.'),
+    onError: () => setErrorMessage('Google sign in failed.'),
   });
 
   const handleNavigateToLogin = () => {
@@ -183,7 +183,7 @@ export const AcceptInvitePage: React.FC = () => {
             <Mail size={24} className="text-white" />
           </div>
           <h1 className="text-xl font-bold tracking-tight">Task Management System</h1>
-          <p className="text-xs text-blue-100 mt-1">Xác nhận lời mời tham gia dự án</p>
+          <p className="text-xs text-blue-100 mt-1">Project Invitation Confirmation</p>
         </div>
 
         {/* Card Body */}
@@ -192,7 +192,7 @@ export const AcceptInvitePage: React.FC = () => {
             <div className="py-12 text-center space-y-3">
               <RefreshCw className="animate-spin text-[#0052CC] mx-auto" size={32} />
               <p className="text-xs font-semibold text-[#5E6C84]">
-                {successMessage || 'Đang xử lý tham gia dự án...'}
+                {successMessage || 'Processing project invitation...'}
               </p>
             </div>
           ) : errorMessage || !verifyData || !verifyData.isValid ? (
@@ -203,12 +203,12 @@ export const AcceptInvitePage: React.FC = () => {
               </div>
 
               <div>
-                <h2 className="text-lg font-bold text-[#172B4D]">Liên Kết Lời Mời Không Hợp Lệ</h2>
+                <h2 className="text-lg font-bold text-[#172B4D]">Invalid Invitation Link</h2>
                 <p className="text-xs text-[#5E6C84] mt-1.5 leading-relaxed">
                   {errorMessage ||
                     (verifyData?.isExpired
-                      ? 'Liên kết mời này đã hết hạn trong vòng 48 giờ. Vui lòng liên hệ Admin để gửi lại lời mời mới.'
-                      : 'Liên kết không tồn tại hoặc đã được sử dụng.')}
+                      ? 'This invitation link has expired (48h). Please contact an Admin to resend an invitation.'
+                      : 'Link does not exist or has already been used.')}
                 </p>
               </div>
 
@@ -217,7 +217,7 @@ export const AcceptInvitePage: React.FC = () => {
                   onClick={() => navigate('/login', { replace: true })}
                   className="w-full py-2.5 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
                 >
-                  Quay về trang Đăng nhập
+                  Back to Sign In
                 </button>
               </div>
             </div>
@@ -226,7 +226,7 @@ export const AcceptInvitePage: React.FC = () => {
               {/* Project Summary Box */}
               <div className="p-4 bg-[#DEEBFF]/40 border border-[#B3D4FF] rounded-xl text-center">
                 <span className="text-[11px] font-bold text-[#0052CC] bg-white px-2.5 py-0.5 rounded-full border border-[#B3D4FF] uppercase tracking-wider">
-                  Dự án được mời
+                  Invited Project
                 </span>
                 <h2 className="text-xl font-extrabold text-[#172B4D] mt-2 tracking-tight">
                   {verifyData.projectName}
@@ -238,7 +238,7 @@ export const AcceptInvitePage: React.FC = () => {
                 )}
                 <div className="mt-3 pt-3 border-t border-[#B3D4FF]/60 flex items-center justify-center gap-1.5 text-xs font-medium text-[#0747A6]">
                   <Mail size={14} />
-                  <span>Dành cho: <strong>{verifyData.email}</strong></span>
+                  <span>For: <strong>{verifyData.email}</strong></span>
                 </div>
               </div>
 
@@ -255,7 +255,7 @@ export const AcceptInvitePage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2 font-medium">
                     <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                    <span>Bạn đã đăng nhập hệ thống. Bấm nút bên dưới để tham gia dự án ngay!</span>
+                    <span>You are currently signed in. Click below to join the project immediately!</span>
                   </div>
 
                   <button
@@ -268,14 +268,14 @@ export const AcceptInvitePage: React.FC = () => {
                     ) : (
                       <CheckCircle2 size={18} />
                     )}
-                    <span>Chấp Nhận Lời Mời &amp; Vào Dự Án Ngay</span>
+                    <span>Accept Invitation &amp; Join Project Now</span>
                   </button>
                 </div>
               ) : verifyData.isRegistered ? (
                 /* 🟡 KỊCH BẢN 2: ĐÃ CÓ TÀI KHOẢN NHƯNG CHƯA ĐĂNG NHẬP */
                 <div className="space-y-3">
                   <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-[#0747A6] font-medium text-center">
-                    Tài khoản <strong>{verifyData.email}</strong> đã có trên hệ thống. Vui lòng đăng nhập để nhận lời mời.
+                    Account <strong>{verifyData.email}</strong> exists in the system. Please sign in to accept the invitation.
                   </div>
 
                   <button
@@ -283,7 +283,7 @@ export const AcceptInvitePage: React.FC = () => {
                     className="w-full py-3 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors"
                   >
                     <LogIn size={16} />
-                    <span>Đăng Nhập Để Nhận Lời Mời</span>
+                    <span>Sign In to Accept Invitation</span>
                   </button>
                 </div>
               ) : (
@@ -292,10 +292,10 @@ export const AcceptInvitePage: React.FC = () => {
                   <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium text-center space-y-1">
                     <div className="flex items-center justify-center gap-1.5 font-bold text-amber-800">
                       <ShieldAlert size={16} />
-                      <span>Bạn chưa có tài khoản trong hệ thống</span>
+                      <span>You do not have an account in the system</span>
                     </div>
                     <p className="text-[11px] text-amber-700">
-                      Vui lòng tạo tài khoản mới hoặc đăng nhập bằng Google để tham gia dự án <strong>{verifyData.projectName}</strong>.
+                      Please create a new account or sign in with Google to join project <strong>{verifyData.projectName}</strong>.
                     </p>
                   </div>
 
@@ -304,12 +304,12 @@ export const AcceptInvitePage: React.FC = () => {
                     className="w-full py-2.5 bg-[#0052CC] hover:bg-[#0747A6] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors"
                   >
                     <UserPlus size={16} />
-                    <span>Tạo Tài Khoản Mới</span>
+                    <span>Create New Account</span>
                   </button>
 
                   <div className="relative flex py-1 items-center">
                     <div className="flex-grow border-t border-gray-200"></div>
-                    <span className="flex-shrink mx-3 text-gray-400 text-[11px] font-semibold">hoặc</span>
+                    <span className="flex-shrink mx-3 text-gray-400 text-[11px] font-semibold">or</span>
                     <div className="flex-grow border-t border-gray-200"></div>
                   </div>
 
@@ -325,7 +325,7 @@ export const AcceptInvitePage: React.FC = () => {
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                     </svg>
-                    <span>Đăng nhập bằng Google</span>
+                    <span>Sign in with Google</span>
                   </button>
                 </div>
               )}

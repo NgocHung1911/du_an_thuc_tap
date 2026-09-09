@@ -58,8 +58,8 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
     }
   };
 
-  const handleRemoveMember = async (targetUserId: number, username: string) => {
-    if (!window.confirm(`Are you sure you want to remove member "${username}" from the project?`)) {
+  const handleRemoveMember = async (targetUserId: number, memberName: string) => {
+    if (!window.confirm(`Are you sure you want to remove member "${memberName}" from the project?`)) {
       return;
     }
 
@@ -67,7 +67,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
       setLoadingUserId(targetUserId);
       await projectApi.removeMemberFromProject(projectId, targetUserId);
       onRemoveMemberSuccess(targetUserId);
-      onShowToast(`Removed member ${username} from the project!`, 'success');
+      onShowToast(`Removed member ${memberName} from the project!`, 'success');
     } catch (err: any) {
       console.error('Error removing member:', err);
       const msg = err.response?.data?.message || 'Could not remove member from the project!';
@@ -75,6 +75,13 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
     } finally {
       setLoadingUserId(null);
     }
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'MB';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   return (
@@ -122,6 +129,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
 
           <div className="divide-y divide-slate-100">
             {members.map((mem) => {
+              const displayName = mem.fullName || mem.username;
               const pRole = mem.projectRole || (mem.role === 'ADMIN' ? 'ADMIN' : 'MEMBER');
               const isTargetOwner = pRole === 'OWNER';
               const isTargetAdmin = pRole === 'ADMIN';
@@ -141,11 +149,11 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
                         ? 'bg-blue-600'
                         : 'bg-slate-500'
                     }`}>
-                      {mem.username.substring(0, 2).toUpperCase()}
+                      {getInitials(displayName)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-slate-900">{mem.username}</span>
+                        <span className="text-sm font-bold text-slate-900">{displayName}</span>
                         {isSelf && (
                           <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold">
                             (You)
@@ -190,7 +198,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
                     {canRemove && (
                       <button
                         type="button"
-                        onClick={() => handleRemoveMember(mem.id, mem.username)}
+                        onClick={() => handleRemoveMember(mem.id, displayName)}
                         disabled={isLoading}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50"
                         title="Remove member from project"

@@ -27,7 +27,7 @@ export const ProjectDeleteModal: React.FC<ProjectDeleteModalProps> = ({
       await onConfirm(project.id);
       onClose();
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Không thể xóa dự án này!';
+      const msg = err.response?.data?.message || err.message || 'Unable to delete this project!';
       setErrorMsg(msg);
     } finally {
       setDeleting(false);
@@ -43,8 +43,8 @@ export const ProjectDeleteModal: React.FC<ProjectDeleteModalProps> = ({
             <AlertTriangle size={20} />
           </div>
           <div>
-            <h3 className="font-bold text-base text-red-900">Xác Nhận Xóa Dự Án</h3>
-            <p className="text-xs text-red-700">Hành động này không thể hoàn tác!</p>
+            <h3 className="font-bold text-base text-red-900">Confirm Delete Project</h3>
+            <p className="text-xs text-red-700">This action cannot be undone!</p>
           </div>
         </div>
 
@@ -57,14 +57,14 @@ export const ProjectDeleteModal: React.FC<ProjectDeleteModalProps> = ({
           )}
 
           <p>
-            Bạn có chắc chắn muốn xóa dự án{' '}
-            <strong className="text-red-600 font-mono">PROJ-{project.id}</strong> không?
+            Are you sure you want to delete project{' '}
+            <strong className="text-red-600 font-mono">PROJ-{project.id}</strong>?
           </p>
           <div className="p-3 bg-[#F4F5F7] rounded-xl border border-[#DFE1E6] text-xs font-semibold text-[#172B4D]">
             "{project.name}"
           </div>
           <p className="text-xs text-[#5E6C84]">
-            Tất cả các công việc (tasks) liên quan thuộc dự án này cũng sẽ bị xóa khỏi hệ thống.
+            All associated tasks in this project will also be deleted from the system.
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export const ProjectDeleteModal: React.FC<ProjectDeleteModalProps> = ({
             disabled={deleting}
             className="px-4 py-2 bg-white hover:bg-gray-100 text-[#172B4D] border border-[#DFE1E6] text-xs font-semibold rounded-lg transition-colors"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="button"
@@ -85,7 +85,7 @@ export const ProjectDeleteModal: React.FC<ProjectDeleteModalProps> = ({
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
           >
             {deleting ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            <span>Xóa Dự Án</span>
+            <span>Delete Project</span>
           </button>
         </div>
       </div>

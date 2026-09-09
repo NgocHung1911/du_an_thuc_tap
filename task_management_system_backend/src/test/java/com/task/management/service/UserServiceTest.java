@@ -115,7 +115,7 @@ class UserServiceTest {
             userService.getUserById(99L);
         });
 
-        assertEquals("Không tìm thấy User với ID: 99", exception.getMessage());
+        assertEquals("User not found with ID: 99", exception.getMessage());
         verify(userRepository, times(1)).findById(99L);
     }
 
@@ -156,7 +156,7 @@ class UserServiceTest {
             userService.createUser(sampleRequest);
         });
 
-        assertEquals("Username đã tồn tại!", exception.getMessage());
+        assertEquals("Username already exists!", exception.getMessage());
         verify(userRepository, times(1)).existsByUsername("new_user");
         verify(userRepository, never()).existsByEmail(anyString());
         verify(userRepository, never()).save(any(User.class));
@@ -172,7 +172,7 @@ class UserServiceTest {
             userService.createUser(sampleRequest);
         });
 
-        assertEquals("Email đã tồn tại!", exception.getMessage());
+        assertEquals("Email already exists!", exception.getMessage());
         verify(userRepository, times(1)).existsByUsername("new_user");
         verify(userRepository, times(1)).existsByEmail("newuser@example.com");
         verify(userRepository, never()).save(any(User.class));
@@ -237,7 +237,7 @@ class UserServiceTest {
             userService.updateUser(99L, sampleRequest);
         });
 
-        assertEquals("Không tìm thấy User với ID: 99", exception.getMessage());
+        assertEquals("User not found with ID: 99", exception.getMessage());
         verify(userRepository, times(1)).findById(99L);
         verify(userRepository, never()).save(any());
     }
@@ -265,7 +265,7 @@ class UserServiceTest {
             userService.deleteUser(99L);
         });
 
-        assertEquals("Không tìm thấy User với ID: 99", exception.getMessage());
+        assertEquals("User not found with ID: 99", exception.getMessage());
         verify(userRepository, times(1)).findById(99L);
         verify(userRepository, never()).delete(any());
     }

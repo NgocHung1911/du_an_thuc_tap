@@ -39,8 +39,8 @@ export const AdminDashboardPage: React.FC = () => {
         setUserProfile(currentUser);
       }
     } catch (err: any) {
-      console.error('Lỗi khi tải dữ liệu Admin Dashboard:', err);
-      setError('Không thể tải dữ liệu tổng quan. Vui lòng kiểm tra kết nối hệ thống.');
+      console.error('Error loading Admin Dashboard data:', err);
+      setError('Failed to load overview data. Please check system connection.');
     } finally {
       setLoading(false);
     }
@@ -98,9 +98,9 @@ export const AdminDashboardPage: React.FC = () => {
     tasks.slice(-3).reverse().forEach((t) => {
       list.push({
         id: `task-${t.id}`,
-        title: `Công việc #${t.id}: ${t.title}`,
-        detail: `Dự án: ${t.projectName || 'Chưa phân loại'} | Trạng thái: ${t.status}`,
-        time: 'Gần đây',
+        title: `Task #${t.id}: ${t.title}`,
+        detail: `Project: ${t.projectName || 'Unassigned'} | Status: ${t.status}`,
+        time: 'Recent',
         tag: 'TASK',
         tagBg: 'bg-blue-50',
         tagColor: 'text-blue-700',
@@ -111,10 +111,10 @@ export const AdminDashboardPage: React.FC = () => {
     projects.slice(-2).reverse().forEach((p) => {
       list.push({
         id: `proj-${p.id}`,
-        title: `Dự án mới: ${p.name}`,
-        detail: `Trạng thái: ${p.status || 'PLANNING'} | ${p.taskCount || 0} tasks`,
-        time: 'Gần đây',
-        tag: 'DỰ ÁN',
+        title: `New project: ${p.name}`,
+        detail: `Status: ${p.status || 'PLANNING'} | ${p.taskCount || 0} tasks`,
+        time: 'Recent',
+        tag: 'PROJECT',
         tagBg: 'bg-indigo-50',
         tagColor: 'text-indigo-700',
       });
@@ -133,10 +133,10 @@ export const AdminDashboardPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
               <LayoutDashboard size={24} className="text-blue-200" />
-              <span>📊 Dashboard Tổng Quan - Xin chào, {displayName}!</span> 👋
+              <span>📊 Admin Dashboard - Welcome back, {displayName}!</span> 👋
             </h1>
             <p className="text-blue-100 text-sm mt-1">
-              Báo cáo tổng quan tiến độ dự án, công việc và thành viên toàn hệ thống
+              System-wide overview report of project progress, tasks, and members
             </p>
           </div>
         </div>
@@ -147,7 +147,7 @@ export const AdminDashboardPage: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold backdrop-blur-xs transition-all border border-white/20 disabled:opacity-50"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-            <span>Làm Mới Dữ Liệu</span>
+            <span>Refresh Data</span>
           </button>
         </div>
       </div>
@@ -163,7 +163,7 @@ export const AdminDashboardPage: React.FC = () => {
             onClick={fetchDashboardData}
             className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-xs font-bold"
           >
-            Thử lại
+            Retry
           </button>
         </div>
       )}
@@ -191,9 +191,9 @@ export const AdminDashboardPage: React.FC = () => {
               className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-400 transition-all cursor-pointer flex items-center justify-between group"
             >
               <div className="space-y-1">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Số Công Việc</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tasks</p>
                 <p className="text-3xl font-extrabold text-blue-600">{stats.totalTasks}</p>
-                <p className="text-xs text-slate-500">{stats.inProgressTasks} Đang xử lý · {stats.todoTasks} Chờ làm</p>
+                <p className="text-xs text-slate-500">{stats.inProgressTasks} In Progress · {stats.todoTasks} To Do</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
                 <CheckSquare size={24} />
@@ -206,9 +206,9 @@ export const AdminDashboardPage: React.FC = () => {
               className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-emerald-400 transition-all cursor-pointer flex items-center justify-between group"
             >
               <div className="space-y-1">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã Hoàn Thành</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Completed Tasks</p>
                 <p className="text-3xl font-extrabold text-emerald-600">{stats.doneTasks}</p>
-                <p className="text-xs text-emerald-600 font-semibold">{stats.taskCompletionRate}% Tỷ lệ hoàn thành</p>
+                <p className="text-xs text-emerald-600 font-semibold">{stats.taskCompletionRate}% Completion Rate</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
                 <CheckCircle2 size={24} />
@@ -221,9 +221,9 @@ export const AdminDashboardPage: React.FC = () => {
               className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-indigo-400 transition-all cursor-pointer flex items-center justify-between group"
             >
               <div className="space-y-1">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Số Dự Án</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Projects</p>
                 <p className="text-3xl font-extrabold text-indigo-600">{stats.totalProjects}</p>
-                <p className="text-xs text-slate-500">{stats.activeProjects} Đang chạy · {stats.completedProjects} Hoàn thành</p>
+                <p className="text-xs text-slate-500">{stats.activeProjects} In Progress · {stats.completedProjects} Completed</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
                 <FolderGit2 size={24} />
@@ -236,7 +236,7 @@ export const AdminDashboardPage: React.FC = () => {
               className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-purple-400 transition-all cursor-pointer flex items-center justify-between group"
             >
               <div className="space-y-1">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Số Lượng Thành Viên</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Members</p>
                 <p className="text-3xl font-extrabold text-purple-600">{stats.totalUsers}</p>
                 <p className="text-xs text-slate-500">{stats.adminUsers} Admin · {stats.memberUsers} Member</p>
               </div>
@@ -256,8 +256,8 @@ export const AdminDashboardPage: React.FC = () => {
                 <FolderGit2 size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 group-hover:text-indigo-600">Quản Lý Dự Án</p>
-                <p className="text-[11px] text-slate-500">{stats.totalProjects} dự án hệ thống</p>
+                <p className="text-xs font-bold text-slate-900 group-hover:text-indigo-600">Manage Projects</p>
+                <p className="text-[11px] text-slate-500">{stats.totalProjects} system projects</p>
               </div>
             </button>
 
@@ -269,8 +269,8 @@ export const AdminDashboardPage: React.FC = () => {
                 <FolderGit2 size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600">Dự Án Tham Gia</p>
-                <p className="text-[11px] text-slate-500">Dự án cá nhân</p>
+                <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600">My Projects</p>
+                <p className="text-[11px] text-slate-500">Joined projects</p>
               </div>
             </button>
 
@@ -282,8 +282,8 @@ export const AdminDashboardPage: React.FC = () => {
                 <Users size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 group-hover:text-purple-600">Quản Lý Thành Viên</p>
-                <p className="text-[11px] text-slate-500">{stats.totalUsers} người dùng</p>
+                <p className="text-xs font-bold text-slate-900 group-hover:text-purple-600">Manage Members</p>
+                <p className="text-[11px] text-slate-500">{stats.totalUsers} users</p>
               </div>
             </button>
 
@@ -295,8 +295,8 @@ export const AdminDashboardPage: React.FC = () => {
                 <User size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Hồ Sơ Cá Nhân</p>
-                <p className="text-[11px] text-slate-500">Thông tin tài khoản</p>
+                <p className="text-xs font-bold text-slate-900">Personal Profile</p>
+                <p className="text-[11px] text-slate-500">Account settings</p>
               </div>
             </button>
           </div>
@@ -310,13 +310,13 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <FolderGit2 size={18} className="text-indigo-600" />
-                    <span>Thống Kê Dự Án Theo Trạng Thái</span>
+                    <span>Projects Status Breakdown</span>
                   </h2>
                   <button
                     onClick={() => navigate('/admin/projects')}
                     className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
                   >
-                    <span>Xem danh sách</span>
+                    <span>View list</span>
                     <ArrowRight size={14} />
                   </button>
                 </div>
@@ -349,10 +349,10 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <TrendingUp size={18} className="text-blue-600" />
-                    <span>Tiến Độ Công Việc Toàn Hệ Thống</span>
+                    <span>System-Wide Task Progress</span>
                   </h2>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                    {stats.doneTasks}/{stats.totalTasks} Đã hoàn thành
+                    {stats.doneTasks}/{stats.totalTasks} Completed
                   </span>
                 </div>
 
@@ -395,12 +395,12 @@ export const AdminDashboardPage: React.FC = () => {
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Activity size={18} className="text-indigo-600" />
-                <span>Hoạt Động Gần Đây</span>
+                <span>Recent Activity</span>
               </h2>
 
               <div className="space-y-3">
                 {recentActivities.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-4 text-center">Chưa có hoạt động hệ thống nào.</p>
+                  <p className="text-xs text-slate-500 py-4 text-center">No recent system activity.</p>
                 ) : (
                   recentActivities.map((act) => (
                     <div key={act.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">

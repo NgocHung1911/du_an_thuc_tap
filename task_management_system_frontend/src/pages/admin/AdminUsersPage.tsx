@@ -36,8 +36,8 @@ export const AdminUsersPage: React.FC = () => {
       const data = await userApi.getAllUsers();
       setUsers(data || []);
     } catch (err: any) {
-      console.error('Lỗi khi tải danh sách người dùng:', err);
-      setError('Không thể tải danh sách người dùng. Vui lòng kiểm tra kết nối hệ thống.');
+      console.error('Error loading users list:', err);
+      setError('Failed to load users list. Please check system connection.');
       setUsers([]);
     } finally {
       setLoading(false);
@@ -67,15 +67,13 @@ export const AdminUsersPage: React.FC = () => {
   const handleFormSubmit = async (data: UserRequest, userId?: number) => {
     if (userId) {
       await userApi.updateUser(userId, data);
-      showToast(`Đã cập nhật thông tin người dùng #${userId}!`, 'success');
+      showToast(`Successfully updated user #${userId}!`, 'success');
     } else {
       await userApi.createUser(data);
-      showToast('Đã tạo tài khoản người dùng mới thành công!', 'success');
+      showToast('Successfully created new user account!', 'success');
     }
     await fetchUsers();
   };
-
-
 
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -94,9 +92,9 @@ export const AdminUsersPage: React.FC = () => {
               <Users size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">👥 Quản Lý Người Dùng</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">👥 User Management</h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Danh sách tài khoản và phân quyền người dùng trong hệ thống
+                List of user accounts and permissions in the system
               </p>
             </div>
           </div>
@@ -106,7 +104,7 @@ export const AdminUsersPage: React.FC = () => {
           <button
             onClick={fetchUsers}
             className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
-            title="Tải lại danh sách"
+            title="Refresh users list"
           >
             <RefreshCw size={18} className={loading ? 'animate-spin text-blue-600' : ''} />
           </button>
@@ -119,7 +117,7 @@ export const AdminUsersPage: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all hover:shadow-md"
           >
             <UserPlus size={18} />
-            <span>Thêm Người Dùng</span>
+            <span>Add User</span>
           </button>
         </div>
       </div>
@@ -134,7 +132,7 @@ export const AdminUsersPage: React.FC = () => {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="Tìm theo username, tên, email..."
+            placeholder="Search by username, name, email..."
             className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
           />
           {searchKeyword && (
@@ -149,13 +147,13 @@ export const AdminUsersPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-slate-400" />
-          <span className="text-xs font-semibold text-slate-600 shrink-0">Vai trò:</span>
+          <span className="text-xs font-semibold text-slate-600 shrink-0">Role:</span>
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
             className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
           >
-            <option value="ALL">Tất cả vai trò</option>
+            <option value="ALL">All Roles</option>
             <option value="ADMIN">ADMIN</option>
             <option value="MEMBER">MEMBER</option>
           </select>
@@ -173,7 +171,7 @@ export const AdminUsersPage: React.FC = () => {
             onClick={fetchUsers}
             className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg font-bold"
           >
-            Thử lại
+            Retry
           </button>
         </div>
       )}
@@ -191,11 +189,11 @@ export const AdminUsersPage: React.FC = () => {
           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
             <Inbox size={24} />
           </div>
-          <h3 className="text-base font-bold text-slate-900">Không tìm thấy người dùng phù hợp</h3>
+          <h3 className="text-base font-bold text-slate-900">No matching users found</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             {searchKeyword || filterRole !== 'ALL'
-              ? 'Vui lòng thử tìm kiếm bằng từ khóa khác hoặc đặt lại bộ lọc.'
-              : 'Chưa có người dùng nào trong hệ thống.'}
+              ? 'Please try searching with a different keyword or reset filters.'
+              : 'No users found in the system.'}
           </p>
           {(searchKeyword || filterRole !== 'ALL') && (
             <button
@@ -205,7 +203,7 @@ export const AdminUsersPage: React.FC = () => {
               }}
               className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-blue-600 text-xs font-bold rounded-xl border border-slate-200 transition-colors"
             >
-              Đặt lại bộ lọc
+              Reset filters
             </button>
           )}
         </div>
@@ -215,11 +213,11 @@ export const AdminUsersPage: React.FC = () => {
             <table className="w-full text-left text-sm text-slate-800">
               <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
-                  <th className="p-4">Tên người dùng</th>
-                  <th className="p-4">Email</th>
-                  <th className="p-4">Vai trò (Role)</th>
-                  <th className="p-4">Trạng thái</th>
-                  <th className="p-4 text-right">Thao tác</th>
+                  <th className="p-4 font-bold">Name</th>
+                  <th className="p-4 font-bold">Email</th>
+                  <th className="p-4 font-bold">Role</th>
+                  <th className="p-4 font-bold">Status</th>
+                  <th className="p-4 text-right font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -256,7 +254,7 @@ export const AdminUsersPage: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                          <CheckCircle2 size={14} /> Hoạt động
+                          <CheckCircle2 size={14} /> Active
                         </span>
                       </td>
                       <td className="p-4 text-right">
@@ -267,7 +265,7 @@ export const AdminUsersPage: React.FC = () => {
                               setIsFormModalOpen(true);
                             }}
                             className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Chỉnh sửa thông tin"
+                            title="Edit user info"
                           >
                             <Edit3 size={16} />
                           </button>

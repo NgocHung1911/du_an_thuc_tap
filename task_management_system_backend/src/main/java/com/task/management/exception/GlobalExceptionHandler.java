@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         Map<String, String> errorMap = new HashMap<>();
-        errorMap.put("message", ex.getMessage() != null ? ex.getMessage() : "Đã xảy ra lỗi máy chủ");
+        errorMap.put("message", ex.getMessage() != null ? ex.getMessage() : "An internal server error occurred");
         return new ResponseEntity<>(errorMap, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

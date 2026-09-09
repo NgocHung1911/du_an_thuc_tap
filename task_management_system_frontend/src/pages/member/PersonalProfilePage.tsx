@@ -50,12 +50,12 @@ export const PersonalProfilePage: React.FC = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setUploadError('Chỉ chấp nhận các file ảnh (JPEG, PNG, WebP, GIF)!');
+      setUploadError('Only image files are accepted (JPEG, PNG, WebP, GIF)!');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Dung lượng ảnh vượt quá giới hạn cho phép (tối đa 10MB)!');
+      setUploadError('Image size exceeds the maximum allowed limit (max 10MB)!');
       return;
     }
 
@@ -66,10 +66,10 @@ export const PersonalProfilePage: React.FC = () => {
 
       const updatedUser = await userApi.uploadAvatar(file);
       setProfile(updatedUser);
-      setUploadSuccess('Đã cập nhật ảnh đại diện lên Cloudflare R2 thành công!');
+      setUploadSuccess('Avatar uploaded successfully!');
     } catch (err: any) {
       console.error('Failed to upload avatar:', err);
-      setUploadError(err.response?.data?.message || 'Không thể tải ảnh lên Cloudflare R2. Vui lòng thử lại!');
+      setUploadError(err.response?.data?.message || 'Failed to upload avatar image. Please try again!');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -117,7 +117,7 @@ export const PersonalProfilePage: React.FC = () => {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-6">
         {/* Avatar Header */}
         <div className="flex flex-col items-center text-center pb-5 border-b border-slate-100">
-          <div className="relative group cursor-pointer mb-3" onClick={handleAvatarClick} title="Bấm để thay đổi ảnh đại diện">
+          <div className="relative group cursor-pointer mb-3" onClick={handleAvatarClick} title="Click to change avatar">
             <div className="w-24 h-24 rounded-full bg-blue-600 text-white font-extrabold text-3xl flex items-center justify-center shadow-md overflow-hidden border-4 border-white ring-2 ring-blue-500/20">
               {profile?.avatarUrl ? (
                 <img
@@ -141,7 +141,7 @@ export const PersonalProfilePage: React.FC = () => {
               ) : (
                 <>
                   <Camera size={20} />
-                  <span className="text-[10px] font-bold mt-1">Đổi ảnh</span>
+                  <span className="text-[10px] font-bold mt-1">Change avatar</span>
                 </>
               )}
             </div>

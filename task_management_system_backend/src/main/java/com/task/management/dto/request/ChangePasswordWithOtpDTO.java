@@ -13,17 +13,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChangePasswordWithOtpDTO {
 
-    @NotBlank(message = "Mật khẩu hiện tại không được để trống")
+    @NotBlank(message = "Current password cannot be blank")
     private String currentPassword;
 
-    @NotBlank(message = "Mật khẩu mới không được để trống")
-    @Size(min = 6, message = "Mật khẩu mới phải có ít nhất 6 ký tự")
+    @NotBlank(message = "New password cannot be blank")
+    @Size(min = 6, message = "New password must be at least 6 characters")
     private String newPassword;
 
-    @NotBlank(message = "Xác nhận mật khẩu mới không được để trống")
+    @NotBlank(message = "Confirm new password cannot be blank")
     private String confirmPassword;
 
-    @NotBlank(message = "Mã OTP không được để trống")
-    @Size(min = 6, max = 6, message = "Mã OTP phải gồm 6 chữ số")
+    @NotBlank(message = "OTP code cannot be blank")
+    @Size(min = 6, max = 6, message = "OTP code must be 6 digits")
     private String otpCode;
 }

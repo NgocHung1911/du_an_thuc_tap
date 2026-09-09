@@ -59,7 +59,7 @@ public class TaskController {
             Principal principal) {
         String statusStr = body.get("status");
         if (statusStr == null || statusStr.trim().isEmpty()) {
-            throw new IllegalArgumentException("Trạng thái (status) không được để trống");
+            throw new IllegalArgumentException("Status cannot be blank");
         }
         String username = principal != null ? principal.getName() : null;
         com.task.management.enums.TaskStatus status = com.task.management.enums.TaskStatus.valueOf(statusStr.trim().toUpperCase());
@@ -73,7 +73,7 @@ public class TaskController {
             Principal principal) {
         String priorityStr = body.get("priority");
         if (priorityStr == null || priorityStr.trim().isEmpty()) {
-            throw new IllegalArgumentException("Mức độ ưu tiên (priority) không được để trống");
+            throw new IllegalArgumentException("Priority cannot be blank");
         }
         String username = principal != null ? principal.getName() : null;
         com.task.management.enums.TaskPriority priority = com.task.management.enums.TaskPriority.valueOf(priorityStr.trim().toUpperCase());
@@ -91,10 +91,21 @@ public class TaskController {
         return ResponseEntity.ok(taskService.assignTaskToUser(taskId, targetUserId, username));
     }
 
+    @PutMapping({"/{taskId}/reporter/{reporterId}", "/{taskId}/reporter"})
+    public ResponseEntity<TaskDTO> assignTaskToReporter(
+            @PathVariable Long taskId,
+            @PathVariable(required = false) Long reporterId,
+            @RequestParam(required = false) Long reporterIdParam,
+            Principal principal) {
+        Long targetReporterId = reporterId != null ? reporterId : reporterIdParam;
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(taskService.assignTaskToReporter(taskId, targetReporterId, username));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteTask(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : null;
         taskService.deleteTask(id, username);
-        return ResponseEntity.ok("Xóa Task thành công với ID: " + id);
+        return ResponseEntity.ok("Successfully deleted Task with ID: " + id);
     }
 }

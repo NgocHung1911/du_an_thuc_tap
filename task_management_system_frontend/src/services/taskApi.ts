@@ -25,10 +25,13 @@ export interface TaskDTO {
   status: TaskStatus;
   project?: ProjectDTO;
   assignedUser?: UserDTO;
+  reporter?: UserDTO;
   projectId?: number;
   projectName?: string;
   userId?: number;
   userFullName?: string;
+  reporterId?: number;
+  reporterFullName?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -42,6 +45,7 @@ export interface TaskRequest {
   projectId?: number;
   userId?: number | null;
   assignedUserId?: number | null;
+  reporterId?: number | null;
 }
 
 export const taskApi = {
@@ -96,6 +100,16 @@ export const taskApi = {
       return res.data;
     } else {
       const res = await apiClient.put<TaskDTO>(`/tasks/${taskId}/assign`);
+      return res.data;
+    }
+  },
+
+  updateTaskReporter: async (taskId: number, reporterId: number | null): Promise<TaskDTO> => {
+    if (reporterId !== null && reporterId !== undefined) {
+      const res = await apiClient.put<TaskDTO>(`/tasks/${taskId}/reporter/${reporterId}`);
+      return res.data;
+    } else {
+      const res = await apiClient.put<TaskDTO>(`/tasks/${taskId}/reporter`);
       return res.data;
     }
   },

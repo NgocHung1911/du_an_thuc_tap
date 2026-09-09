@@ -1,6 +1,7 @@
 package com.task.management.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.task.management.config.security.JwtTokenProvider;
 import com.task.management.dto.request.UserRequest;
 import com.task.management.dto.response.UserDTO;
 import com.task.management.enums.Role;
@@ -38,11 +39,16 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private com.task.management.config.security.CustomUserDetailsService customUserDetailsService;
 
     @Test
     void getAllUsers_returnsUserList() throws Exception {
@@ -116,29 +122,29 @@ class UserControllerTest {
 
         mockMvc.perform(delete("/api/users/{id}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value("Xóa User thành công với ID: 1"));
+                .andExpect(jsonPath("$").value("Successfully deleted User with ID: 1"));
 
         verify(userService).deleteUser(1L);
     }
 
     @Test
     void getUserById_whenServiceFails_returnsInternalServerError() throws Exception {
-        doThrow(new RuntimeException("Không tìm thấy User với ID: 99")).when(userService).getUserById(99L);
+        doThrow(new RuntimeException("User not found with ID: 99")).when(userService).getUserById(99L);
 
         mockMvc.perform(get("/api/users/{id}", 99L))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message").value("Không tìm thấy User với ID: 99"));
+                .andExpect(jsonPath("$.message").value("User not found with ID: 99"));
     }
 
     @Test
     void createUser_whenServiceRejectsDuplicate_returnsInternalServerError() throws Exception {
         UserRequest request = userRequest("hung", "secret123", "hung@example.com", Role.MEMBER);
-        doThrow(new RuntimeException("Username đã tồn tại!")).when(userService).createUser(any(UserRequest.class));
+        doThrow(new RuntimeException("Username already exists!")).when(userService).createUser(any(UserRequest.class));
 
         mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message").value("Username đã tồn tại!"));
+                .andExpect(jsonPath("$.message").value("Username already exists!"));
     }
 
     private UserDTO userDto(Long id, String username, String email, Role role) {

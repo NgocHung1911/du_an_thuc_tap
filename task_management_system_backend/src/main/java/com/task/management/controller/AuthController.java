@@ -45,7 +45,7 @@ public class AuthController {
         if (user != null && !user.isVerified()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of(
-                            "message", "Tài khoản chưa được xác thực OTP. Vui lòng xác thực email để đăng nhập!",
+                            "message", "Account is not verified with OTP. Please verify your email to log in!",
                             "isVerified", false,
                             "email", user.getEmail()
                     ));
@@ -77,7 +77,7 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Tên đăng nhập hoặc mật khẩu không chính xác!"));
+                    .body(Map.of("message", "Incorrect username or password!"));
         }
     }
 
@@ -85,12 +85,12 @@ public class AuthController {
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDTO registerDTO) {
         if (userRepository.existsByUsername(registerDTO.getUsername())) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Tên đăng nhập đã được sử dụng!"));
+                    .body(Map.of("message", "Username is already taken!"));
         }
 
         if (userRepository.existsByEmail(registerDTO.getEmail())) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Email đã được sử dụng!"));
+                    .body(Map.of("message", "Email is already registered!"));
         }
 
         User user = new User();
@@ -114,7 +114,7 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of(
-                        "message", "Đăng ký tài khoản thành công! Vui lòng kiểm tra email để nhập mã OTP xác thực.",
+                        "message", "Account registered successfully! Please check your email for the OTP verification code.",
                         "username", user.getUsername(),
                         "email", user.getEmail(),
                         "isVerified", false
@@ -126,11 +126,11 @@ public class AuthController {
         try {
             otpService.verifyOtp(verifyDto.getEmail(), verifyDto.getOtpCode());
             return ResponseEntity.ok(Map.of(
-                    "message", "Xác thực tài khoản OTP thành công! Bạn có thể đăng nhập ngay bây giờ."
+                    "message", "OTP account verification successful! You can log in now."
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Xác thực OTP thất bại!"));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "OTP verification failed!"));
         }
     }
 
@@ -139,11 +139,11 @@ public class AuthController {
         try {
             otpService.resendOtp(resendDto.getEmail());
             return ResponseEntity.ok(Map.of(
-                    "message", "Mã OTP mới đã được gửi đến email của bạn!"
+                    "message", "A new OTP code has been sent to your email!"
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Gửi lại mã OTP thất bại!"));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Failed to resend OTP code!"));
         }
     }
 
@@ -154,7 +154,7 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Đăng nhập Google thất bại!"));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Google sign in failed!"));
         }
     }
 }

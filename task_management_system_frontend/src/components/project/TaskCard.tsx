@@ -101,7 +101,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  const assigneeName = task.userFullName || task.assignedUser?.username || 'Unassigned';
+  const assigneeName = task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned';
+  const reporterName = task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System';
 
   return (
     <div
@@ -229,8 +230,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </select>
         </div>
 
-        {/* Assignee Select / Avatar */}
-        {isAdmin && projectMembers.length > 0 ? (
+        {/* Assignee & Reporter */}
+        <div className="flex items-center gap-1.5">
+          {reporterName && (
+            <span
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 truncate max-w-[90px]"
+              title={`Reporter: ${reporterName}`}
+            >
+              R: {reporterName}
+            </span>
+          )}
+
+          {isAdmin && projectMembers.length > 0 ? (
           <div
             className="inline-block"
             onClick={(e) => e.stopPropagation()}
@@ -256,7 +267,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               <option value="">Unassigned</option>
               {projectMembers.map((mem) => (
                 <option key={mem.id} value={mem.id}>
-                  {mem.username}
+                  {mem.fullName || mem.username}
                 </option>
               ))}
             </select>
@@ -264,13 +275,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         ) : (
           <div
             className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
-              task.assignedUser?.username
+              assigneeName
             )}`}
             title={`Assigned to: ${assigneeName}`}
           >
-            {task.assignedUser ? getInitials(task.assignedUser.username) : '?'}
+            {task.assignedUser || task.userFullName ? getInitials(assigneeName) : '?'}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

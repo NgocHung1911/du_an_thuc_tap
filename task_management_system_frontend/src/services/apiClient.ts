@@ -29,7 +29,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      console.warn('Phiên làm việc hết hạn hoặc token không hợp lệ. Đăng xuất...');
+      console.warn('Session expired or invalid token. Logging out...');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('roles');

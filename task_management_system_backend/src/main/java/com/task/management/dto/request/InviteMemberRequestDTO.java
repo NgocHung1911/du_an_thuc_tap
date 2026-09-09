@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class InviteMemberRequestDTO {
 
-    @NotBlank(message = "Email người được mời không được để trống!")
-    @Email(message = "Địa chỉ email không đúng định dạng!")
+    @NotBlank(message = "Invitee email cannot be blank!")
+    @Email(message = "Invalid email format!")
     private String email;
 }
 
