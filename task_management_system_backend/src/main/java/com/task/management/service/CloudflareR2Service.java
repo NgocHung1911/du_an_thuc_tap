@@ -26,6 +26,38 @@ public class CloudflareR2Service {
     @Value("${cloudflare.r2.public-url}")
     private String publicUrl;
 
+    public String uploadFile(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File upload cannot be empty.");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
+        String targetFolder = (folder != null && !folder.isBlank()) ? folder : "files";
+        String fileKey = String.format("%s/%s-%s%s", targetFolder, UUID.randomUUID().toString(), System.currentTimeMillis(), extension);
+        String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(fileKey)
+                    .contentType(contentType)
+                    .build();
+
+            r2S3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+            String baseUrl = publicUrl.endsWith("/") ? publicUrl.substring(0, publicUrl.length() - 1) : publicUrl;
+            return String.format("%s/%s", baseUrl, fileKey);
+        } catch (IOException e) {
+            log.error("Failed to upload file to Cloudflare R2", e);
+            throw new RuntimeException("Failed to upload file to Cloudflare R2 storage.", e);
+        }
+    }
+
     public String uploadAvatar(MultipartFile file, Long userId) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("File upload cannot be empty.");
