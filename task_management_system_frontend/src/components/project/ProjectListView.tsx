@@ -180,11 +180,15 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                           className="text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer max-w-[140px] truncate"
                         >
                           <option value="">Unassigned</option>
-                          {projectMembers.map((mem) => (
-                            <option key={mem.id} value={mem.id}>
-                              {mem.fullName || mem.username}
-                            </option>
-                          ))}
+                          {projectMembers.map((mem) => {
+                            const name = mem.fullName || mem.username;
+                            const email = mem.email || mem.username;
+                            return (
+                              <option key={mem.id} value={mem.id}>
+                                {name} ({email})
+                              </option>
+                            );
+                          })}
                         </select>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -201,6 +205,7 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                           )}
                           <span className="text-xs text-slate-800 font-medium line-clamp-1">
                             {task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned'}
+                            {task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}
                           </span>
                         </div>
                       )}
@@ -219,11 +224,15 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                           className="text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer max-w-[140px] truncate"
                         >
                           <option value="">Default</option>
-                          {projectMembers.map((mem) => (
-                            <option key={mem.id} value={mem.id}>
-                              {mem.fullName || mem.username}
-                            </option>
-                          ))}
+                          {projectMembers.map((mem) => {
+                            const name = mem.fullName || mem.username;
+                            const email = mem.email || mem.username;
+                            return (
+                              <option key={mem.id} value={mem.id}>
+                                {name} ({email})
+                              </option>
+                            );
+                          })}
                         </select>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -240,6 +249,7 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                           )}
                           <span className="text-xs text-slate-800 font-medium line-clamp-1">
                             {task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System'}
+                            {task.reporter?.email ? ` (${task.reporter.email})` : ''}
                           </span>
                         </div>
                       )}
