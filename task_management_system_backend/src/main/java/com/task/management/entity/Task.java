@@ -52,6 +52,9 @@ public class Task {
     @JoinColumn(name = "reporter_id")
     private User reporter;
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private java.util.List<TaskAttachment> attachments = new java.util.ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

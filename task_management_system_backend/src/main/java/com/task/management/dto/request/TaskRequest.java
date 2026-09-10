@@ -41,4 +41,6 @@ public class TaskRequest {
     private Long userId; // Assignee user ID (Can be null)
 
     private Long reporterId; // Reporter user ID (Can be null)
+
+    private java.util.List<String> attachments;
 }

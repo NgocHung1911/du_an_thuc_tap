@@ -34,6 +34,8 @@ public class TaskDTO {
     private Long reporterId;
     private String reporterFullName;
 
+    private java.util.List<TaskAttachmentDTO> attachments;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

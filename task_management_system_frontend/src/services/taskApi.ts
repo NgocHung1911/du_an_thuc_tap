@@ -16,6 +16,15 @@ export interface UserDTO {
   avatarBg?: string;
 }
 
+export interface TaskAttachmentDTO {
+  id: number;
+  fileName: string;
+  fileUrl: string;
+  fileSize?: number;
+  fileType?: string;
+  createdAt?: string;
+}
+
 export interface TaskDTO {
   id: number;
   title: string;
@@ -32,6 +41,7 @@ export interface TaskDTO {
   userFullName?: string;
   reporterId?: number;
   reporterFullName?: string;
+  attachments?: TaskAttachmentDTO[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -46,6 +56,7 @@ export interface TaskRequest {
   userId?: number | null;
   assignedUserId?: number | null;
   reporterId?: number | null;
+  attachments?: string[];
 }
 
 export const taskApi = {
@@ -116,6 +127,22 @@ export const taskApi = {
 
   deleteTask: async (id: number): Promise<string> => {
     const res = await apiClient.delete<string>(`/tasks/${id}`);
+    return res.data;
+  },
+
+  uploadTaskAttachment: async (taskId: number, file: File): Promise<TaskDTO> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post<TaskDTO>(`/tasks/${taskId}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  deleteTaskAttachment: async (taskId: number, url: string): Promise<TaskDTO> => {
+    const res = await apiClient.delete<TaskDTO>(`/tasks/${taskId}/attachments`, {
+      params: { url },
+    });
     return res.data;
   },
 };
