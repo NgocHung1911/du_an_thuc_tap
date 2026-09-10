@@ -8,6 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.task.management.dto.websocket.WebSocketEvent;
+import com.task.management.dto.websocket.WebSocketEventType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CloudinaryService cloudinaryService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     private String resolveFullName(User user) {
         if (user.getFullName() != null && !user.getFullName().isBlank()) {
@@ -121,13 +126,33 @@ public class UserService {
         userRepository.delete(existingUser);
     }
 
-    // Cập nhật ảnh đại diện (Avatar) lên Cloudinary
+    // Cập nhật ảnh đại diện (Avatar) lên Cloudinary và gửi WebSocket event
     public UserDTO updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User details not found!"));
         String avatarUrl = cloudinaryService.uploadAvatar(file, user.getId());
         user.setAvatarUrl(avatarUrl);
         User savedUser = userRepository.save(user);
-        return mapToDTO(savedUser);
+        UserDTO userDTO = mapToDTO(savedUser);
+
+        try {
+            WebSocketEvent<Object> avatarEvent = WebSocketEvent.builder()
+                    .eventType(WebSocketEventType.USER_AVATAR_UPDATED)
+                    .timestamp(System.currentTimeMillis())
+                    .actorUsername(user.getUsername())
+                    .actorFullName(resolveFullName(user))
+                    .data(userDTO)
+                    .build();
+
+            messagingTemplate.convertAndSendToUser(
+                    user.getUsername(),
+                    "/queue/notifications",
+                    avatarEvent
+            );
+        } catch (Exception e) {
+            // Log error silently so avatar upload still succeeds even if WebSocket notification fails
+        }
+
+        return userDTO;
     }
 }

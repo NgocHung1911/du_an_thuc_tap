@@ -7,6 +7,8 @@ import { userApi } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
 import { Bell, HelpCircle, Kanban } from 'lucide-react';
 
+import { useNotificationWebSocket } from '../../hooks/useWebSocket';
+
 export const MainLayout: React.FC = () => {
   const { isAdmin, user } = useAuth();
   const [profile, setProfile] = useState<UserDTO | null>(null);
@@ -16,6 +18,14 @@ export const MainLayout: React.FC = () => {
       .then(data => setProfile(data))
       .catch(err => console.error('Failed to load profile in header:', err));
   }, []);
+
+  useNotificationWebSocket((event) => {
+    if (event.eventType === 'USER_AVATAR_UPDATED' || event.type === 'USER_AVATAR_UPDATED') {
+      if (event.data?.avatarUrl) {
+        setProfile((prev) => (prev ? { ...prev, avatarUrl: event.data.avatarUrl } : event.data));
+      }
+    }
+  });
 
   const displayName = profile?.fullName || profile?.username || user?.username || 'User';
 
