@@ -19,7 +19,8 @@ export type WebSocketEventType =
   | 'PROJECT_MEMBER_REMOVED'
   | 'PROJECT_MEMBER_UPDATED'
   | 'PROJECT_MEMBER_ROLE_UPDATED'
-  | 'NOTIFICATION_CREATED';
+  | 'NOTIFICATION_CREATED'
+  | 'USER_AVATAR_UPDATED';
 
 export interface WebSocketEvent {
   eventType?: WebSocketEventType;
