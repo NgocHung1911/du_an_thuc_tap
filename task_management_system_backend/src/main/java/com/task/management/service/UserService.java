@@ -17,7 +17,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final CloudflareR2Service cloudflareR2Service;
+    private final CloudinaryService cloudinaryService;
 
     private String resolveFullName(User user) {
         if (user.getFullName() != null && !user.getFullName().isBlank()) {
@@ -121,11 +121,11 @@ public class UserService {
         userRepository.delete(existingUser);
     }
 
-    // Cập nhật ảnh đại diện (Avatar) lên Cloudflare R2
+    // Cập nhật ảnh đại diện (Avatar) lên Cloudinary
     public UserDTO updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User details not found!"));
-        String avatarUrl = cloudflareR2Service.uploadAvatar(file, user.getId());
+        String avatarUrl = cloudinaryService.uploadAvatar(file, user.getId());
         user.setAvatarUrl(avatarUrl);
         User savedUser = userRepository.save(user);
         return mapToDTO(savedUser);
