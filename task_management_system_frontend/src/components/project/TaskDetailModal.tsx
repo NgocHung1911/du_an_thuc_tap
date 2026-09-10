@@ -127,7 +127,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   const projectName = task.projectName || task.project?.name || 'Project';
   const assigneeName = task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned';
+  const assigneeEmail = task.assignedUser?.email;
   const reporterName = task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System';
+  const reporterEmail = task.reporter?.email;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -303,11 +305,15 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   className="w-full px-3 py-2 bg-white text-xs font-bold text-slate-900 border border-slate-200 rounded-xl shadow-2xs focus:outline-none focus:border-blue-600 cursor-pointer"
                 >
                   <option value="">Unassigned</option>
-                  {projectMembers && projectMembers.map((mem) => (
-                    <option key={mem.id} value={mem.id}>
-                      {mem.fullName || mem.username}
-                    </option>
-                  ))}
+                  {projectMembers && projectMembers.map((mem) => {
+                    const name = mem.fullName || mem.username;
+                    const email = mem.email || mem.username;
+                    return (
+                      <option key={mem.id} value={mem.id}>
+                        {name} ({email})
+                      </option>
+                    );
+                  })}
                 </select>
               ) : (
                 <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
@@ -327,7 +333,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     </div>
                   )}
                   <span className="text-xs font-semibold text-slate-900">
-                    {assigneeName}
+                    {assigneeName}{assigneeEmail ? ` (${assigneeEmail})` : ''}
                   </span>
                 </div>
               )}
@@ -349,11 +355,15 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   className="w-full px-3 py-2 bg-white text-xs font-bold text-slate-900 border border-slate-200 rounded-xl shadow-2xs focus:outline-none focus:border-blue-600 cursor-pointer"
                 >
                   <option value="">-- Default --</option>
-                  {projectMembers && projectMembers.map((mem) => (
-                    <option key={mem.id} value={mem.id}>
-                      {mem.fullName || mem.username}
-                    </option>
-                  ))}
+                  {projectMembers && projectMembers.map((mem) => {
+                    const name = mem.fullName || mem.username;
+                    const email = mem.email || mem.username;
+                    return (
+                      <option key={mem.id} value={mem.id}>
+                        {name} ({email})
+                      </option>
+                    );
+                  })}
                 </select>
               ) : (
                 <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
@@ -373,7 +383,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     </div>
                   )}
                   <span className="text-xs font-semibold text-slate-900">
-                    {reporterName}
+                    {reporterName}{reporterEmail ? ` (${reporterEmail})` : ''}
                   </span>
                 </div>
               )}

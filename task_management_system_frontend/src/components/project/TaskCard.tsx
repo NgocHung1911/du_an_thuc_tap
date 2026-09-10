@@ -102,7 +102,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const assigneeName = task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned';
-  const reporterName = task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System';
 
   return (
     <div
@@ -230,24 +229,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </select>
         </div>
 
-        {/* Assignee & Reporter */}
-        <div className="flex items-center gap-1.5">
-          {reporterName && (
-            <span
-              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 truncate max-w-[90px]"
-              title={`Reporter: ${reporterName}`}
+        {/* Assignee Avatar with Dropdown */}
+        <div
+          className="relative inline-block cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {task.assignedUser?.avatarUrl ? (
+            <img
+              src={task.assignedUser.avatarUrl}
+              alt={assigneeName}
+              className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-xs shrink-0"
+              title={`Assigned to: ${assigneeName}${task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}`}
+            />
+          ) : (
+            <div
+              className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
+                assigneeName
+              )}`}
+              title={`Assigned to: ${assigneeName}${task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}`}
             >
-              R: {reporterName}
-            </span>
+              {task.assignedUser || task.userFullName ? getInitials(assigneeName) : '?'}
+            </div>
           )}
 
-          {isAdmin && projectMembers.length > 0 ? (
-          <div
-            className="inline-block"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
+          {isAdmin && projectMembers.length > 0 && onAssigneeChange && (
             <select
               value={task.userId || task.assignedUser?.id || ''}
               onClick={(e) => e.stopPropagation()}
@@ -261,34 +268,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   onAssigneeChange(task.id, newUserId);
                 }
               }}
-              className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 outline-none cursor-pointer max-w-[110px] truncate"
-              title={`Assigned to: ${assigneeName}`}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              title={`Assigned to: ${assigneeName}${task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}`}
             >
               <option value="">Unassigned</option>
-              {projectMembers.map((mem) => (
-                <option key={mem.id} value={mem.id}>
-                  {mem.fullName || mem.username}
-                </option>
-              ))}
+              {projectMembers.map((mem) => {
+                const name = mem.fullName || mem.username;
+                const email = mem.email || mem.username;
+                return (
+                  <option key={mem.id} value={mem.id}>
+                    {name} ({email})
+                  </option>
+                );
+              })}
             </select>
-          </div>
-        ) : task.assignedUser?.avatarUrl ? (
-          <img
-            src={task.assignedUser.avatarUrl}
-            alt={assigneeName}
-            className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-xs shrink-0"
-            title={`Assigned to: ${assigneeName}`}
-          />
-        ) : (
-          <div
-            className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
-              assigneeName
-            )}`}
-            title={`Assigned to: ${assigneeName}`}
-          >
-            {task.assignedUser || task.userFullName ? getInitials(assigneeName) : '?'}
-          </div>
-        )}
+          )}
         </div>
       </div>
     </div>

@@ -1185,11 +1185,15 @@ export const ProjectDetailPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-medium focus:outline-none focus:border-[#0052CC]"
                   >
                     <option value="">-- Unassigned --</option>
-                    {projectMembers.map((mem) => (
-                      <option key={mem.id} value={mem.id}>
-                        {mem.fullName || mem.username}
-                      </option>
-                    ))}
+                    {projectMembers.map((mem) => {
+                      const name = mem.fullName || mem.username;
+                      const email = mem.email || mem.username;
+                      return (
+                        <option key={mem.id} value={mem.id}>
+                          {name} ({email})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -1203,11 +1207,15 @@ export const ProjectDetailPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-[#DFE1E6] rounded-lg text-xs font-medium focus:outline-none focus:border-[#0052CC]"
                   >
                     <option value="">-- Default --</option>
-                    {projectMembers.map((mem) => (
-                      <option key={mem.id} value={mem.id}>
-                        {mem.fullName || mem.username}
-                      </option>
-                    ))}
+                    {projectMembers.map((mem) => {
+                      const name = mem.fullName || mem.username;
+                      const email = mem.email || mem.username;
+                      return (
+                        <option key={mem.id} value={mem.id}>
+                          {name} ({email})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
