@@ -34,6 +34,8 @@ public class TaskService {
     private final UserRepository userRepository;
     private final ProjectService projectService;
     private final ApplicationEventPublisher eventPublisher;
+    private final CloudinaryService cloudinaryService;
+    private final CloudflareR2Service cloudflareR2Service;
 
     private void publishTaskEvent(WebSocketEventType eventType, Task task, TaskDTO taskDto, Long targetUserId) {
         if (eventPublisher == null || task == null) return;
@@ -138,6 +140,16 @@ public class TaskService {
                 .userFullName(uFullName)
                 .reporterId(rId)
                 .reporterFullName(rFullName)
+                .attachments(task.getAttachments() != null 
+                        ? task.getAttachments().stream().map(att -> com.task.management.dto.response.TaskAttachmentDTO.builder()
+                                .id(att.getId())
+                                .fileName(att.getFileName())
+                                .fileUrl(att.getAttachmentUrl())
+                                .fileSize(att.getFileSize())
+                                .fileType(att.getFileType())
+                                .createdAt(att.getCreatedAt())
+                                .build()).collect(Collectors.toList())
+                        : new java.util.ArrayList<>())
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();
@@ -228,6 +240,15 @@ public class TaskService {
         }
         task.setReporter(reporterUser);
 
+        if (request.getAttachments() != null) {
+            task.setAttachments(request.getAttachments().stream()
+                    .map(url -> {
+                        String name = url.contains("/") ? url.substring(url.lastIndexOf("/") + 1) : url;
+                        return new com.task.management.entity.TaskAttachment(name, url, null, null, task);
+                    })
+                    .collect(Collectors.toList()));
+        }
+
         Task savedTask = taskRepository.save(task);
         TaskDTO dto = mapToDTO(savedTask);
         publishTaskEvent(WebSocketEventType.TASK_CREATED, savedTask, dto, savedTask.getUser() != null ? savedTask.getUser().getId() : null);
@@ -286,6 +307,16 @@ public class TaskService {
                 creatorUser = project.getUser();
             }
             existingTask.setReporter(creatorUser);
+        }
+
+        if (request.getAttachments() != null) {
+            existingTask.getAttachments().clear();
+            existingTask.getAttachments().addAll(request.getAttachments().stream()
+                    .map(url -> {
+                        String name = url.contains("/") ? url.substring(url.lastIndexOf("/") + 1) : url;
+                        return new com.task.management.entity.TaskAttachment(name, url, null, null, existingTask);
+                    })
+                    .collect(Collectors.toList()));
         }
 
         Task updatedTask = taskRepository.save(existingTask);
@@ -439,5 +470,73 @@ public class TaskService {
         TaskDTO dto = mapToDTO(existingTask);
         publishTaskEvent(WebSocketEventType.TASK_DELETED, existingTask, dto, null);
         taskRepository.delete(existingTask);
+    }
+
+    @Transactional
+    public TaskDTO addAttachment(Long taskId, org.springframework.web.multipart.MultipartFile file, String username) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        String effectiveUsername = resolveUsername(username);
+        if (effectiveUsername != null) {
+            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
+            if (role == null) {
+                throw new BadRequestException("You are not a member of this project!");
+            }
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("Attachment file cannot be empty!");
+        }
+
+        String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "attachment";
+        Long fileSize = file.getSize();
+        String contentType = file.getContentType();
+
+        String fileUrl;
+        if (contentType != null && contentType.toLowerCase().startsWith("image/")) {
+            fileUrl = cloudinaryService.uploadAvatar(file, task.getId());
+        } else {
+            fileUrl = cloudflareR2Service.uploadFile(file, "task-attachments");
+        }
+
+        if (task.getAttachments() == null) {
+            task.setAttachments(new java.util.ArrayList<>());
+        }
+        task.getAttachments().add(new com.task.management.entity.TaskAttachment(
+                originalFilename,
+                fileUrl,
+                fileSize,
+                contentType,
+                task
+        ));
+
+        Task updatedTask = taskRepository.save(task);
+        TaskDTO dto = mapToDTO(updatedTask);
+        publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
+        return dto;
+    }
+
+    @Transactional
+    public TaskDTO removeAttachment(Long taskId, String attachmentUrl, String username) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        String effectiveUsername = resolveUsername(username);
+        if (effectiveUsername != null) {
+            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
+            if (role == null) {
+                throw new BadRequestException("You are not a member of this project!");
+            }
+        }
+
+        if (task.getAttachments() != null && attachmentUrl != null) {
+            task.getAttachments().removeIf(att -> att.getAttachmentUrl().equals(attachmentUrl));
+        }
+
+        Task updatedTask = taskRepository.save(task);
+        TaskDTO dto = mapToDTO(updatedTask);
+        publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
+        return dto;
     }
 }

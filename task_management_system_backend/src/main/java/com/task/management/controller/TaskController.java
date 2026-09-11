@@ -108,4 +108,22 @@ public class TaskController {
         taskService.deleteTask(id, username);
         return ResponseEntity.ok("Successfully deleted Task with ID: " + id);
     }
+
+    @PostMapping("/{id}/attachments")
+    public ResponseEntity<TaskDTO> addAttachment(
+            @PathVariable Long id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            Principal principal) {
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(taskService.addAttachment(id, file, username));
+    }
+
+    @DeleteMapping("/{id}/attachments")
+    public ResponseEntity<TaskDTO> removeAttachment(
+            @PathVariable Long id,
+            @RequestParam("url") String attachmentUrl,
+            Principal principal) {
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(taskService.removeAttachment(id, attachmentUrl, username));
+    }
 }
