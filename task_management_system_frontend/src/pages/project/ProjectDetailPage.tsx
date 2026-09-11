@@ -15,6 +15,7 @@ import { InviteMemberModal } from '../../components/project/InviteMemberModal';
 import { ProjectMembersModal } from '../../components/project/ProjectMembersModal';
 import { useProjectWebSocket } from '../../hooks/useWebSocket';
 import { WebSocketEvent } from '../../services/websocketService';
+import { UserAvatar } from '../../components/common/UserAvatar';
 
 type ViewTab = 'Board' | 'List';
 
@@ -852,15 +853,12 @@ export const ProjectDetailPage: React.FC = () => {
                       }`}
                     title={`${displayName} (${mem.email || 'Member'})`}
                   >
-                    {mem.avatarUrl ? (
-                      <img
-                        src={mem.avatarUrl}
-                        alt={displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      initials
-                    )}
+                    <UserAvatar
+                      src={mem.avatarUrl}
+                      name={displayName}
+                      size="w-7 h-7"
+                      textSize="text-[11px]"
+                    />
                     {isSelected && (
                       <div className="absolute inset-0 bg-blue-600/50 flex items-center justify-center">
                         <Check size={14} className="text-white stroke-[3]" />

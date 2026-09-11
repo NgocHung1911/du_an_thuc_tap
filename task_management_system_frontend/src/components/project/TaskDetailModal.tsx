@@ -5,6 +5,7 @@ import {
   MoreHorizontal, ArrowDown
 } from 'lucide-react';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO, TaskAttachmentDTO, taskApi } from '../../services/taskApi';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface TaskDetailModalProps {
   task: TaskDTO | null;
@@ -610,21 +611,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </select>
               ) : (
                 <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
-                  {task.assignedUser?.avatarUrl ? (
-                    <img
-                      src={task.assignedUser.avatarUrl}
-                      alt={assigneeName}
-                      className="w-7 h-7 rounded-full object-cover shrink-0"
-                    />
-                  ) : (
-                    <div
-                      className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
-                        assigneeName
-                      )}`}
-                    >
-                      {getInitials(assigneeName)}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={task.assignedUser?.avatarUrl}
+                    name={assigneeName}
+                    size="w-7 h-7"
+                    textSize="text-xs"
+                  />
                   <span className="text-xs font-semibold text-slate-900">
                     {assigneeName}{assigneeEmail ? ` (${assigneeEmail})` : ''}
                   </span>
@@ -660,21 +652,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </select>
               ) : (
                 <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
-                  {task.reporter?.avatarUrl ? (
-                    <img
-                      src={task.reporter.avatarUrl}
-                      alt={reporterName}
-                      className="w-7 h-7 rounded-full object-cover shrink-0"
-                    />
-                  ) : (
-                    <div
-                      className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center ${getAvatarColor(
-                        reporterName
-                      )}`}
-                    >
-                      {getInitials(reporterName)}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={task.reporter?.avatarUrl}
+                    name={reporterName}
+                    size="w-7 h-7"
+                    textSize="text-xs"
+                  />
                   <span className="text-xs font-semibold text-slate-900">
                     {reporterName}{reporterEmail ? ` (${reporterEmail})` : ''}
                   </span>

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { userApi } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
 import { User, Mail, Camera, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { UserAvatar } from '../../components/common/UserAvatar';
 
 export const PersonalProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -118,21 +119,13 @@ export const PersonalProfilePage: React.FC = () => {
         {/* Avatar Header */}
         <div className="flex flex-col items-center text-center pb-5 border-b border-slate-100">
           <div className="relative group cursor-pointer mb-3" onClick={handleAvatarClick} title="Click to change avatar">
-            <div className="w-24 h-24 rounded-full bg-blue-600 text-white font-extrabold text-3xl flex items-center justify-center shadow-md overflow-hidden border-4 border-white ring-2 ring-blue-500/20">
-              {profile?.avatarUrl ? (
-                <img
-                  src={profile.avatarUrl}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Fallback on image load error
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <span>{getInitials(profile?.fullName || profile?.username || user?.username)}</span>
-              )}
-            </div>
+            <UserAvatar
+              src={profile?.avatarUrl}
+              name={profile?.fullName || profile?.username || user?.username}
+              size="w-24 h-24"
+              className="border-4 border-white ring-2 ring-blue-500/20 shadow-md"
+              textSize="text-3xl"
+            />
 
             {/* Hover Camera Overlay */}
             <div className="absolute inset-0 rounded-full bg-black/40 backdrop-blur-3xs flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
