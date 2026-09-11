@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO, TaskAttachmentDTO, taskApi } from '../../services/taskApi';
 import { UserAvatar } from '../common/UserAvatar';
+import { useAuth } from '../../context/AuthContext';
+import { TaskCommentSection } from './TaskCommentSection';
 
 interface TaskDetailModalProps {
   task: TaskDTO | null;
@@ -35,6 +37,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onDeleteTask,
 }) => {
   if (!isOpen || !task) return null;
+
+  const { user } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [titleInput, setTitleInput] = useState(task.title);
@@ -254,7 +258,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-150 font-sans">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-150 font-sans">
         {/* Header Bar */}
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -291,10 +295,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Body - 2 Columns Layout */}
-        <div className="p-6 overflow-y-auto grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 bg-white">
-          {/* Left Column (Main Content: Title & Description) */}
-          <div className="lg:col-span-2 space-y-6">
+        {/* Modal Body - Always 2 Columns Side-by-Side Layout (Jira Style) */}
+        <div className="p-6 overflow-y-auto flex flex-row gap-6 flex-1 bg-white min-w-0">
+          {/* Left Column (Main Content: Title, Description, Attachments, Comments) */}
+          <div className="flex-1 min-w-0 space-y-6 pb-12">
             {/* Title Section */}
             <div>
               {isEditing ? (
@@ -535,11 +539,21 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   )}
                 </div>
               )}
+
+              {/* Task Comments & Activity Section */}
+              <TaskCommentSection
+                taskId={task.id}
+                projectId={task.projectId || task.project?.id}
+                projectMembers={projectMembers}
+                currentUsername={user?.username}
+                currentUserFullName={user?.fullName}
+                isAdminOrOwner={isAdmin}
+              />
             </div>
           </div>
 
           {/* Right Column (Attributes & Metadata Sidebar) */}
-          <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-5 h-fit">
+          <div className="w-72 sm:w-80 shrink-0 bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-5 h-fit">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 pb-2">
               Task Attributes
             </h3>
