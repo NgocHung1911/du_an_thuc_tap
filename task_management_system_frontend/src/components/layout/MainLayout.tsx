@@ -8,6 +8,7 @@ import { UserDTO } from '../../services/taskApi';
 import { Bell, HelpCircle, Kanban } from 'lucide-react';
 
 import { useNotificationWebSocket } from '../../hooks/useWebSocket';
+import { UserAvatar } from '../common/UserAvatar';
 
 export const MainLayout: React.FC = () => {
   const { isAdmin, user } = useAuth();
@@ -57,13 +58,13 @@ export const MainLayout: React.FC = () => {
           <div className="h-5 w-px bg-slate-800"></div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-blue-600 border border-blue-400/30 flex items-center justify-center text-xs font-bold text-white shadow-xs overflow-hidden">
-              {profile?.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                getInitials(displayName)
-              )}
-            </div>
+            <UserAvatar
+              src={profile?.avatarUrl}
+              name={displayName}
+              size="w-8 h-8"
+              className="border border-blue-400/30"
+              textSize="text-xs"
+            />
             <span className="text-xs font-semibold text-slate-200 hidden sm:inline">{displayName}</span>
           </div>
         </div>

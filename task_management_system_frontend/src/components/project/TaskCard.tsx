@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface TaskCardProps {
   task: TaskDTO;
@@ -236,23 +237,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {task.assignedUser?.avatarUrl ? (
-            <img
-              src={task.assignedUser.avatarUrl}
-              alt={assigneeName}
-              className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-xs shrink-0"
-              title={`Assigned to: ${assigneeName}${task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}`}
-            />
-          ) : (
-            <div
-              className={`w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs shrink-0 ${getAvatarColor(
-                assigneeName
-              )}`}
-              title={`Assigned to: ${assigneeName}${task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}`}
-            >
-              {task.assignedUser || task.userFullName ? getInitials(assigneeName) : '?'}
-            </div>
-          )}
+          <UserAvatar
+            src={task.assignedUser?.avatarUrl}
+            name={assigneeName}
+            size="w-7 h-7"
+            className="border-2 border-white shadow-xs"
+            textSize="text-[11px]"
+            title={`Assigned to: ${assigneeName}${task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}`}
+          />
 
           {isAdmin && projectMembers.length > 0 && onAssigneeChange && (
             <select

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, Edit3, Trash2, AlertCircle } from 'lucide-react';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface ProjectListViewProps {
   tasks: TaskDTO[];
@@ -192,17 +193,12 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                         </select>
                       ) : (
                         <div className="flex items-center gap-2">
-                          {task.assignedUser?.avatarUrl ? (
-                            <img
-                              src={task.assignedUser.avatarUrl}
-                              alt="Assignee Avatar"
-                              className="w-6 h-6 rounded-full object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                              {getInitials(task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username)}
-                            </div>
-                          )}
+                          <UserAvatar
+                            src={task.assignedUser?.avatarUrl}
+                            name={task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username}
+                            size="w-6 h-6"
+                            textSize="text-[10px]"
+                          />
                           <span className="text-xs text-slate-800 font-medium line-clamp-1">
                             {task.userFullName || task.assignedUser?.fullName || task.assignedUser?.username || 'Unassigned'}
                             {task.assignedUser?.email ? ` (${task.assignedUser.email})` : ''}
@@ -236,17 +232,12 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
                         </select>
                       ) : (
                         <div className="flex items-center gap-2">
-                          {task.reporter?.avatarUrl ? (
-                            <img
-                              src={task.reporter.avatarUrl}
-                              alt="Reporter Avatar"
-                              className="w-6 h-6 rounded-full object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                              {getInitials(task.reporterFullName || task.reporter?.fullName || task.reporter?.username)}
-                            </div>
-                          )}
+                          <UserAvatar
+                            src={task.reporter?.avatarUrl}
+                            name={task.reporterFullName || task.reporter?.fullName || task.reporter?.username}
+                            size="w-6 h-6"
+                            textSize="text-[10px]"
+                          />
                           <span className="text-xs text-slate-800 font-medium line-clamp-1">
                             {task.reporterFullName || task.reporter?.fullName || task.reporter?.username || 'System'}
                             {task.reporter?.email ? ` (${task.reporter.email})` : ''}
