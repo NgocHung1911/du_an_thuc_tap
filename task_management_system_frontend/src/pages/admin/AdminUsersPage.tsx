@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Users, UserPlus, Shield, CheckCircle2, RefreshCw, Search,
   Filter, X, Edit3, AlertCircle, Inbox
@@ -8,6 +9,7 @@ import { UserDTO } from '../../services/taskApi';
 import { UserFormModal } from '../../components/admin/UserFormModal';
 
 export const AdminUsersPage: React.FC = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,9 +94,9 @@ export const AdminUsersPage: React.FC = () => {
               <Users size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">👥 User Management</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">👥 {t('users.title')}</h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                List of user accounts and permissions in the system
+                {t('users.subtitle')}
               </p>
             </div>
           </div>
@@ -104,7 +106,7 @@ export const AdminUsersPage: React.FC = () => {
           <button
             onClick={fetchUsers}
             className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
-            title="Refresh users list"
+            title={t('common.loading')}
           >
             <RefreshCw size={18} className={loading ? 'animate-spin text-blue-600' : ''} />
           </button>
@@ -114,10 +116,10 @@ export const AdminUsersPage: React.FC = () => {
               setUserToEdit(null);
               setIsFormModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all hover:shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all hover:shadow-md cursor-pointer"
           >
             <UserPlus size={18} />
-            <span>Add User</span>
+            <span>{t('users.add_user')}</span>
           </button>
         </div>
       </div>
@@ -132,7 +134,7 @@ export const AdminUsersPage: React.FC = () => {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="Search by username, name, email..."
+            placeholder={t('common.search')}
             className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
           />
           {searchKeyword && (
@@ -147,13 +149,13 @@ export const AdminUsersPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-slate-400" />
-          <span className="text-xs font-semibold text-slate-600 shrink-0">Role:</span>
+          <span className="text-xs font-semibold text-slate-600 shrink-0">{t('users.role')}:</span>
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
             className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
           >
-            <option value="ALL">All Roles</option>
+            <option value="ALL">Tất cả vai trò</option>
             <option value="ADMIN">ADMIN</option>
             <option value="MEMBER">MEMBER</option>
           </select>
@@ -189,11 +191,11 @@ export const AdminUsersPage: React.FC = () => {
           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
             <Inbox size={24} />
           </div>
-          <h3 className="text-base font-bold text-slate-900">No matching users found</h3>
+          <h3 className="text-base font-bold text-slate-900">Không tìm thấy người dùng nào</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             {searchKeyword || filterRole !== 'ALL'
-              ? 'Please try searching with a different keyword or reset filters.'
-              : 'No users found in the system.'}
+              ? 'Thử tìm kiếm với từ khóa khác hoặc đặt lại bộ lọc.'
+              : 'Không có người dùng trong hệ thống.'}
           </p>
           {(searchKeyword || filterRole !== 'ALL') && (
             <button
@@ -203,7 +205,7 @@ export const AdminUsersPage: React.FC = () => {
               }}
               className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-blue-600 text-xs font-bold rounded-xl border border-slate-200 transition-colors"
             >
-              Reset filters
+              Đặt lại bộ lọc
             </button>
           )}
         </div>
@@ -213,11 +215,11 @@ export const AdminUsersPage: React.FC = () => {
             <table className="w-full text-left text-sm text-slate-800">
               <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
-                  <th className="p-4 font-bold">Name</th>
-                  <th className="p-4 font-bold">Email</th>
-                  <th className="p-4 font-bold">Role</th>
-                  <th className="p-4 font-bold">Status</th>
-                  <th className="p-4 text-right font-bold">Actions</th>
+                  <th className="p-4 font-bold">{t('users.full_name')}</th>
+                  <th className="p-4 font-bold">{t('users.email')}</th>
+                  <th className="p-4 font-bold">{t('users.role')}</th>
+                  <th className="p-4 font-bold">{t('users.status')}</th>
+                  <th className="p-4 text-right font-bold">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -236,7 +238,7 @@ export const AdminUsersPage: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-sm font-bold text-slate-900">{u.fullName || u.username}</p>
-                            <p className="text-xs text-slate-400 font-mono">Username: {u.username}</p>
+                            <p className="text-xs text-slate-400 font-mono">{t('users.username')}: {u.username}</p>
                           </div>
                         </div>
                       </td>
@@ -249,12 +251,12 @@ export const AdminUsersPage: React.FC = () => {
                             }`}
                         >
                           <Shield size={12} />
-                          {isAdminRole ? 'ROLE_ADMIN' : 'ROLE_MEMBER'}
+                          {isAdminRole ? t('users.roles.ADMIN') : t('users.roles.MEMBER')}
                         </span>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                          <CheckCircle2 size={14} /> Active
+                          <CheckCircle2 size={14} /> {t('users.statuses.ACTIVE')}
                         </span>
                       </td>
                       <td className="p-4 text-right">
@@ -264,8 +266,8 @@ export const AdminUsersPage: React.FC = () => {
                               setUserToEdit(u);
                               setIsFormModalOpen(true);
                             }}
-                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit user info"
+                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title={t('common.edit')}
                           >
                             <Edit3 size={16} />
                           </button>
@@ -291,8 +293,6 @@ export const AdminUsersPage: React.FC = () => {
         onSubmit={handleFormSubmit}
       />
 
-
-
       {/* Toast Notification */}
       {toast && (
         <div
@@ -311,3 +311,4 @@ export const AdminUsersPage: React.FC = () => {
     </div>
   );
 };
+

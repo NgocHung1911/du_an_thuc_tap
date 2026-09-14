@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { AdminSidebar } from './AdminSidebar';
 import { MemberSidebar } from './MemberSidebar';
@@ -7,17 +8,25 @@ import { userApi } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
 import { notificationApi, NotificationDTO } from '../../services/notificationApi';
 import { NotificationDropdown } from './NotificationDropdown';
-import { Bell, HelpCircle, Kanban } from 'lucide-react';
+import { Bell, HelpCircle, Kanban, Globe } from 'lucide-react';
 
 import { useNotificationWebSocket } from '../../hooks/useWebSocket';
 import { UserAvatar } from '../common/UserAvatar';
 
 export const MainLayout: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { isAdmin, user } = useAuth();
   const [profile, setProfile] = useState<UserDTO | null>(null);
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState<boolean>(false);
+
+  const currentLang = (i18n.language || 'vi').startsWith('en') ? 'en' : 'vi';
+
+  const toggleLanguage = () => {
+    const nextLang = currentLang === 'vi' ? 'en' : 'vi';
+    i18n.changeLanguage(nextLang);
+  };
 
   useEffect(() => {
     userApi.getCurrentUser()
@@ -68,16 +77,28 @@ export const MainLayout: React.FC = () => {
           <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-sm">
             <Kanban size={18} />
           </div>
-          <span className="font-bold text-base tracking-tight text-white">Kira Task Management</span>
+          <span className="font-bold text-base tracking-tight text-white">{t('header.title')}</span>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Language Switcher */}
+          <button
+            onClick={toggleLanguage}
+            className="px-2.5 py-1.5 hover:bg-slate-800 rounded-xl transition-all text-slate-200 hover:text-white flex items-center gap-1.5 text-xs font-medium border border-slate-700/80 bg-slate-800/40 cursor-pointer"
+            title={t('language.select')}
+          >
+            <Globe size={14} className="text-blue-400" />
+            <span className="font-semibold tracking-wide">
+              {currentLang === 'vi' ? '🇻🇳 VI' : '🇺🇸 EN'}
+            </span>
+          </button>
+
           {/* Notification Bell Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsNotificationOpen((prev) => !prev)}
               className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white relative"
-              title="Thông báo"
+              title={t('header.notifications')}
             >
               <Bell size={18} />
               {safeUnreadCount > 0 && (
@@ -96,7 +117,7 @@ export const MainLayout: React.FC = () => {
             />
           </div>
 
-          <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Help">
+          <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title={t('header.help')}>
             <HelpCircle size={18} />
           </button>
 

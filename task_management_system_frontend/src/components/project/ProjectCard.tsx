@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Edit3, Trash2, CheckSquare, ArrowUpRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ProjectDTO, ProjectStatus } from '../../services/projectApi';
 
 interface ProjectCardProps {
@@ -19,6 +20,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onDeleteClick,
   onStatusChange,
 }) => {
+  const { t } = useTranslation();
   const getStatusBadgeStyle = (status?: ProjectStatus | string) => {
     switch (status) {
       case 'PLANNING':
@@ -55,10 +57,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               )}`}
               title="Quickly change project status"
             >
-              <option value="PLANNING" className="bg-white text-slate-900 font-semibold">PLANNING</option>
-              <option value="IN_PROGRESS" className="bg-white text-slate-900 font-semibold">IN_PROGRESS</option>
-              <option value="COMPLETED" className="bg-white text-slate-900 font-semibold">COMPLETED</option>
-              <option value="ON_HOLD" className="bg-white text-slate-900 font-semibold">ON_HOLD</option>
+            <option value="PLANNING" className="bg-white text-slate-900 font-semibold">{t('projects.status.PLANNING')}</option>
+              <option value="IN_PROGRESS" className="bg-white text-slate-900 font-semibold">{t('projects.status.IN_PROGRESS')}</option>
+              <option value="COMPLETED" className="bg-white text-slate-900 font-semibold">{t('projects.status.COMPLETED')}</option>
+              <option value="ON_HOLD" className="bg-white text-slate-900 font-semibold">{t('projects.status.ON_HOLD')}</option>
             </select>
           ) : (
             <span
@@ -66,7 +68,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 project.status
               )}`}
             >
-              {project.status || 'PLANNING'}
+              {t(`projects.status.${project.status || 'PLANNING'}`, project.status || 'PLANNING')}
             </span>
           )}
 
@@ -114,7 +116,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             {project.name}
           </h3>
           <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
-            {project.description || 'No description provided.'}
+            {project.description || t('projects.no_description')}
           </p>
         </div>
       </div>
@@ -131,7 +133,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {project.taskCount !== undefined && (
           <div className="flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md text-[11px]">
             <CheckSquare size={13} className="text-blue-600" />
-            <span>{project.taskCount} {project.taskCount === 1 ? 'task' : 'tasks'}</span>
+            <span>{project.taskCount} {project.taskCount === 1 ? t('projects.task_singular') : t('projects.task_plural')}</span>
           </div>
         )}
       </div>

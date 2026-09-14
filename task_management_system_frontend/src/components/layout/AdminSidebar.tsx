@@ -1,9 +1,11 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { LayoutDashboard, FolderGit2, Users, FolderKanban, User, LogOut } from 'lucide-react';
 
 export const AdminSidebar: React.FC = () => {
+  const { t } = useTranslation();
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -13,11 +15,11 @@ export const AdminSidebar: React.FC = () => {
   };
 
   const navItems = [
-    { label: 'Dashboard Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { label: 'Participating Projects', icon: FolderGit2, path: '/admin/my-projects' },
-    { label: 'Manage Users', icon: Users, path: '/admin/users' },
-    { label: 'Manage System Projects', icon: FolderKanban, path: '/admin/projects' },
-    { label: 'Personal Profile', icon: User, path: '/admin/profile' },
+    { labelKey: 'sidebar.dashboard_overview', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { labelKey: 'sidebar.participating_projects', icon: FolderGit2, path: '/admin/my-projects' },
+    { labelKey: 'sidebar.manage_users', icon: Users, path: '/admin/users' },
+    { labelKey: 'sidebar.manage_system_projects', icon: FolderKanban, path: '/admin/projects' },
+    { labelKey: 'sidebar.profile', icon: User, path: '/admin/profile' },
   ];
 
   return (
@@ -25,7 +27,7 @@ export const AdminSidebar: React.FC = () => {
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto min-h-0 p-3 space-y-1">
         <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-          System Administration
+          {t('sidebar.system_admin')}
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -42,7 +44,7 @@ export const AdminSidebar: React.FC = () => {
               }
             >
               <Icon size={18} />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           );
         })}
@@ -52,12 +54,13 @@ export const AdminSidebar: React.FC = () => {
       <div className="p-4 border-t border-slate-200 bg-slate-50/80 mt-auto shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-all shadow-2xs"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
         >
           <LogOut size={16} />
-          <span>Logout</span>
+          <span>{t('sidebar.logout')}</span>
         </button>
       </div>
     </aside>
   );
 };
+

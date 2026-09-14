@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Clock, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 import { UserAvatar } from '../common/UserAvatar';
@@ -27,6 +28,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onDeleteTask,
   onDragStart,
 }) => {
+  const { t } = useTranslation();
   // Check if overdue
   const isOverdue = React.useMemo(() => {
     if (!task.deadline || task.status === 'DONE') return false;
@@ -136,9 +138,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   task.priority
                 )}`}
               >
-                <option value="HIGH">HIGH</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="LOW">LOW</option>
+                <option value="HIGH">{t('tasks.priority.HIGH', 'HIGH')}</option>
+                <option value="MEDIUM">{t('tasks.priority.MEDIUM', 'MEDIUM')}</option>
+                <option value="LOW">{t('tasks.priority.LOW', 'LOW')}</option>
               </select>
             ) : (
               <span
@@ -146,7 +148,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   task.priority
                 )}`}
               >
-                {task.priority}
+                {t(`tasks.priority.${task.priority}`, task.priority)}
               </span>
             )}
           </div>

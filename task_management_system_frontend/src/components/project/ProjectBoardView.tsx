@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, CheckCircle2, Clock, PlayCircle, Eye } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 import { TaskCard } from './TaskCard';
 
@@ -27,11 +28,12 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   onDeleteTask,
   onQuickCreate,
 }) => {
+  const { t } = useTranslation();
   const columns: { status: TaskStatus; label: string; icon: React.FC<{ size?: number }>; color: string }[] = [
-    { status: 'TODO', label: 'TODO', icon: Clock, color: 'border-slate-300 bg-slate-50 text-slate-700' },
-    { status: 'DOING', label: 'DOING', icon: PlayCircle, color: 'border-sky-300 bg-sky-50 text-sky-700' },
-    { status: 'REVIEW', label: 'REVIEW', icon: Eye, color: 'border-purple-300 bg-purple-50 text-purple-700' },
-    { status: 'DONE', label: 'DONE', icon: CheckCircle2, color: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
+    { status: 'TODO', label: t('tasks.status.TODO'), icon: Clock, color: 'border-slate-300 bg-slate-50 text-slate-700' },
+    { status: 'DOING', label: t('tasks.status.DOING'), icon: PlayCircle, color: 'border-sky-300 bg-sky-50 text-sky-700' },
+    { status: 'REVIEW', label: t('tasks.status.REVIEW'), icon: Eye, color: 'border-purple-300 bg-purple-50 text-purple-700' },
+    { status: 'DONE', label: t('tasks.status.DONE'), icon: CheckCircle2, color: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
   ];
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -84,7 +86,7 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
                 <button
                   onClick={() => onQuickCreate(col.status)}
                   className="p-1 hover:bg-white text-slate-500 hover:text-blue-600 rounded-lg transition-colors"
-                  title={`Add task to ${col.label}`}
+                  title={t('board.add_task_to', { column: col.label })}
                 >
                   <Plus size={16} />
                 </button>
@@ -95,7 +97,7 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
             <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-[120px] scrollbar-thin">
               {columnTasks.length === 0 ? (
                 <div className="h-28 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400 font-medium p-4 text-center">
-                  No tasks in this column
+                  {t('board.no_tasks_in_column')}
                 </div>
               ) : (
                 columnTasks.map((task) => (
@@ -122,7 +124,7 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
                 className="mt-3 w-full py-2 px-3 text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-white rounded-xl border border-transparent hover:border-slate-200 flex items-center justify-center gap-1.5 transition-all shrink-0"
               >
                 <Plus size={15} />
-                <span>Create Task</span>
+                <span>{t('board.create_task')}</span>
               </button>
             )}
           </div>

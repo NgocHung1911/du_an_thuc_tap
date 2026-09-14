@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FolderKanban, Plus, RefreshCw, Search, Inbox, CheckCircle2, AlertCircle, X,
   Filter, Eye, Edit3, Trash2, ChevronLeft, ChevronRight, Calendar, Users, CheckSquare,
@@ -15,6 +16,7 @@ const ITEMS_PER_PAGE = 20;
 export const AdminProjectsPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { t } = useTranslation();
 
   const [projects, setProjects] = useState<ProjectDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -84,13 +86,13 @@ export const AdminProjectsPage: React.FC = () => {
         endDate: currentProject.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: newStatus,
       });
-      showToast(`Successfully updated project status to ${newStatus}!`, 'success');
+      showToast(t('admin_projects.status_updated', { status: newStatus }), 'success');
     } catch (err: any) {
       console.error('Error changing project status:', err);
       setProjects((prev) =>
         prev.map((p) => (p.id === projectId ? { ...p, status: previousStatus } : p))
       );
-      const msg = err.response?.data?.message || err.message || 'Failed to update project status!';
+      const msg = err.response?.data?.message || err.message || t('common.loading');
       showToast(msg, 'error');
     }
   };
@@ -99,10 +101,10 @@ export const AdminProjectsPage: React.FC = () => {
   const handleFormSubmit = async (data: ProjectRequest, projectId?: number) => {
     if (projectId) {
       await projectApi.updateProject(projectId, data);
-      showToast(`Successfully updated project #${projectId}!`, 'success');
+      showToast(t('admin_projects.project_updated', { id: projectId }), 'success');
     } else {
       await projectApi.createProject(data);
-      showToast('Successfully created new project!', 'success');
+      showToast(t('admin_projects.project_created'), 'success');
     }
     await fetchProjects();
   };
@@ -110,7 +112,7 @@ export const AdminProjectsPage: React.FC = () => {
   // Handle Delete Confirm
   const handleDeleteConfirm = async (projectId: number) => {
     await projectApi.deleteProject(projectId);
-    showToast(`Successfully deleted project #${projectId}!`, 'success');
+    showToast(t('admin_projects.project_deleted', { id: projectId }), 'success');
     await fetchProjects();
   };
 
@@ -142,9 +144,9 @@ export const AdminProjectsPage: React.FC = () => {
               <FolderKanban size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">System Projects Management</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('admin_projects.title')}</h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Manage all system projects, monitor progress, and update status
+                {t('admin_projects.subtitle')}
               </p>
             </div>
           </div>
@@ -154,7 +156,7 @@ export const AdminProjectsPage: React.FC = () => {
           <button
             onClick={fetchProjects}
             className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
-            title="Refresh list"
+            title={t('admin_projects.refresh_title')}
           >
             <RefreshCw size={18} className={loading ? 'animate-spin text-blue-600' : ''} />
           </button>
@@ -167,7 +169,7 @@ export const AdminProjectsPage: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all"
           >
             <Plus size={18} />
-            <span>Create New Project</span>
+            <span>{t('projects.create_project')}</span>
           </button>
         </div>
       </div>
@@ -176,7 +178,7 @@ export const AdminProjectsPage: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase text-slate-400">Total Projects</p>
+            <p className="text-[11px] font-bold uppercase text-slate-400">{t('admin_projects.stat_total')}</p>
             <p className="text-2xl font-extrabold text-slate-900 mt-0.5">{stats.total}</p>
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
@@ -186,7 +188,7 @@ export const AdminProjectsPage: React.FC = () => {
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase text-slate-400">In Progress</p>
+            <p className="text-[11px] font-bold uppercase text-slate-400">{t('admin_projects.stat_in_progress')}</p>
             <p className="text-2xl font-extrabold text-blue-600 mt-0.5">{stats.inProgress}</p>
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
@@ -196,7 +198,7 @@ export const AdminProjectsPage: React.FC = () => {
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase text-slate-400">Completed</p>
+            <p className="text-[11px] font-bold uppercase text-slate-400">{t('admin_projects.stat_completed')}</p>
             <p className="text-2xl font-extrabold text-emerald-600 mt-0.5">{stats.completed}</p>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -206,7 +208,7 @@ export const AdminProjectsPage: React.FC = () => {
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase text-slate-400">Planning / On Hold</p>
+            <p className="text-[11px] font-bold uppercase text-slate-400">{t('admin_projects.stat_planning_hold')}</p>
             <p className="text-2xl font-extrabold text-amber-600 mt-0.5">{stats.planning + stats.onHold}</p>
           </div>
           <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
@@ -226,7 +228,7 @@ export const AdminProjectsPage: React.FC = () => {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="Search projects by name..."
+            placeholder={t('projects.search_placeholder')}
             className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
           />
           {searchKeyword && (
@@ -242,17 +244,17 @@ export const AdminProjectsPage: React.FC = () => {
         {/* Status Filter */}
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-slate-400" />
-          <span className="text-xs font-semibold text-slate-600 shrink-0">Status:</span>
+          <span className="text-xs font-semibold text-slate-600 shrink-0">{t('projects.filter_status_label')}</span>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="PLANNING">PLANNING</option>
-            <option value="IN_PROGRESS">IN_PROGRESS</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="ON_HOLD">ON_HOLD</option>
+            <option value="ALL">{t('projects.status.all')}</option>
+            <option value="PLANNING">{t('projects.status.PLANNING')}</option>
+            <option value="IN_PROGRESS">{t('projects.status.IN_PROGRESS')}</option>
+            <option value="COMPLETED">{t('projects.status.COMPLETED')}</option>
+            <option value="ON_HOLD">{t('projects.status.ON_HOLD')}</option>
           </select>
         </div>
       </div>
@@ -273,13 +275,13 @@ export const AdminProjectsPage: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-slate-900">
               {searchKeyword || filterStatus !== 'ALL'
-                ? 'No projects found matching the filter'
-                : 'No projects available in the system'}
+                ? t('admin_projects.no_projects_found')
+                : t('admin_projects.no_projects_available')}
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
               {searchKeyword || filterStatus !== 'ALL'
-                ? 'Please try searching with another keyword or reset filters.'
-                : 'Click "Create New Project" to create your first project.'}
+                ? t('admin_projects.no_projects_filter_hint')
+                : t('admin_projects.no_projects_empty_hint')}
             </p>
           </div>
 
@@ -292,7 +294,7 @@ export const AdminProjectsPage: React.FC = () => {
                 }}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-blue-600 text-xs font-bold rounded-xl border border-slate-200 transition-colors"
               >
-                Reset all filters
+                {t('admin_projects.reset_filters')}
               </button>
             ) : (
               <button
@@ -303,7 +305,7 @@ export const AdminProjectsPage: React.FC = () => {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors inline-flex items-center gap-1.5"
               >
                 <Plus size={16} />
-                <span>Create New Project</span>
+                <span>{t('projects.create_project')}</span>
               </button>
             )}
           </div>
@@ -361,10 +363,10 @@ export const AdminProjectsPage: React.FC = () => {
                             : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                         }`}
                       >
-                        <option value="PLANNING" className="bg-white text-amber-700 font-semibold">PLANNING</option>
-                        <option value="IN_PROGRESS" className="bg-white text-blue-700 font-semibold">IN_PROGRESS</option>
-                        <option value="COMPLETED" className="bg-white text-emerald-700 font-semibold">COMPLETED</option>
-                        <option value="ON_HOLD" className="bg-white text-slate-700 font-semibold">ON_HOLD</option>
+                        <option value="PLANNING" className="bg-white text-amber-700 font-semibold">{t('projects.status.PLANNING')}</option>
+                        <option value="IN_PROGRESS" className="bg-white text-blue-700 font-semibold">{t('projects.status.IN_PROGRESS')}</option>
+                        <option value="COMPLETED" className="bg-white text-emerald-700 font-semibold">{t('projects.status.COMPLETED')}</option>
+                        <option value="ON_HOLD" className="bg-white text-slate-700 font-semibold">{t('projects.status.ON_HOLD')}</option>
                       </select>
                     </td>
 
@@ -400,8 +402,7 @@ export const AdminProjectsPage: React.FC = () => {
                         <button
                           onClick={() => navigate(`/admin/projects/${project.id}`)}
                           className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View details"
-                        >
+                          title={t('admin_projects.view_details')}>
                           <Eye size={16} />
                         </button>
                         <button
@@ -410,8 +411,7 @@ export const AdminProjectsPage: React.FC = () => {
                             setIsFormModalOpen(true);
                           }}
                           className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                          title="Edit project"
-                        >
+                          title={t('admin_projects.edit_project')}>
                           <Edit3 size={16} />
                         </button>
                         <button
@@ -420,8 +420,7 @@ export const AdminProjectsPage: React.FC = () => {
                             setIsDeleteModalOpen(true);
                           }}
                           className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete project"
-                        >
+                          title={t('admin_projects.delete_project')}>
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -435,9 +434,9 @@ export const AdminProjectsPage: React.FC = () => {
           {/* Pagination Controls */}
           <div className="p-4 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="text-slate-500">
-              Showing <span className="font-bold text-slate-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{' '}
-              <span className="font-bold text-slate-900">{Math.min(currentPage * ITEMS_PER_PAGE, projects.length)}</span> of{' '}
-              <span className="font-bold text-slate-900">{projects.length}</span> projects (20 items / page)
+              {t('admin_projects.pagination_showing')} <span className="font-bold text-slate-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> {t('admin_projects.pagination_to')}{' '}
+              <span className="font-bold text-slate-900">{Math.min(currentPage * ITEMS_PER_PAGE, projects.length)}</span> {t('admin_projects.pagination_of')}{' '}
+              <span className="font-bold text-slate-900">{projects.length}</span> {t('admin_projects.pagination_projects')} {t('admin_projects.pagination_per_page')}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -447,7 +446,7 @@ export const AdminProjectsPage: React.FC = () => {
                 className="p-2 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl disabled:opacity-40 disabled:hover:bg-white hover:bg-slate-100 transition-all font-semibold flex items-center gap-1 shadow-2xs"
               >
                 <ChevronLeft size={16} />
-                <span>Previous</span>
+                <span>{t('admin_projects.previous')}</span>
               </button>
 
               <div className="flex items-center gap-1 px-2">
@@ -471,7 +470,7 @@ export const AdminProjectsPage: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="p-2 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl disabled:opacity-40 disabled:hover:bg-white hover:bg-slate-100 transition-all font-semibold flex items-center gap-1 shadow-2xs"
               >
-                <span>Next</span>
+                <span>{t('admin_projects.next')}</span>
                 <ChevronRight size={16} />
               </button>
             </div>

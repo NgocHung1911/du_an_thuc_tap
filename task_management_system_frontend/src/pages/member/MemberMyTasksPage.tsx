@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CheckSquare, Clock, AlertCircle, Search, Filter, RefreshCw,
   Folder, CheckCircle2, Layers, ChevronDown, ChevronRight, Eye,
@@ -58,6 +59,7 @@ interface ProjectGroup {
 }
 
 export const MemberMyTasksPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
@@ -197,14 +199,14 @@ export const MemberMyTasksPage: React.FC = () => {
 
     try {
       await taskApi.updateTaskStatus(taskId, newStatus);
-      showToast(`Task status updated to ${newStatus}`, 'success');
+      showToast(t('tasks.status_updated', { status: newStatus }), 'success');
       if (fromModal) {
         setIsDetailModalOpen(false);
         setSelectedTaskDetail(null);
       }
     } catch (err: any) {
       console.error('Failed to update status:', err);
-      showToast('Failed to update task status', 'error');
+      showToast(t('tasks.status_update_failed'), 'error');
       // Revert status
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: previousStatus } : t))
@@ -228,19 +230,20 @@ export const MemberMyTasksPage: React.FC = () => {
 
   // Priority styling helper
   const getPriorityBadge = (priority: TaskPriority) => {
+    const label = t(`tasks.priority.${priority}`, priority);
     switch (priority) {
       case 'HIGH':
-        return <span className="bg-red-50 text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded border border-red-200">HIGH</span>;
+        return <span className="bg-red-50 text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded border border-red-200">{label}</span>;
       case 'MEDIUM':
-        return <span className="bg-amber-50 text-amber-700 text-[11px] font-semibold px-2 py-0.5 rounded border border-amber-200">MEDIUM</span>;
+        return <span className="bg-amber-50 text-amber-700 text-[11px] font-semibold px-2 py-0.5 rounded border border-amber-200">{label}</span>;
       case 'LOW':
       default:
-        return <span className="bg-slate-50 text-slate-600 text-[11px] font-semibold px-2 py-0.5 rounded border border-slate-200">LOW</span>;
+        return <span className="bg-slate-50 text-slate-600 text-[11px] font-semibold px-2 py-0.5 rounded border border-slate-200">{label}</span>;
     }
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 font-sans">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -259,19 +262,19 @@ export const MemberMyTasksPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#DFE1E6] pb-4">
         <div>
           <h1 className="text-2xl font-bold text-[#172B4D] flex items-center gap-2">
-            📌 My Tasks
+            📌 {t('tasks.title')}
           </h1>
           <p className="text-sm text-[#5E6C84] mt-0.5">
-            Tasks assigned to <strong>{user?.username}</strong> categorized by Project & Status
+            {t('tasks.subtitle', { username: user?.username || 'user' })}
           </p>
         </div>
         <button
           onClick={fetchTasks}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#172B4D] bg-white border border-[#DFE1E6] rounded-md hover:bg-[#F4F5F7] shadow-xs transition-colors self-start sm:self-auto disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#172B4D] bg-white border border-[#DFE1E6] rounded-md hover:bg-[#F4F5F7] shadow-xs transition-colors self-start sm:self-auto disabled:opacity-50 cursor-pointer"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span>Refresh</span>
+          <span>{t('tasks.refresh')}</span>
         </button>
       </div>
 
@@ -281,7 +284,7 @@ export const MemberMyTasksPage: React.FC = () => {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B778C]" />
           <input
             type="text"
-            placeholder="Search by task title or project name..."
+            placeholder={t('tasks.search_placeholder')}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 text-xs border border-[#DFE1E6] rounded-md focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC] bg-[#FAFBFC]"
@@ -295,9 +298,9 @@ export const MemberMyTasksPage: React.FC = () => {
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="px-2.5 py-1.5 text-xs border border-[#DFE1E6] rounded-md focus:outline-none focus:border-[#0052CC] bg-white text-[#172B4D] font-medium"
+              className="px-2.5 py-1.5 text-xs border border-[#DFE1E6] rounded-md focus:outline-none focus:border-[#0052CC] bg-white text-[#172B4D] font-medium cursor-pointer"
             >
-              <option value="ALL">All Projects ({availableProjects.length})</option>
+              <option value="ALL">{t('tasks.all_projects')} ({availableProjects.length})</option>
               {availableProjects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -319,7 +322,7 @@ export const MemberMyTasksPage: React.FC = () => {
             onClick={fetchTasks}
             className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded font-medium"
           >
-            Retry
+            {t('tasks.retry')}
           </button>
         </div>
       )}
@@ -344,11 +347,11 @@ export const MemberMyTasksPage: React.FC = () => {
           <div className="w-12 h-12 bg-[#F4F5F7] text-[#5E6C84] rounded-full flex items-center justify-center mx-auto">
             <Inbox size={24} />
           </div>
-          <h3 className="text-base font-semibold text-[#172B4D]">No Tasks Found</h3>
+          <h3 className="text-base font-semibold text-[#172B4D]">{t('tasks.no_tasks_found')}</h3>
           <p className="text-xs text-[#5E6C84] max-w-md mx-auto">
             {myAssignedTasks.length === 0
-              ? "You currently have no tasks assigned to you across any project."
-              : "No tasks match your search or filter criteria. Try resetting filters."}
+              ? t('tasks.no_tasks_assigned')
+              : t('tasks.no_tasks_search')}
           </p>
           {(searchKeyword || selectedProjectId !== 'ALL') && (
             <button
@@ -356,9 +359,9 @@ export const MemberMyTasksPage: React.FC = () => {
                 setSearchKeyword('');
                 setSelectedProjectId('ALL');
               }}
-              className="px-3 py-1.5 text-xs font-medium text-[#0052CC] hover:underline"
+              className="px-3 py-1.5 text-xs font-medium text-[#0052CC] hover:underline cursor-pointer"
             >
-              Clear all filters
+              {t('tasks.clear_filters')}
             </button>
           )}
         </div>
@@ -367,7 +370,6 @@ export const MemberMyTasksPage: React.FC = () => {
         <div className="space-y-8">
           {projectGroups.map((group) => {
             const pKey = String(group.projectId);
-            // Default: Collapsed (isExpanded = false), unless toggled or currently searching
             const isExpanded = Boolean(expandedProjects[pKey]) || Boolean(searchKeyword.trim());
 
             return (
@@ -395,7 +397,7 @@ export const MemberMyTasksPage: React.FC = () => {
                           {group.projectName}
                         </h2>
                         <span className="bg-[#DFE1E6] text-[#172B4D] px-2 py-0.5 rounded-full text-xs font-bold">
-                          {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+                          {t('projects.tasks_count', { count: group.tasks.length })}
                         </span>
                       </div>
                       {group.projectDescription && (
@@ -412,7 +414,7 @@ export const MemberMyTasksPage: React.FC = () => {
                   <div className="p-4 bg-[#FAFBFC]">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {STATUS_COLUMNS.map((col) => {
-                        const colTasks = group.tasks.filter((t) => t.status === col.key);
+                        const colTasks = group.tasks.filter((tItem) => tItem.status === col.key);
 
                         return (
                           <div
@@ -422,7 +424,7 @@ export const MemberMyTasksPage: React.FC = () => {
                             {/* Column Header */}
                             <div className="flex items-center justify-between pb-2 border-b border-black/5">
                               <span className="font-semibold text-xs text-[#42526E] uppercase tracking-wider flex items-center gap-1.5">
-                                {col.title}
+                                {t(`tasks.status.${col.key}`, col.title)}
                               </span>
                               <span className={`${col.badgeBg} ${col.badgeText} px-2 py-0.5 rounded-full text-xs font-bold`}>
                                 {colTasks.length}
@@ -433,7 +435,7 @@ export const MemberMyTasksPage: React.FC = () => {
                             <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[420px] pr-0.5">
                               {colTasks.length === 0 ? (
                                 <div className="py-6 text-center text-xs text-[#6B778C] border border-dashed border-gray-200 rounded-md bg-white/50">
-                                  No tasks in {col.title}
+                                  {t('tasks.no_tasks_in_column')}
                                 </div>
                               ) : (
                                 colTasks.map((task) => (
@@ -472,7 +474,7 @@ export const MemberMyTasksPage: React.FC = () => {
                                       {/* Deadline */}
                                       <div className="flex items-center gap-1 font-medium">
                                         <Clock size={12} className="text-[#6B778C]" />
-                                        <span>{formatDate(task.deadline) || 'No date'}</span>
+                                        <span>{formatDate(task.deadline) || t('tasks.no_deadline')}</span>
                                       </div>
 
                                       {/* Change Status Dropdown */}
@@ -483,10 +485,10 @@ export const MemberMyTasksPage: React.FC = () => {
                                         }
                                         className="text-[11px] font-semibold py-0.5 px-1.5 rounded border border-[#DFE1E6] bg-white text-[#172B4D] focus:outline-none focus:border-[#0052CC] hover:bg-[#F4F5F7] cursor-pointer"
                                       >
-                                        <option value="TODO">TO DO</option>
-                                        <option value="DOING">IN PROGRESS</option>
-                                        <option value="REVIEW">REVIEW</option>
-                                        <option value="DONE">DONE</option>
+                                        <option value="TODO">{t('tasks.status.TODO')}</option>
+                                        <option value="DOING">{t('tasks.status.DOING')}</option>
+                                        <option value="REVIEW">{t('tasks.status.REVIEW')}</option>
+                                        <option value="DONE">{t('tasks.status.DONE')}</option>
                                       </select>
                                     </div>
                                   </div>
