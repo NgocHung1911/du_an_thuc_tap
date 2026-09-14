@@ -261,6 +261,19 @@ export const ProjectDetailPage: React.FC = () => {
     fetchData();
   }, [projectId]);
 
+  // Auto-open Task Detail Modal if URL query contains ?taskId=...
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const taskIdParam = searchParams.get('taskId');
+    if (taskIdParam && tasks.length > 0) {
+      const targetTask = tasks.find((t) => Number(t.id) === Number(taskIdParam));
+      if (targetTask) {
+        setSelectedTaskDetail(targetTask);
+        setIsDetailModalOpen(true);
+      }
+    }
+  }, [location.search, tasks]);
+
   // Handle task click to open Task Detail Modal
   const handleTaskClick = (task: TaskDTO) => {
     setSelectedTaskDetail(task);
