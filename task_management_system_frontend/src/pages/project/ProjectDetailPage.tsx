@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useTransition } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, Filter, Layers, Plus, ArrowLeft, RefreshCw, AlertCircle, Columns, List,
   CheckCircle2, Check, X, Trash2, AlertTriangle, Inbox, UserPlus, Users
 } from 'lucide-react';
-
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { projectApi, ProjectDTO } from '../../services/projectApi';
 import { taskApi, TaskDTO, TaskStatus, TaskPriority, UserDTO } from '../../services/taskApi';
@@ -22,6 +22,7 @@ type ViewTab = 'Board' | 'List';
 
 
 export const ProjectDetailPage: React.FC = () => {
+  const { t }= useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -755,7 +756,7 @@ export const ProjectDetailPage: React.FC = () => {
               title="View and manage members"
             >
               <Users size={15} className="text-slate-500" />
-              <span className="hidden sm:inline">Members ({projectMembers.length})</span>
+              <span className="hidden sm:inline">{t('projects.members')} ({projectMembers.length})</span>
             </button>
 
             {canManageMembers && (
@@ -766,7 +767,7 @@ export const ProjectDetailPage: React.FC = () => {
                 title="Invite new member"
               >
                 <UserPlus size={15} />
-                <span>+ Invite</span>
+                <span>{t('projects.invite_member')}</span>
               </button>
             )}
 
@@ -775,8 +776,7 @@ export const ProjectDetailPage: React.FC = () => {
                 onClick={() => handleOpenQuickCreate('TODO')}
                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors"
               >
-                <Plus size={18} />
-                <span>Create Task</span>
+                <span>{t('tasks.create_task')}</span>
               </button>
             )}
           </div>
@@ -794,7 +794,7 @@ export const ProjectDetailPage: React.FC = () => {
               }`}
           >
             <Columns size={15} />
-            <span>Board View</span>
+            <span>{t('projects.board_view')}</span>
           </button>
 
           <button
@@ -805,7 +805,7 @@ export const ProjectDetailPage: React.FC = () => {
               }`}
           >
             <List size={15} />
-            <span>List View</span>
+            <span>{t('projects.list_view')}</span>
           </button>
         </div>
       </div>
@@ -823,7 +823,7 @@ export const ProjectDetailPage: React.FC = () => {
               type="text"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="Search tasks (Name, ID)..."
+              placeholder={t('projects.search_placeholder')}
               className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
             />
             {searchKeyword && (
@@ -839,7 +839,7 @@ export const ProjectDetailPage: React.FC = () => {
           {/* Member Avatars Filter */}
           <div className="flex flex-wrap items-center gap-1.5 border-l border-slate-200 pl-3">
             <span className="text-xs font-semibold text-slate-500 mr-1 hidden lg:inline">
-              Filter by member:
+              {t('projects.filter_by_member')}:
             </span>
             {projectMembers.length > 0 &&
               projectMembers.map((mem, idx) => {
@@ -895,31 +895,31 @@ export const ProjectDetailPage: React.FC = () => {
         {/* Right: Status & Priority Filters & Reset Button */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600">Status:</span>
+            <span className="text-xs font-semibold text-slate-600">{t('projects.filter_by_status')}</span>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
             >
-              <option value="ALL">All Statuses</option>
-              <option value="TODO">TODO</option>
-              <option value="DOING">DOING</option>
-              <option value="REVIEW">REVIEW</option>
-              <option value="DONE">DONE</option>
+              <option value="ALL">{t('tasks.status.all')}</option>
+              <option value="TODO">{t('tasks.status.TODO')}</option>
+              <option value="DOING">{t('tasks.status.DOING')}</option>
+              <option value="REVIEW">{t('tasks.status.REVIEW')}</option>
+              <option value="DONE">{t('tasks.status.DONE')}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600">Priority:</span>
+            <span className="text-xs font-semibold text-slate-600">{t('projects.filter_by_priority')}</span>
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
               className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
             >
-              <option value="ALL">All Priorities</option>
-              <option value="HIGH">HIGH</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="LOW">LOW</option>
+              <option value="ALL">{t('tasks.priority.ALL')}</option>
+              <option value="HIGH">{t('tasks.priority.HIGH')}</option>
+              <option value="MEDIUM">{t('tasks.priority.MEDIUM')}</option>
+              <option value="LOW">{t('tasks.priority.LOW')}</option>
             </select>
           </div>
 

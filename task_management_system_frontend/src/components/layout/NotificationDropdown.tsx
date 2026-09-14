@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Bell, 
   CheckCheck, 
@@ -34,6 +35,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   setUnreadCount,
   onNotificationClick
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -159,17 +161,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   const getNotificationTitle = (n: NotificationDTO) => {
     if (n.title && n.title.trim()) return n.title;
-    switch (n.type) {
-      case 'PROJECT_INVITE': return 'Lời mời tham gia dự án';
-      case 'TASK_ASSIGNED': return 'Bạn được gán công việc mới';
-      case 'REPORTER_ASSIGNED': return 'Bạn được chỉ định làm người báo cáo';
-      case 'USER_MENTIONED': return 'Bạn được nhắc đến trong bình luận';
-      case 'COMMENT_ADDED': return 'Bình luận mới trong công việc';
-      case 'TASK_STATUS_CHANGED': return 'Cập nhật trạng thái công việc';
-      case 'TASK_PRIORITY_CHANGED': return 'Cập nhật độ ưu tiên công việc';
-      case 'TASK_UPDATED': return 'Cập nhật thông tin công việc';
-      default: return 'Thông báo hệ thống';
-    }
+    return t(`notification_types.${n.type}`, t('notification_types.default'));
   };
 
   const getNotificationMessage = (n: NotificationDTO) => {
@@ -192,7 +184,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
         <div className="flex items-center gap-2">
           <Bell size={18} className="text-blue-400" />
-          <h3 className="font-bold text-sm tracking-tight text-white">Thông báo</h3>
+          <h3 className="font-bold text-sm tracking-tight text-white">{t('header.notifications')}</h3>
           {safeUnreadCount > 0 && (
             <span className="px-2 py-0.5 text-xs font-semibold bg-blue-600 text-white rounded-full">
               {safeUnreadCount}
@@ -205,10 +197,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               onClick={handleMarkAllAsRead}
               disabled={loading}
               className="text-xs text-slate-300 hover:text-white flex items-center gap-1 hover:bg-slate-800 px-2 py-1 rounded-lg transition-colors"
-              title="Đánh dấu tất cả đã đọc"
+              title={t('header.mark_all_read')}
             >
               <CheckCheck size={14} />
-              <span className="hidden sm:inline">Đọc tất cả</span>
+              <span className="hidden sm:inline">{t('header.mark_all_read')}</span>
             </button>
           )}
           <button
@@ -230,7 +222,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Tất cả ({safeNotifications.length})
+          {t('header.all')} ({safeNotifications.length})
         </button>
         <button
           onClick={() => setActiveTab('unread')}
@@ -240,7 +232,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Chưa đọc ({safeUnreadCount})
+          {t('header.unread')} ({safeUnreadCount})
         </button>
       </div>
 
@@ -249,7 +241,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         {filteredNotifications.length === 0 ? (
           <div className="p-8 text-center text-slate-400 flex flex-col items-center gap-2">
             <Bell size={32} className="text-slate-300 stroke-1" />
-            <p className="text-xs font-medium">Không có thông báo nào</p>
+            <p className="text-xs font-medium">{t('header.no_notifications')}</p>
           </div>
         ) : (
           filteredNotifications.map((n) => (
