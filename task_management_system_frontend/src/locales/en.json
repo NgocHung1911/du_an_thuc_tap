@@ -204,11 +204,16 @@
     "full_name": "Full Name",
     "email": "Email",
     "role": "Role",
+    "password":"Password...",
     "status": "Status",
     "created_at": "Created At",
+    "search_by_name_or_email": "Search by name or email...",
+    "update_info": "Update information for",
+    "enter_info": "Enter information to create a new user account",
     "roles": {
-      "ADMIN": "Administrator",
-      "MEMBER": "Member"
+      "ALL":"ALL ROLE",
+      "ADMIN": "ADMIN",
+      "MEMBER": "MEMBER"
     },
     "statuses": {
       "ACTIVE": "Active",

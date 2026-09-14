@@ -204,10 +204,15 @@
     "username": "Tên đăng nhập",
     "full_name": "Họ và tên",
     "email": "Email",
+    "password":"Mật khẩu...",
     "role": "Vai trò",
     "status": "Trạng thái",
     "created_at": "Ngày tạo",
+    "search_by_name_or_email": "Tìm kiếm theo tên hoặc email...",
+    "update_info": "Cập nhật thông tin cho",
+    "enter_info": "Nhập thông tin để tạo tài khoản mới",
     "roles": {
+      "ALL":"Tất cả vai trò",
       "ADMIN": "Quản trị viên",
       "MEMBER": "Thành viên"
     },

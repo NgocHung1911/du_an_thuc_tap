@@ -101,7 +101,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 {userToEdit ? t('users.edit_user') : t('users.add_user')}
               </h2>
               <p className="text-xs text-slate-500">
-                {userToEdit ? `Cập nhật thông tin cho #${userToEdit.id}` : 'Nhập thông tin để tạo tài khoản mới'}
+                {userToEdit ? t('users.update_info') + ` #${userToEdit.id}` : t('users.enter_info')}
               </p>
             </div>
           </div>
@@ -135,7 +135,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. john_doe"
+                placeholder="nguyenvana"
                 disabled={Boolean(userToEdit)}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all disabled:opacity-60"
               />
@@ -155,7 +155,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. John Doe"
+                placeholder="Nguyen Van A"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
               />
             </div>
@@ -174,7 +174,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. user@example.com"
+                placeholder="nguyenvana@gmail.com"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
               />
             </div>
@@ -194,7 +194,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mật khẩu..."
+                  placeholder= {t('users.password')}
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
                 />
               </div>
@@ -215,8 +215,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 onChange={(e) => setRole(e.target.value as 'ADMIN' | 'MEMBER')}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all font-semibold cursor-pointer"
               >
-                <option value="MEMBER">MEMBER</option>
-                <option value="ADMIN">ADMIN</option>
+                <option value="MEMBER">{t('users.roles.MEMBER')}</option>
+                <option value="ADMIN">{t('users.roles.ADMIN')}</option>
               </select>
             </div>
           </div>

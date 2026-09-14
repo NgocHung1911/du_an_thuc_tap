@@ -7,7 +7,6 @@ import {
 import { userApi, UserRequest } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
 import { UserFormModal } from '../../components/admin/UserFormModal';
-
 export const AdminUsersPage: React.FC = () => {
   const { t } = useTranslation();
   const [users, setUsers] = useState<UserDTO[]>([]);
@@ -134,13 +133,14 @@ export const AdminUsersPage: React.FC = () => {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder={t('common.search')}
+            placeholder={t('users.search_by_name_or_email')}
             className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
           />
           {searchKeyword && (
             <button
               onClick={() => setSearchKeyword('')}
               className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600"
+            
             >
               <X size={14} />
             </button>
@@ -155,9 +155,9 @@ export const AdminUsersPage: React.FC = () => {
             onChange={(e) => setFilterRole(e.target.value)}
             className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
           >
-            <option value="ALL">Tất cả vai trò</option>
-            <option value="ADMIN">ADMIN</option>
-            <option value="MEMBER">MEMBER</option>
+            <option value="ALL">{t('users.roles.ALL')}</option>
+            <option value="ADMIN">{t('users.roles.ADMIN')}</option>
+            <option value="MEMBER">{t('users.roles.MEMBER')}</option>
           </select>
         </div>
       </div>
