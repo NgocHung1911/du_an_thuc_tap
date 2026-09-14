@@ -27,6 +27,8 @@ import com.task.management.dto.websocket.WebSocketEventType;
 import com.task.management.event.ProjectDomainEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
+import com.task.management.enums.NotificationType;
+
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -35,6 +37,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationService notificationService;
 
     private void publishProjectEvent(WebSocketEventType eventType, Long projectId, UserDTO memberDto, Long targetUserId) {
         if (eventPublisher == null || projectId == null) return;
@@ -316,6 +319,18 @@ public class ProjectService {
 
         project.getMembers().add(newMember);
         projectRepository.save(project);
+
+        User actor = currentUsername != null ? userRepository.findByUsername(currentUsername).orElseGet(() -> userRepository.findByEmail(currentUsername).orElse(null)) : null;
+        String actorName = actor != null ? resolveFullName(actor) : "System";
+        notificationService.createAndSendNotification(
+                user,
+                actor,
+                NotificationType.PROJECT_INVITE,
+                "Project Invitation",
+                actorName + " added you to project '" + project.getName() + "'",
+                projectId,
+                null
+        );
 
         UserDTO memberDto = mapProjectMemberToDTO(newMember);
         publishProjectEvent(WebSocketEventType.PROJECT_MEMBER_ADDED, projectId, memberDto, user.getId());

@@ -27,8 +27,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.task.management.enums.NotificationType;
+
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,6 +48,7 @@ public class TaskCommentService {
     private final CloudinaryService cloudinaryService;
     private final CloudflareR2Service cloudflareR2Service;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationService notificationService;
 
     private String resolveUsername(String username) {
         if (username != null && !username.trim().isEmpty()) {
@@ -215,6 +220,111 @@ public class TaskCommentService {
         TaskComment savedComment = commentRepository.save(comment);
         TaskCommentDTO commentDTO = mapToDTO(savedComment);
         publishCommentEvent(WebSocketEventType.COMMENT_CREATED, task, commentDTO);
+
+        // Notifications for USER_MENTIONED and COMMENT_ADDED
+        try {
+            Set<Long> notifiedUserIds = new HashSet<>();
+            String actorName = resolveFullName(author);
+            String taskTitle = "\"" + task.getTitle() + "\"";
+            Long projId = task.getProject() != null ? task.getProject().getId() : null;
+            String rawContent = request.getContent() != null ? request.getContent().toLowerCase() : "";
+
+            // 1. Check for @mentions in content across all project users
+            List<User> projectUsers = new ArrayList<>();
+            if (task.getProject() != null) {
+                if (task.getProject().getUser() != null) {
+                    projectUsers.add(task.getProject().getUser());
+                }
+                if (task.getProject().getMembers() != null) {
+                    task.getProject().getMembers().forEach(m -> {
+                        if (m.getUser() != null) projectUsers.add(m.getUser());
+                    });
+                }
+            }
+
+            for (User u : projectUsers) {
+                if (u == null || u.getId().equals(author.getId())) continue;
+
+                boolean isMentioned = false;
+                if (!rawContent.isEmpty()) {
+                    String usernameTag = "@" + u.getUsername().toLowerCase();
+                    String emailTag = u.getEmail() != null ? "@" + u.getEmail().toLowerCase() : "";
+                    String fullName = u.getFullName() != null ? u.getFullName().toLowerCase() : "";
+
+                    if (rawContent.contains(usernameTag)) isMentioned = true;
+                    if (!emailTag.isEmpty() && rawContent.contains(emailTag)) isMentioned = true;
+                    if (!fullName.isEmpty()) {
+                        String fnTag1 = "@" + fullName;
+                        String fnTag2 = "@" + fullName.replace(" ", "_");
+                        String fnTag3 = "@" + fullName.replace("_", " ");
+                        if (rawContent.contains(fnTag1) || rawContent.contains(fnTag2) || rawContent.contains(fnTag3)) {
+                            isMentioned = true;
+                        }
+                    }
+                }
+
+                if (isMentioned && !notifiedUserIds.contains(u.getId())) {
+                    notificationService.createAndSendNotification(
+                            u,
+                            author,
+                            NotificationType.USER_MENTIONED,
+                            "Bạn được nhắc đến trong một bình luận",
+                            actorName + " đã nhắc đến bạn trong task " + taskTitle,
+                            projId,
+                            task.getId()
+                    );
+                    notifiedUserIds.add(u.getId());
+                }
+            }
+
+            // 2. Notify Assignee if not author and not already mentioned
+            User assignee = task.getUser();
+            if (assignee != null && !assignee.getId().equals(author.getId()) && !notifiedUserIds.contains(assignee.getId())) {
+                notificationService.createAndSendNotification(
+                        assignee,
+                        author,
+                        NotificationType.COMMENT_ADDED,
+                        "Bình luận mới trong task",
+                        actorName + " đã thêm một bình luận trong task " + taskTitle,
+                        projId,
+                        task.getId()
+                );
+                notifiedUserIds.add(assignee.getId());
+            }
+
+            // 3. Notify Reporter if not author and not already mentioned
+            User reporter = task.getReporter();
+            if (reporter != null && !reporter.getId().equals(author.getId()) && !notifiedUserIds.contains(reporter.getId())) {
+                notificationService.createAndSendNotification(
+                        reporter,
+                        author,
+                        NotificationType.COMMENT_ADDED,
+                        "Bình luận mới trong task",
+                        actorName + " đã thêm một bình luận trong task " + taskTitle,
+                        projId,
+                        task.getId()
+                );
+                notifiedUserIds.add(reporter.getId());
+            }
+
+            // 4. Notify Project Owner if not author and not already notified
+            User projectOwner = task.getProject() != null ? task.getProject().getUser() : null;
+            if (projectOwner != null && !projectOwner.getId().equals(author.getId()) && !notifiedUserIds.contains(projectOwner.getId())) {
+                notificationService.createAndSendNotification(
+                        projectOwner,
+                        author,
+                        NotificationType.COMMENT_ADDED,
+                        "Bình luận mới trong dự án của bạn",
+                        actorName + " đã bình luận trong task " + taskTitle,
+                        projId,
+                        task.getId()
+                );
+                notifiedUserIds.add(projectOwner.getId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to send comment notifications", e);
+        }
+
         return commentDTO;
     }
 

@@ -25,6 +25,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.task.management.enums.NotificationType;
+
 @Service
 @RequiredArgsConstructor
 public class TaskService {
@@ -36,6 +38,25 @@ public class TaskService {
     private final ApplicationEventPublisher eventPublisher;
     private final CloudinaryService cloudinaryService;
     private final CloudflareR2Service cloudflareR2Service;
+    private final NotificationService notificationService;
+
+    private void notifyAssigneeAndReporter(User actor, Task task, NotificationType type, String title, String message) {
+        if (task == null) return;
+        Long projId = task.getProject() != null ? task.getProject().getId() : null;
+        Long taskId = task.getId();
+
+        if (task.getUser() != null) {
+            notificationService.createAndSendNotification(
+                    task.getUser(), actor, type, title, message, projId, taskId
+            );
+        }
+
+        if (task.getReporter() != null && (task.getUser() == null || !task.getReporter().getId().equals(task.getUser().getId()))) {
+            notificationService.createAndSendNotification(
+                    task.getReporter(), actor, type, title, message, projId, taskId
+            );
+        }
+    }
 
     private void publishTaskEvent(WebSocketEventType eventType, Task task, TaskDTO taskDto, Long targetUserId) {
         if (eventPublisher == null || task == null) return;
@@ -321,6 +342,7 @@ public class TaskService {
 
         Task updatedTask = taskRepository.save(existingTask);
         TaskDTO dto = mapToDTO(updatedTask);
+
         publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
         return dto;
     }
@@ -346,6 +368,7 @@ public class TaskService {
         task.setStatus(status);
         Task updatedTask = taskRepository.save(task);
         TaskDTO dto = mapToDTO(updatedTask);
+
         publishTaskEvent(WebSocketEventType.TASK_STATUS_CHANGED, updatedTask, dto, null);
         return dto;
     }
@@ -371,6 +394,7 @@ public class TaskService {
         task.setPriority(priority);
         Task updatedTask = taskRepository.save(task);
         TaskDTO dto = mapToDTO(updatedTask);
+
         publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
         return dto;
     }
@@ -405,6 +429,21 @@ public class TaskService {
 
         Task updatedTask = taskRepository.save(task);
         TaskDTO dto = mapToDTO(updatedTask);
+
+        User actor = effectiveUsername != null ? userRepository.findByUsername(effectiveUsername).orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null)) : null;
+        String actorName = actor != null ? resolveFullName(actor) : "System";
+        if (updatedTask.getUser() != null) {
+            notificationService.createAndSendNotification(
+                    updatedTask.getUser(),
+                    actor,
+                    NotificationType.TASK_ASSIGNED,
+                    "Task Assignment",
+                    actorName + " assigned you to task '#TASK-" + updatedTask.getId() + ": " + updatedTask.getTitle() + "'",
+                    updatedTask.getProject() != null ? updatedTask.getProject().getId() : null,
+                    updatedTask.getId()
+            );
+        }
+
         publishTaskEvent(WebSocketEventType.TASK_ASSIGNED, updatedTask, dto, updatedTask.getUser() != null ? updatedTask.getUser().getId() : null);
         return dto;
     }
@@ -445,6 +484,20 @@ public class TaskService {
 
         Task updatedTask = taskRepository.save(task);
         TaskDTO dto = mapToDTO(updatedTask);
+
+        User actor = effectiveUsername != null ? userRepository.findByUsername(effectiveUsername).orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null)) : null;
+        String actorName = actor != null ? resolveFullName(actor) : "System";
+        if (updatedTask.getReporter() != null) {
+            notificationService.createAndSendNotification(
+                    updatedTask.getReporter(),
+                    actor,
+                    NotificationType.REPORTER_ASSIGNED,
+                    "Reporter Assignment",
+                    actorName + " set you as reporter for task '#TASK-" + updatedTask.getId() + ": " + updatedTask.getTitle() + "'",
+                    updatedTask.getProject() != null ? updatedTask.getProject().getId() : null,
+                    updatedTask.getId()
+            );
+        }
         publishTaskEvent(WebSocketEventType.TASK_UPDATED, updatedTask, dto, null);
         return dto;
     }

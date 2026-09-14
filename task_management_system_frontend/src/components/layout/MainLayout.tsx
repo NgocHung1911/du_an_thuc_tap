@@ -5,6 +5,8 @@ import { AdminSidebar } from './AdminSidebar';
 import { MemberSidebar } from './MemberSidebar';
 import { userApi } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
+import { notificationApi, NotificationDTO } from '../../services/notificationApi';
+import { NotificationDropdown } from './NotificationDropdown';
 import { Bell, HelpCircle, Kanban } from 'lucide-react';
 
 import { useNotificationWebSocket } from '../../hooks/useWebSocket';
@@ -13,11 +15,22 @@ import { UserAvatar } from '../common/UserAvatar';
 export const MainLayout: React.FC = () => {
   const { isAdmin, user } = useAuth();
   const [profile, setProfile] = useState<UserDTO | null>(null);
+  const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isNotificationOpen, setIsNotificationOpen] = useState<boolean>(false);
 
   useEffect(() => {
     userApi.getCurrentUser()
       .then(data => setProfile(data))
       .catch(err => console.error('Failed to load profile in header:', err));
+
+    notificationApi.getNotifications()
+      .then(data => setNotifications(data))
+      .catch(err => console.error('Failed to load notifications:', err));
+
+    notificationApi.getUnreadCount()
+      .then(count => setUnreadCount(count))
+      .catch(err => console.error('Failed to load unread count:', err));
   }, []);
 
   useNotificationWebSocket((event) => {
@@ -26,16 +39,27 @@ export const MainLayout: React.FC = () => {
         setProfile((prev) => (prev ? { ...prev, avatarUrl: event.data.avatarUrl } : event.data));
       }
     }
+
+    if (event.eventType === 'NOTIFICATION_CREATED' || event.type === 'NOTIFICATION_CREATED') {
+      if (event.data) {
+        const newNotif = event.data as NotificationDTO;
+        setNotifications((prev) => [newNotif, ...prev.filter(n => n.id !== newNotif.id)]);
+      }
+    }
   });
 
   const displayName = profile?.fullName || profile?.username || user?.username || 'User';
 
-  const getInitials = (name: string) => {
-    if (!name) return 'U';
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
+  const checkIsRead = (n: any) => Boolean(n?.isRead || n?.read);
+
+  const safeUnreadCount = (Array.isArray(notifications) ? notifications : []).filter(
+    (n) =>
+      n.type !== 'TASK_UPDATED' &&
+      n.type !== 'TASK_STATUS_CHANGED' &&
+      n.type !== 'TASK_PRIORITY_CHANGED' &&
+      Boolean(n.message && n.message.trim()) &&
+      !checkIsRead(n)
+  ).length;
 
   return (
     <div className="h-screen max-h-screen bg-slate-50 flex flex-col font-sans overflow-hidden">
@@ -48,9 +72,30 @@ export const MainLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Notifications">
-            <Bell size={18} />
-          </button>
+          {/* Notification Bell Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsNotificationOpen((prev) => !prev)}
+              className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white relative"
+              title="Thông báo"
+            >
+              <Bell size={18} />
+              {safeUnreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center ring-2 ring-slate-900 animate-pulse">
+                  {safeUnreadCount > 99 ? '99+' : safeUnreadCount}
+                </span>
+              )}
+            </button>
+            <NotificationDropdown
+              isOpen={isNotificationOpen}
+              onClose={() => setIsNotificationOpen(false)}
+              notifications={notifications}
+              setNotifications={setNotifications}
+              unreadCount={safeUnreadCount}
+              setUnreadCount={setUnreadCount}
+            />
+          </div>
+
           <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-300 hover:text-white" title="Help">
             <HelpCircle size={18} />
           </button>
@@ -83,3 +128,4 @@ export const MainLayout: React.FC = () => {
     </div>
   );
 };
+
