@@ -3,7 +3,7 @@ import { X, Shield, Crown, User, Trash2, UserPlus, RefreshCw, AlertTriangle } fr
 import { UserDTO } from '../../services/taskApi';
 import { projectApi } from '../../services/projectApi';
 import { UserAvatar } from '../common/UserAvatar';
-
+import { useTranslation } from 'react-i18next';
 interface ProjectMembersModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,6 +30,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
   onOpenInvite,
   onShowToast,
 }) => {
+  const { t } = useTranslation();
   const [loadingUserId, setLoadingUserId] = useState<number | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<{ id: number; name: string } | null>(null);
 
@@ -95,8 +96,8 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
         {/* Header */}
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-base text-slate-900">Project Members</h3>
-            <p className="text-xs text-slate-500">Manage team members and permissions in this project</p>
+            <h3 className="font-bold text-base text-slate-900">{t('projects.manage_members')}</h3>
+            <p className="text-xs text-slate-500">{t('projects.manage_members_subtitle')}</p>
           </div>
           <button
             type="button"
@@ -113,7 +114,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
           {canManageMembers && (
             <div className="flex items-center justify-between p-3.5 bg-blue-50/60 rounded-xl border border-blue-200 mb-4">
               <div className="text-xs text-blue-900">
-                <span className="font-semibold">Your Role: </span>
+                <span className="font-semibold">{t('projects.your_role')}: </span>
                 <span className="font-extrabold uppercase bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200">
                   {currentUserRole}
                 </span>
@@ -127,7 +128,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-2xs transition-colors"
               >
                 <UserPlus size={14} />
-                <span>+ Invite Member</span>
+                <span>{t('projects.invite_member')}</span>
               </button>
             </div>
           )}
@@ -159,7 +160,7 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
                         <span className="text-sm font-bold text-slate-900">{displayName}</span>
                         {isSelf && (
                           <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold">
-                            (You)
+                            ({t('projects.you')})
                           </span>
                         )}
                         {isLoading && (
@@ -216,16 +217,6 @@ export const ProjectMembersModal: React.FC<ProjectMembersModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl transition-colors"
-          >
-            Close
-          </button>
-        </div>
       </div>
 
       {/* Remove Member Custom Confirmation Modal */}

@@ -90,6 +90,7 @@
     "owner": "Owner",
     "members": "Members",
     "manage_members": "Manage Members",
+    "manage_members_subtitle": "Manage team members and permissions in this project.",
     "invite_member": "Invite Member",
     "board_view": "Board View",
     "list_view": "List View",
@@ -116,6 +117,12 @@
     "project_deleted": "Successfully deleted project #{{id}}!",
     "send_mail_link": "Send an email invitation link to a new member.",
     "your_role": "Your Role:",
+    "role":{
+      "OWNER":"OWNER",
+      "ADMIN":"ADMIN",
+      "MEMBER":"MEMBER"
+    },
+    "you":"You",
     "recipient_email": "Recipient Email:",
     "recipient_email_placeholder": "Enter recipient's email...",
     "send_invitation": "Send Email Invitation",

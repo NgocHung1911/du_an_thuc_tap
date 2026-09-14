@@ -90,6 +90,7 @@
     "owner": "Chủ sở hữu",
     "members": "Thành viên",
     "manage_members": "Quản lý thành viên",
+    "manage_members_subtitle": "Quản lý các thành viên nhóm và quyền trong dự án.",
     "invite_member": "Mời thành viên",
     "board_view": "Bảng công việc",
     "list_view": "Danh sách công việc",
@@ -116,6 +117,12 @@
     "project_deleted": "Xóa dự án #{{id}} thành công!",
     "send_mail_link":"Gửi liên kết email mời đến một thành viên mới.",
     "your_role": "Vai trò của bạn:",
+    "role":{
+      "OWNER":"Chủ sở hữu",
+      "ADMIN":"Quản trị viên",
+      "MEMBER":"Thành viên"
+    },
+    "you":"Bạn",
     "recipient_email": "Email người nhận",
     "recipient_email_placeholder": "Nhập email người nhận...",
     "cancel_invitation": "Hủy lời mời",
