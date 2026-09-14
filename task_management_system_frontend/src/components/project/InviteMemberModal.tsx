@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, UserPlus, AlertCircle, Check, Mail, Send } from 'lucide-react';
 import { invitationApi } from '../../services/invitationApi';
 import { UserDTO } from '../../services/taskApi';
-
+import { useTranslation } from 'react-i18next';
 interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,6 +18,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   projectId,
   onShowSuccessToast,
 }) => {
+  const { t } = useTranslation();
   const [emailInput, setEmailInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -81,8 +82,8 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
               <UserPlus size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-base text-slate-900">Invite Project Member</h3>
-              <p className="text-xs text-slate-500">Send an invitation email link to a new team member</p>
+              <h3 className="font-bold text-base text-slate-900">{t('projects.invite_project_member')}</h3>
+              <p className="text-xs text-slate-500">{t('projects.send_mail_link')}</p>
             </div>
           </div>
           <button
@@ -108,7 +109,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
           {/* Email Input Field */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Recipient Email Address <span className="text-red-500">*</span>
+              {t('projects.recipient_email')} <span className="text-red-500">*</span>
             </label>
 
             <div className="relative">
@@ -122,7 +123,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
                   setEmailInput(e.target.value);
                   setErrorMessage(null);
                 }}
-                placeholder="Enter email address (e.g. member@example.com)..."
+                placeholder={t('projects.recipient_email_placeholder')}
                 className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 focus:bg-white text-sm text-slate-900 rounded-xl border transition-all ${
                   errorMessage
                     ? 'border-red-400 focus:ring-1 focus:ring-red-400'
@@ -142,16 +143,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
             </div>
           )}
 
-          {/* Business Rules Info Box */}
-          <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200 text-xs text-blue-800 space-y-1">
-            <p className="font-bold">Member invitation process:</p>
-            <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-blue-700">
-              <li>A <strong>unique invitation token</strong> valid for <strong>48 hours</strong> will be generated.</li>
-              <li>An automated email with an <strong>"Accept Invitation"</strong> link will be delivered.</li>
-              <li>The recipient can click the link to instantly join this project.</li>
-            </ul>
-          </div>
-
           {/* Buttons Footer */}
           <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
             <button
@@ -160,7 +151,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
               disabled={loading}
               className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-colors"
             >
-              Cancel
+              {t('projects.cancel_invitation')}
             </button>
             <button
               type="submit"
@@ -172,7 +163,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
               ) : (
                 <Send size={15} />
               )}
-              <span>Send Email Invitation</span>
+              <span>{t('projects.send_invitation')}</span>
             </button>
           </div>
         </form>

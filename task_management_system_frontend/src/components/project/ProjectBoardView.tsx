@@ -29,7 +29,8 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   onQuickCreate,
 }) => {
   const { t } = useTranslation();
-  const columns: { status: TaskStatus; label: string; icon: React.FC<{ size?: number }>; color: string }[] = [
+  const columns: 
+    { status: TaskStatus; label: string; icon: React.FC<{ size?: number }>; color: string }[] = [
     { status: 'TODO', label: t('tasks.status.TODO'), icon: Clock, color: 'border-slate-300 bg-slate-50 text-slate-700' },
     { status: 'DOING', label: t('tasks.status.DOING'), icon: PlayCircle, color: 'border-sky-300 bg-sky-50 text-sky-700' },
     { status: 'REVIEW', label: t('tasks.status.REVIEW'), icon: Eye, color: 'border-purple-300 bg-purple-50 text-purple-700' },

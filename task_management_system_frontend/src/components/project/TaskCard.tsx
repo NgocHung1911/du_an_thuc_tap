@@ -138,9 +138,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   task.priority
                 )}`}
               >
-                <option value="HIGH">{t('tasks.priority.HIGH', 'HIGH')}</option>
-                <option value="MEDIUM">{t('tasks.priority.MEDIUM', 'MEDIUM')}</option>
-                <option value="LOW">{t('tasks.priority.LOW', 'LOW')}</option>
+                <option value="HIGH">{t('tasks.priority.HIGH')}</option>
+                <option value="MEDIUM">{t('tasks.priority.MEDIUM')}</option>
+                <option value="LOW">{t('tasks.priority.LOW')}</option>
               </select>
             ) : (
               <span
@@ -196,7 +196,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           ) : (
             <Clock size={12} className="shrink-0 text-slate-400" />
           )}
-          <span>{isOverdue ? `Overdue: ${formattedDate}` : `Due: ${formattedDate}`}</span>
+          <span>{isOverdue ? `${t('tasks.task_overdue')}: ${formattedDate}` : `${t('tasks.task_due_date')}: ${formattedDate}`}</span>
         </div>
       )}
 
@@ -225,10 +225,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               task.status
             )}`}
           >
-            <option value="TODO">TODO</option>
-            <option value="DOING">DOING</option>
-            <option value="REVIEW">REVIEW</option>
-            <option value="DONE">DONE</option>
+            <option value="TODO">{t('tasks.status.TODO')}</option>
+            <option value="DOING">{t('tasks.status.DOING')}</option>
+            <option value="REVIEW">{t('tasks.status.REVIEW')}</option>
+            <option value="DONE">{t('tasks.status.DONE')}</option>
           </select>
         </div>
 
