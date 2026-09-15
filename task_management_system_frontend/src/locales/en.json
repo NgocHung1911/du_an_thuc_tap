@@ -23,15 +23,20 @@
   "dashboard": {
     "welcome_back": "Welcome back",
     "summary_subtitle": "Here is your personal task summary, and upcoming deadlines.",
+    "admin_summary_subtitle": "Here is the system-wide overview summary, including projects, tasks, and members.",
     "refresh_data": "Refresh Data",
     "view_all_tasks": "View All Tasks",
     "projects": "PROJECTS",
     "total_tasks": "TOTAL TASKS",
+    "total_members": "TOTAL MEMBERS",
+    "total_projects": "TOTAL PROJECTS",
     "task_doing": "TASK DOING",
     "task_done": "TASK DONE",
+    "project status details": "Project Status Details",
+    "view_list": "View List",
     "assigned_to_you": "Assigned to you",
     "doing_review": "{{doing}} Doing · {{review}} Review",
-    "completed_rate": "{{rate}}% Completed",
+    "completed_rate": " Completed",
     "recent_assigned_tasks": "Recent Assigned Tasks",
     "view_all": "View all",
     "no_assigned_tasks": "No tasks currently assigned to you!",
@@ -48,7 +53,24 @@
     "general_project": "General Project",
     "loading_tasks": "Loading tasks...",
     "loading_projects": "Loading projects...",
-    "loading_deadlines": "Loading deadlines..."
+    "loading_deadlines": "Loading deadlines...",
+    "status":{
+      "TO_DO": "To Do",
+      "DOING": "Doing",
+      "IN_PROGRESS": "In Progress",
+      "COMPLETED": "Completed"
+    },
+    "status_project":{
+      "PLANNING": "Planning",
+      "IN_PROGRESS": "In Progress",
+      "COMPLETED": "Completed",
+      "ON_HOLD": "On Hold"
+    },
+    "role":{
+      "OWNER":"Owner",
+      "ADMIN":"Admin",
+      "MEMBER":"Member"
+    }
   },
   "auth": {
     "login_title": "System Login",
