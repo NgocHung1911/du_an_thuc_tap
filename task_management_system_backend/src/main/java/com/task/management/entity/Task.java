@@ -52,7 +52,7 @@ public class Task {
     @JoinColumn(name = "reporter_id")
     private User reporter;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private java.util.List<TaskAttachment> attachments = new java.util.ArrayList<>();
 
     @CreationTimestamp

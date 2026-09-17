@@ -6,18 +6,17 @@ import {
   TrendingUp, ArrowRight, Activity, Settings, UserPlus, User
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { taskApi, TaskDTO, UserDTO } from '../../services/taskApi';
-import { projectApi, ProjectDTO } from '../../services/projectApi';
+import { dashboardApi, AdminDashboardStatsDTO } from '../../services/dashboardApi';
+import { UserDTO } from '../../services/taskApi';
 import { userApi } from '../../services/userApi';
 import { useTranslation } from 'react-i18next';
+
 export const AdminDashboardPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [tasks, setTasks] = useState<TaskDTO[]>([]);
-  const [projects, setProjects] = useState<ProjectDTO[]>([]);
-  const [users, setUsers] = useState<UserDTO[]>([]);
+  const [statsData, setStatsData] = useState<AdminDashboardStatsDTO | null>(null);
   const [userProfile, setUserProfile] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,16 +25,12 @@ export const AdminDashboardPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const [allTasks, allProjects, allUsers, currentUser] = await Promise.all([
-        taskApi.getAllTasks().catch(() => []),
-        projectApi.getAllProjects({ all: true }).catch(() => []),
-        userApi.getAllUsers().catch(() => []),
+      const [adminStats, currentUser] = await Promise.all([
+        dashboardApi.getAdminStats(),
         userApi.getCurrentUser().catch(() => null),
       ]);
 
-      setTasks(allTasks || []);
-      setProjects(allProjects || []);
-      setUsers(allUsers || []);
+      setStatsData(adminStats);
       if (currentUser) {
         setUserProfile(currentUser);
       }
@@ -53,43 +48,24 @@ export const AdminDashboardPage: React.FC = () => {
 
   // Compute Statistics
   const stats = useMemo(() => {
-    const totalTasks = tasks.length;
-    const doneTasks = tasks.filter((t) => t.status === 'DONE').length;
-    const doingTasks = tasks.filter((t) => t.status === 'DOING').length;
-    const reviewTasks = tasks.filter((t) => t.status === 'REVIEW').length;
-    const todoTasks = tasks.filter((t) => t.status === 'TODO').length;
-    const inProgressTasks = doingTasks + reviewTasks;
-
-    const taskCompletionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-
-    const totalProjects = projects.length;
-    const activeProjects = projects.filter((p) => p.status === 'IN_PROGRESS').length;
-    const completedProjects = projects.filter((p) => p.status === 'COMPLETED').length;
-    const planningProjects = projects.filter((p) => p.status === 'PLANNING').length;
-    const onHoldProjects = projects.filter((p) => p.status === 'ON_HOLD').length;
-
-    const totalUsers = users.length;
-    const adminUsers = users.filter((u) => u.role && u.role.toUpperCase().includes('ADMIN')).length;
-    const memberUsers = totalUsers - adminUsers;
-
     return {
-      totalTasks,
-      doneTasks,
-      doingTasks,
-      reviewTasks,
-      todoTasks,
-      inProgressTasks,
-      taskCompletionRate,
-      totalProjects,
-      activeProjects,
-      completedProjects,
-      planningProjects,
-      onHoldProjects,
-      totalUsers,
-      adminUsers,
-      memberUsers,
+      totalTasks: statsData?.totalTasks || 0,
+      doneTasks: statsData?.doneTasks || 0,
+      doingTasks: statsData?.doingTasks || 0,
+      reviewTasks: statsData?.reviewTasks || 0,
+      todoTasks: statsData?.todoTasks || 0,
+      inProgressTasks: statsData?.inProgressTasks || 0,
+      taskCompletionRate: statsData?.taskCompletionRate || 0,
+      totalProjects: statsData?.totalProjects || 0,
+      activeProjects: statsData?.activeProjects || 0,
+      completedProjects: statsData?.completedProjects || 0,
+      planningProjects: statsData?.planningProjects || 0,
+      onHoldProjects: statsData?.onHoldProjects || 0,
+      totalUsers: statsData?.totalUsers || 0,
+      adminUsers: statsData?.adminUsers || 0,
+      memberUsers: statsData?.memberUsers || 0,
     };
-  }, [tasks, projects, users]);
+  }, [statsData]);
 
   // Format relative time with i18n support
   const formatRelativeTime = (dateStr?: string) => {
@@ -130,10 +106,11 @@ export const AdminDashboardPage: React.FC = () => {
 
   // Dynamic Recent System Activity
   const recentActivities = useMemo(() => {
+    if (!statsData) return [];
     const list: { id: string; title: string; detail: string; time: string; tag: string; tagBg: string; tagColor: string }[] = [];
 
     // Recent tasks
-    tasks.slice(-3).reverse().forEach((task) => {
+    (statsData.recentTasks || []).forEach((task) => {
       const taskStatusTranslated = t(`dashboard.status.${task.status}`, { defaultValue: task.status });
       list.push({
         id: `task-${task.id}`,
@@ -147,7 +124,7 @@ export const AdminDashboardPage: React.FC = () => {
     });
 
     // Recent projects
-    projects.slice(-2).reverse().forEach((p) => {
+    (statsData.recentProjects || []).forEach((p) => {
       const rawStatus = p.status || 'PLANNING';
       const projStatusTranslated = t(`dashboard.status_project.${rawStatus}`, { defaultValue: rawStatus });
       list.push({
@@ -162,7 +139,7 @@ export const AdminDashboardPage: React.FC = () => {
     });
 
     return list;
-  }, [tasks, projects, t]);
+  }, [statsData, t]);
 
   const displayName = userProfile?.fullName || userProfile?.username || user?.fullName || user?.username || 'Admin';
 

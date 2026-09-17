@@ -23,4 +23,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
            "(:status IS NULL OR p.status = :status) " +
            "ORDER BY p.id DESC")
     List<Project> searchProjectsByUser(@Param("userId") Long userId, @Param("name") String name, @Param("status") ProjectStatus status);
+
+    @Query("SELECT p.status, COUNT(p) FROM Project p GROUP BY p.status")
+    List<Object[]> countProjectsGroupedByStatus();
+
+    List<Project> findTop5ByOrderByIdDesc();
 }

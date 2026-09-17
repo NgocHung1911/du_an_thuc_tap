@@ -95,7 +95,7 @@ public class TaskService {
         return user.getUsername();
     }
 
-    private TaskDTO mapToDTO(Task task) {
+    public TaskDTO mapToDTO(Task task) {
         ProjectDTO projectDTO = ProjectDTO.builder()
                 .id(task.getProject().getId())
                 .name(task.getProject().getName())

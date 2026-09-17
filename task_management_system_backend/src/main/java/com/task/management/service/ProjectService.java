@@ -80,7 +80,7 @@ public class ProjectService {
     }
 
 
-    private ProjectDTO mapToDTO(Project project) {
+    public ProjectDTO mapToDTO(Project project) {
         int taskCount = (project.getTasks() != null) ? project.getTasks().size() : 0;
         List<UserDTO> memberDTOs = (project.getMembers() != null)
                 ? project.getMembers().stream().map(this::mapProjectMemberToDTO).collect(Collectors.toList())
