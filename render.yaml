@@ -2,6 +2,7 @@ services:
   - type: web
     name: task-management-api
     runtime: docker
+    plan: free
     rootDir: task_management_system_backend
     dockerfilePath: ./Dockerfile
     dockerContext: .
