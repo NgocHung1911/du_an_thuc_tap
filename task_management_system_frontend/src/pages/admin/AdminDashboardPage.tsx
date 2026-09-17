@@ -28,7 +28,7 @@ export const AdminDashboardPage: React.FC = () => {
       setError(null);
       const [allTasks, allProjects, allUsers, currentUser] = await Promise.all([
         taskApi.getAllTasks().catch(() => []),
-        projectApi.getAllProjects().catch(() => []),
+        projectApi.getAllProjects({ all: true }).catch(() => []),
         userApi.getAllUsers().catch(() => []),
         userApi.getCurrentUser().catch(() => null),
       ]);
@@ -91,18 +91,56 @@ export const AdminDashboardPage: React.FC = () => {
     };
   }, [tasks, projects, users]);
 
+  // Format relative time with i18n support
+  const formatRelativeTime = (dateStr?: string) => {
+    if (!dateStr) return t('dashboard.time.just_now', { defaultValue: 'Vừa xong' });
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return t('dashboard.time.just_now', { defaultValue: 'Vừa xong' });
+
+    const now = new Date();
+    const diffInSeconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
+
+    if (diffInSeconds < 60) {
+      return t('dashboard.time.just_now', { defaultValue: 'Vừa xong' });
+    }
+
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) {
+      return t('dashboard.time.minutes_ago', { count: diffInMinutes, defaultValue: `${diffInMinutes} phút trước` });
+    }
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+      return t('dashboard.time.hours_ago', { count: diffInHours, defaultValue: `${diffInHours} giờ trước` });
+    }
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) {
+      return t('dashboard.time.days_ago', { count: diffInDays, defaultValue: `${diffInDays} ngày trước` });
+    }
+
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) {
+      return t('dashboard.time.months_ago', { count: diffInMonths, defaultValue: `${diffInMonths} tháng trước` });
+    }
+
+    const diffInYears = Math.floor(diffInDays / 365);
+    return t('dashboard.time.years_ago', { count: diffInYears, defaultValue: `${diffInYears} năm trước` });
+  };
+
   // Dynamic Recent System Activity
   const recentActivities = useMemo(() => {
     const list: { id: string; title: string; detail: string; time: string; tag: string; tagBg: string; tagColor: string }[] = [];
 
     // Recent tasks
-    tasks.slice(-3).reverse().forEach((t) => {
+    tasks.slice(-3).reverse().forEach((task) => {
+      const taskStatusTranslated = t(`dashboard.status.${task.status}`, { defaultValue: task.status });
       list.push({
-        id: `task-${t.id}`,
-        title: `Task #${t.id}: ${t.title}`,
-        detail: `Project: ${t.projectName || 'Unassigned'} | Status: ${t.status}`,
-        time: 'Recent',
-        tag: 'TASK',
+        id: `task-${task.id}`,
+        title: `${t('dashboard.task')} #${task.id}: ${task.title}`,
+        detail: `${t('dashboard.project')}: ${task.projectName || 'Unassigned'} | ${t('dashboard.status_task')}: ${taskStatusTranslated}`,
+        time: formatRelativeTime(task.updatedAt || task.createdAt),
+        tag: t('dashboard.task'),
         tagBg: 'bg-blue-50',
         tagColor: 'text-blue-700',
       });
@@ -110,19 +148,21 @@ export const AdminDashboardPage: React.FC = () => {
 
     // Recent projects
     projects.slice(-2).reverse().forEach((p) => {
+      const rawStatus = p.status || 'PLANNING';
+      const projStatusTranslated = t(`dashboard.status_project.${rawStatus}`, { defaultValue: rawStatus });
       list.push({
         id: `proj-${p.id}`,
-        title: `New project: ${p.name}`,
-        detail: `Status: ${p.status || 'PLANNING'} | ${p.taskCount || 0} tasks`,
-        time: 'Recent',
-        tag: 'PROJECT',
+        title: `${t('dashboard.new_project', { defaultValue: 'New project' })}: ${p.name}`,
+        detail: `${t('dashboard.status_task')}: ${projStatusTranslated} | ${p.taskCount || 0} ${t('dashboard.tasks_count_suffix', { defaultValue: 'tasks' })}`,
+        time: formatRelativeTime(p.updatedAt || p.createdAt),
+        tag: t('dashboard.project'),
         tagBg: 'bg-indigo-50',
         tagColor: 'text-indigo-700',
       });
     });
 
     return list;
-  }, [tasks, projects]);
+  }, [tasks, projects, t]);
 
   const displayName = userProfile?.fullName || userProfile?.username || user?.fullName || user?.username || 'Admin';
 
@@ -224,7 +264,7 @@ export const AdminDashboardPage: React.FC = () => {
               <div className="space-y-1">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('dashboard.total_projects')}</p>
                 <p className="text-3xl font-extrabold text-indigo-600">{stats.totalProjects}</p>
-                <p className="text-xs text-slate-500">{stats.activeProjects} {t('dashboard.status.IN_PROGRESS')} · {stats.completedProjects} {t('dashboard.status.COMPLETED')}</p>
+                <p className="text-xs text-slate-500">{stats.activeProjects} {t('dashboard.status_project.IN_PROGRESS')} · {stats.completedProjects} {t('dashboard.status_project.COMPLETED')}</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
                 <FolderGit2 size={24} />
@@ -295,10 +335,10 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <TrendingUp size={18} className="text-blue-600" />
-                    <span>System-Wide Task Progress</span>
+                    <span>{t('dashboard.system_wide_task_progress')}</span>
                   </h2>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                    {stats.doneTasks}/{stats.totalTasks} Completed
+                    {stats.doneTasks}/{stats.totalTasks} {t('dashboard.status.COMPLETED')}
                   </span>
                 </div>
 
@@ -308,30 +348,30 @@ export const AdminDashboardPage: React.FC = () => {
                     <div
                       style={{ width: `${stats.totalTasks > 0 ? (stats.doneTasks / stats.totalTasks) * 100 : 0}%` }}
                       className="bg-emerald-500 transition-all duration-500"
-                      title="Done"
+                      title={t('dashboard.status.COMPLETED')}
                     />
                     <div
                       style={{ width: `${stats.totalTasks > 0 ? (stats.doingTasks / stats.totalTasks) * 100 : 0}%` }}
                       className="bg-blue-500 transition-all duration-500"
-                      title="Doing"
+                      title={t('dashboard.status.DOING')}
                     />
                     <div
                       style={{ width: `${stats.totalTasks > 0 ? (stats.reviewTasks / stats.totalTasks) * 100 : 0}%` }}
                       className="bg-purple-500 transition-all duration-500"
-                      title="Review"
+                      title={t('dashboard.status.IN_REVIEW')}
                     />
                     <div
                       style={{ width: `${stats.totalTasks > 0 ? (stats.todoTasks / stats.totalTasks) * 100 : 0}%` }}
                       className="bg-slate-300 transition-all duration-500"
-                      title="To Do"
+                      title={t('dashboard.status.TO_DO')}
                     />
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-slate-600 font-semibold pt-1">
-                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Done ({stats.doneTasks})</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Doing ({stats.doingTasks})</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Review ({stats.reviewTasks})</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span> To Do ({stats.todoTasks})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {t('dashboard.status.COMPLETED')} ({stats.doneTasks})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> {t('dashboard.status.DOING')} ({stats.doingTasks})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span> {t('dashboard.status.IN_REVIEW')} ({stats.reviewTasks})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span> {t('dashboard.status.TO_DO')} ({stats.todoTasks})</span>
                   </div>
                 </div>
               </div>
@@ -341,12 +381,12 @@ export const AdminDashboardPage: React.FC = () => {
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Activity size={18} className="text-indigo-600" />
-                <span>Recent Activity</span>
+                <span>  {t('dashboard.recent_activities')}</span>
               </h2>
 
               <div className="space-y-3">
                 {recentActivities.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-4 text-center">No recent system activity.</p>
+                  <p className="text-xs text-slate-500 py-4 text-center">{t('dashboard.no_recent_activities')}</p>
                 ) : (
                   recentActivities.map((act) => (
                     <div key={act.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">

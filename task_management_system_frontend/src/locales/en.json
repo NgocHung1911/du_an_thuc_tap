@@ -54,22 +54,47 @@
     "loading_tasks": "Loading tasks...",
     "loading_projects": "Loading projects...",
     "loading_deadlines": "Loading deadlines...",
-    "status":{
+    "system_wide_task_progress": "System-Wide Task Progress",
+    "recent_activities": "Recent Activities",
+    "no_recent_activities": "No recent activities",
+    "task": "Task",
+    "project": "Project",
+    "new_project": "New project",
+    "status_task": "Status",
+    "tasks_count_suffix": "tasks",
+    "status": {
+      "TODO": "To Do",
       "TO_DO": "To Do",
       "DOING": "Doing",
-      "IN_PROGRESS": "In Progress",
-      "COMPLETED": "Completed"
+      "REVIEW": "In Review",
+      "IN_REVIEW": "In Review",
+      "DONE": "Done",
+      "COMPLETED": "Completed",
+      "IN_PROGRESS": "In Progress"
     },
-    "status_project":{
+    "status_project": {
       "PLANNING": "Planning",
       "IN_PROGRESS": "In Progress",
       "COMPLETED": "Completed",
       "ON_HOLD": "On Hold"
     },
-    "role":{
-      "OWNER":"Owner",
-      "ADMIN":"Admin",
-      "MEMBER":"Member"
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "{{count}} minutes ago",
+      "minutes_ago_one": "1 minute ago",
+      "hours_ago": "{{count}} hours ago",
+      "hours_ago_one": "1 hour ago",
+      "days_ago": "{{count}} days ago",
+      "days_ago_one": "1 day ago",
+      "months_ago": "{{count}} months ago",
+      "months_ago_one": "1 month ago",
+      "years_ago": "{{count}} years ago",
+      "years_ago_one": "1 year ago"
+    },
+    "role": {
+      "OWNER": "Owner",
+      "ADMIN": "Admin",
+      "MEMBER": "Member"
     }
   },
   "auth": {
