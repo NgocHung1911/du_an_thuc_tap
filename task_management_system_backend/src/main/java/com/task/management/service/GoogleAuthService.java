@@ -29,7 +29,7 @@ public class GoogleAuthService {
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${google.client-id:YOUR_GOOGLE_CLIENT_ID}")
+    @Value("${google.client-id}")
     private String googleClientId;
 
     public AuthResponseDTO processGoogleLogin(String idTokenString) {

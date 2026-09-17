@@ -20,6 +20,7 @@ import com.task.management.dto.response.UserDTO;
 import com.task.management.dto.websocket.WebSocketEventType;
 import com.task.management.event.ProjectDomainEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,9 @@ public class InvitationService {
     private final UserRepository userRepository;
     private final BrevoMailService brevoMailService;
     private final ApplicationEventPublisher eventPublisher;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Transactional
     public AcceptInvitationResponseDTO sendInvitation(Long projectId, InviteMemberRequestDTO request) {
@@ -92,7 +96,7 @@ public class InvitationService {
 
         projectInvitationRepository.save(invitation);
 
-        String inviteLink = "http://localhost:5173/accept-invite?token=" + token;
+        String inviteLink = frontendUrl.replaceAll("/+$", "") + "/accept-invite?token=" + token;
         boolean mailSent = brevoMailService.sendInvitationEmail(recipientEmail, project.getName(), inviteLink);
 
         String message;

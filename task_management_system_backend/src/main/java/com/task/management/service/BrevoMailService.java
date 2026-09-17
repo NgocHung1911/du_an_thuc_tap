@@ -16,13 +16,13 @@ import java.util.Map;
 @Slf4j
 public class BrevoMailService {
 
-    @Value("${brevo.api-key:xkeysib-your_brevo_api_key_here}")
+    @Value("${brevo.api-key}")
     private String apiKey;
 
-    @Value("${brevo.sender-email:noreply@taskmanagementsystem.com}")
+    @Value("${brevo.sender-email}")
     private String senderEmail;
 
-    @Value("${brevo.sender-name:Task Management System}")
+    @Value("${brevo.sender-name}")
     private String senderName;
 
     private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
