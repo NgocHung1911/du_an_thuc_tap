@@ -34,6 +34,7 @@ build/
 
 ### Secrets & Application Configs ###
 *.properties
+!.mvn/wrapper/maven-wrapper.properties
 .env
 .env.*
 !.env.example
