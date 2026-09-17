@@ -54,22 +54,42 @@
     "loading_tasks": "Đang tải công việc...",
     "loading_projects": "Đang tải dự án...",
     "loading_deadlines": "Đang tải hạn chót...",
-    "status":{
+    "system_wide_task_progress": "Tiến độ công việc toàn hệ thống",
+    "recent_activities": "Hoạt động gần đây",
+    "no_recent_activities": "Không có hoạt động nào gần đây",
+    "task": "Công việc",
+    "project": "Dự án",
+    "new_project": "Dự án mới",
+    "status_task": "Trạng thái",
+    "tasks_count_suffix": "công việc",
+    "status": {
+      "TODO": "Cần làm",
       "TO_DO": "Cần làm",
       "DOING": "Đang làm",
-      "IN_PROGRESS": "Đang triển khai",
-      "COMPLETED": "Hoàn thành"
+      "REVIEW": "Chờ duyệt",
+      "IN_REVIEW": "Chờ duyệt",
+      "DONE": "Hoàn thành",
+      "COMPLETED": "Hoàn thành",
+      "IN_PROGRESS": "Đang triển khai"
     },
-    "status_project":{
+    "status_project": {
       "PLANNING": "Lên kế hoạch",
       "IN_PROGRESS": "Đang triển khai",
       "COMPLETED": "Hoàn thành",
       "ON_HOLD": "Tạm dừng"
     },
-    "role":{
-      "OWNER":"Chủ sở hữu",
-      "ADMIN":"Quản trị viên",
-      "MEMBER":"Thành viên"
+    "time": {
+      "just_now": "Vừa xong",
+      "minutes_ago": "{{count}} phút trước",
+      "hours_ago": "{{count}} giờ trước",
+      "days_ago": "{{count}} ngày trước",
+      "months_ago": "{{count}} tháng trước",
+      "years_ago": "{{count}} năm trước"
+    },
+    "role": {
+      "OWNER": "Chủ sở hữu",
+      "ADMIN": "Quản trị viên",
+      "MEMBER": "Thành viên"
     }
   },
   "auth": {
