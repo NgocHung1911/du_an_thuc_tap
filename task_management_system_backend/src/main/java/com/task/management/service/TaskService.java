@@ -8,6 +8,7 @@ import com.task.management.entity.Project;
 import com.task.management.entity.Task;
 import com.task.management.entity.User;
 import com.task.management.enums.ProjectRole;
+import com.task.management.enums.Role;
 import com.task.management.enums.TaskPriority;
 import com.task.management.enums.TaskStatus;
 import com.task.management.exception.BadRequestException;
@@ -77,12 +78,19 @@ public class TaskService {
         ));
     }
 
-    private void validateUserBelongsToProject(User user, Project project) {
-        if (user == null || project == null) return;
+    private boolean isUserInProject(User user, Project project) {
+        if (user == null || project == null) {
+            return false;
+        }
         boolean isMember = project.getMembers() != null &&
                 project.getMembers().stream().anyMatch(m -> m.getUser() != null && m.getUser().getId().equals(user.getId()));
         boolean isOwner = project.getUser() != null && project.getUser().getId().equals(user.getId());
-        if (!isMember && !isOwner) {
+        return isMember || isOwner;
+    }
+
+    private void validateUserBelongsToProject(User user, Project project) {
+        if (user == null || project == null) return;
+        if (!isUserInProject(user, project)) {
             throw new BadRequestException("User does not belong to this project!");
         }
     }
@@ -105,24 +113,32 @@ public class TaskService {
                 .status(task.getProject().getStatus())
                 .build();
 
+        User assignedUser = task.getUser();
+        if (assignedUser != null && !isUserInProject(assignedUser, task.getProject())) {
+            assignedUser = null;
+        }
+
         UserDTO userDTO = null;
-        if (task.getUser() != null) {
+        if (assignedUser != null) {
             userDTO = UserDTO.builder()
-                    .id(task.getUser().getId())
-                    .username(task.getUser().getUsername())
-                    .email(task.getUser().getEmail())
-                    .fullName(resolveFullName(task.getUser()))
-                    .avatarUrl(task.getUser().getAvatarUrl())
-                    .role(task.getUser().getRole())
+                    .id(assignedUser.getId())
+                    .username(assignedUser.getUsername())
+                    .email(assignedUser.getEmail())
+                    .fullName(resolveFullName(assignedUser))
+                    .avatarUrl(assignedUser.getAvatarUrl())
+                    .role(assignedUser.getRole())
                     .build();
         }
 
         User effectiveReporter = task.getReporter();
+        if (effectiveReporter != null && !isUserInProject(effectiveReporter, task.getProject())) {
+            effectiveReporter = null;
+        }
         if (effectiveReporter == null) {
             if (task.getProject() != null && task.getProject().getUser() != null) {
                 effectiveReporter = task.getProject().getUser();
-            } else if (task.getUser() != null) {
-                effectiveReporter = task.getUser();
+            } else if (assignedUser != null) {
+                effectiveReporter = assignedUser;
             }
         }
 
@@ -140,8 +156,8 @@ public class TaskService {
 
         Long projId = task.getProject() != null ? task.getProject().getId() : null;
         String projName = task.getProject() != null ? task.getProject().getName() : null;
-        Long uId = task.getUser() != null ? task.getUser().getId() : null;
-        String uFullName = task.getUser() != null ? resolveFullName(task.getUser()) : null;
+        Long uId = assignedUser != null ? assignedUser.getId() : null;
+        String uFullName = assignedUser != null ? resolveFullName(assignedUser) : null;
         Long rId = effectiveReporter != null ? effectiveReporter.getId() : null;
         String rFullName = effectiveReporter != null ? resolveFullName(effectiveReporter) : null;
 
@@ -176,16 +192,68 @@ public class TaskService {
                 .build();
     }
 
+    private User resolveCurrentUser(String username) {
+        String effectiveUsername = resolveUsername(username);
+        if (effectiveUsername == null) {
+            return null;
+        }
+        return userRepository.findByUsername(effectiveUsername)
+                .orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null));
+    }
+
+    private boolean isSystemAdmin(User user) {
+        return user != null && user.getRole() == Role.ADMIN;
+    }
+
+    private boolean canAccessProject(User user, Long projectId) {
+        if (user == null || projectId == null) {
+            return false;
+        }
+        if (isSystemAdmin(user)) {
+            return true;
+        }
+        return projectService.getUserRoleInProject(projectId, user.getUsername()) != null;
+    }
+
     @Transactional(readOnly = true)
     public List<TaskDTO> getAllTasks() {
-        return taskRepository.findAll()
-                .stream()
+        return getAllTasks(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskDTO> getAllTasks(String username) {
+        String effectiveUsername = resolveUsername(username);
+        if (effectiveUsername == null) {
+            return taskRepository.findAll().stream()
+                    .map(this::mapToDTO)
+                    .collect(Collectors.toList());
+        }
+
+        User currentUser = userRepository.findByUsername(effectiveUsername)
+                .orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null));
+        if (currentUser == null) {
+            return List.of();
+        }
+
+        List<Task> tasks = isSystemAdmin(currentUser)
+                ? taskRepository.findAll()
+                : taskRepository.findVisibleTasksForUser(currentUser.getId());
+        return tasks.stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<TaskDTO> getTasksByProjectId(Long projectId) {
+        return getTasksByProjectId(projectId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskDTO> getTasksByProjectId(Long projectId, String username) {
+        User currentUser = resolveCurrentUser(username);
+        if (currentUser != null && !canAccessProject(currentUser, projectId)) {
+            throw new BadRequestException("You are not a member of this project!");
+        }
         return taskRepository.findByProjectId(projectId)
                 .stream()
                 .map(this::mapToDTO)
@@ -194,8 +262,18 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public TaskDTO getTaskById(Long id) {
+        return getTaskById(id, null);
+    }
+
+    @Transactional(readOnly = true)
+    public TaskDTO getTaskById(Long id, String username) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
+        User currentUser = resolveCurrentUser(username);
+        Long projectId = task.getProject() != null ? task.getProject().getId() : null;
+        if (currentUser != null && !canAccessProject(currentUser, projectId)) {
+            throw new BadRequestException("You are not a member of this project!");
+        }
         return mapToDTO(task);
     }
 
