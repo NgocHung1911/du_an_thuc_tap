@@ -29,6 +29,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @EntityGraph(attributePaths = {"project", "user", "reporter"})
     List<Task> findByPriority(TaskPriority priority);
+    @Query("SELECT t FROM Task t WHERE t.project.id IN (SELECT pm.project.id FROM ProjectMember pm WHERE pm.user.id = :userId)")
+    List<Task> findVisibleTasksForUser(@Param("userId") Long userId);
 
     long countByStatus(TaskStatus status);
 

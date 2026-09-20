@@ -6,6 +6,7 @@ import com.task.management.dto.response.ProjectDTO;
 import com.task.management.dto.response.UserDTO;
 import com.task.management.entity.Project;
 import com.task.management.entity.ProjectMember;
+import com.task.management.entity.Task;
 import com.task.management.entity.User;
 import com.task.management.enums.ProjectRole;
 import com.task.management.enums.ProjectStatus;
@@ -14,6 +15,7 @@ import com.task.management.exception.BadRequestException;
 import com.task.management.exception.ResourceNotFoundException;
 import com.task.management.repository.ProjectMemberRepository;
 import com.task.management.repository.ProjectRepository;
+import com.task.management.repository.TaskRepository;
 import com.task.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final TaskRepository taskRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final NotificationService notificationService;
 
@@ -436,8 +439,31 @@ public class ProjectService {
         UserDTO memberDto = mapProjectMemberToDTO(targetMember);
         publishProjectEvent(WebSocketEventType.PROJECT_MEMBER_REMOVED, projectId, memberDto, userId);
 
+        revokeUserFromProjectTasks(project, userId);
+
         project.getMembers().remove(targetMember);
         projectMemberRepository.delete(targetMember);
         projectRepository.save(project);
+    }
+
+    private void revokeUserFromProjectTasks(Project project, Long userId) {
+        if (project == null || userId == null) {
+            return;
+        }
+        List<Task> projectTasks = taskRepository.findByProjectId(project.getId());
+        for (Task task : projectTasks) {
+            boolean changed = false;
+            if (task.getUser() != null && userId.equals(task.getUser().getId())) {
+                task.setUser(null);
+                changed = true;
+            }
+            if (task.getReporter() != null && userId.equals(task.getReporter().getId())) {
+                task.setReporter(project.getUser());
+                changed = true;
+            }
+            if (changed) {
+                taskRepository.save(task);
+            }
+        }
     }
 }
