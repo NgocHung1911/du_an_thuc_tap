@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { userApi } from '../../services/userApi';
 import { UserDTO } from '../../services/taskApi';
@@ -6,6 +7,7 @@ import { User, Mail, Camera, CheckCircle2, AlertCircle, Loader2 } from 'lucide-r
 import { UserAvatar } from '../../components/common/UserAvatar';
 
 export const PersonalProfilePage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const [profile, setProfile] = useState<UserDTO | null>(null);
@@ -32,13 +34,6 @@ export const PersonalProfilePage: React.FC = () => {
   useEffect(() => {
     fetchProfile();
   }, []);
-
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
 
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
@@ -67,7 +62,7 @@ export const PersonalProfilePage: React.FC = () => {
 
       const updatedUser = await userApi.uploadAvatar(file);
       setProfile(updatedUser);
-      setUploadSuccess('Avatar uploaded successfully!');
+      setUploadSuccess(t('profile.success_update'));
     } catch (err: any) {
       console.error('Failed to upload avatar:', err);
       setUploadError(err.response?.data?.message || 'Failed to upload avatar image. Please try again!');
@@ -93,10 +88,10 @@ export const PersonalProfilePage: React.FC = () => {
       {/* Page Header */}
       <div className="border-b border-[#DFE1E6] pb-4">
         <h1 className="text-2xl font-bold text-[#172B4D] flex items-center gap-2">
-          👤 Personal Profile
+          👤 {t('profile.title')}
         </h1>
         <p className="text-sm text-[#5E6C84] mt-0.5">
-          View and manage your personal account profile & avatar
+          {t('profile.subtitle')}
         </p>
       </div>
 
@@ -118,7 +113,7 @@ export const PersonalProfilePage: React.FC = () => {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-6">
         {/* Avatar Header */}
         <div className="flex flex-col items-center text-center pb-5 border-b border-slate-100">
-          <div className="relative group cursor-pointer mb-3" onClick={handleAvatarClick} title="Click to change avatar">
+          <div className="relative group cursor-pointer mb-3" onClick={handleAvatarClick} title={t('profile.change_avatar')}>
             <UserAvatar
               src={profile?.avatarUrl}
               name={profile?.fullName || profile?.username || user?.username}
@@ -134,7 +129,7 @@ export const PersonalProfilePage: React.FC = () => {
               ) : (
                 <>
                   <Camera size={20} />
-                  <span className="text-[10px] font-bold mt-1">Change avatar</span>
+                  <span className="text-[10px] font-bold mt-1">{t('profile.change_avatar')}</span>
                 </>
               )}
             </div>
@@ -158,21 +153,21 @@ export const PersonalProfilePage: React.FC = () => {
         <div className="space-y-4 text-xs text-slate-800">
           <div className="flex items-center justify-between py-2 border-b border-slate-100">
             <span className="text-slate-500 flex items-center gap-2 font-medium">
-              <User size={16} /> Username
+              <User size={16} /> {t('users.username')}
             </span>
             <span className="font-semibold text-slate-900">{profile?.username || user?.username}</span>
           </div>
 
           <div className="flex items-center justify-between py-2 border-b border-slate-100">
             <span className="text-slate-500 flex items-center gap-2 font-medium">
-              <Mail size={16} /> Email Address
+              <Mail size={16} /> {t('users.email')}
             </span>
             <span className="font-semibold text-slate-900">{profile?.email || user?.email || 'N/A'}</span>
           </div>
 
           <div className="flex items-center justify-between py-2">
             <span className="text-slate-500 flex items-center gap-2 font-medium">
-              <User size={16} /> Full Name
+              <User size={16} /> {t('users.full_name')}
             </span>
             <span className="font-semibold text-slate-900">
               {profile?.fullName || (user?.email ? user.email.split('@')[0] : 'N/A')}

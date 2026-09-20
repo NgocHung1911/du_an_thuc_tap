@@ -2,7 +2,7 @@ import React from 'react';
 import { Clock, Edit3, Trash2, AlertCircle } from 'lucide-react';
 import { TaskDTO, TaskPriority, TaskStatus, UserDTO } from '../../services/taskApi';
 import { UserAvatar } from '../common/UserAvatar';
-
+import {useTranslation} from "react-i18next";
 interface ProjectListViewProps {
   tasks: TaskDTO[];
   projectKey?: string;
@@ -27,6 +27,7 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
   onReporterChange,
   onDeleteTask,
 }) => {
+  const {t} = useTranslation();
   const renderStatusBadge = (status: TaskStatus) => {
     switch (status) {
       case 'TODO':
@@ -83,14 +84,14 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
         <table className="w-full text-left text-sm border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th className="py-3.5 px-4 w-28">Task ID</th>
-              <th className="py-3.5 px-4 min-w-[240px]">Task Title</th>
-              <th className="py-3.5 px-4 w-36">Status</th>
-              <th className="py-3.5 px-4 w-36">Priority</th>
-              <th className="py-3.5 px-4 w-44">Assignee</th>
-              <th className="py-3.5 px-4 w-44">Reporter</th>
-              <th className="py-3.5 px-4 w-36">Due Date</th>
-              <th className="py-3.5 px-4 w-24 text-right">Actions</th>
+              <th className="py-3.5 px-4 w-28">{t('tasks.task_id')}</th>
+              <th className="py-3.5 px-4 min-w-[240px]">{t('tasks.task_title')}</th>
+              <th className="py-3.5 px-4 w-36">{t('tasks.task_status')}</th>
+              <th className="py-3.5 px-4 w-36">{t('tasks.task_priority')}</th>
+              <th className="py-3.5 px-4 w-44">{t('tasks.task_assignee')}</th>
+              <th className="py-3.5 px-4 w-44">{t('tasks.task_reporter')}</th>
+              <th className="py-3.5 px-4 w-36">{t('tasks.task_due_date')}</th>
+              <th className="py-3.5 px-4 w-24 text-right">{t('tasks.task_actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

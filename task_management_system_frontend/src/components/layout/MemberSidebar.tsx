@@ -1,10 +1,12 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
-import { LayoutDashboard, CheckSquare, FolderGit2, User, LogOut, UserCheck } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, FolderGit2, User, LogOut } from 'lucide-react';
 
 export const MemberSidebar: React.FC = () => {
+  const { t } = useTranslation();
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -14,10 +16,10 @@ export const MemberSidebar: React.FC = () => {
   };
 
   const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/member/dashboard' },
-    { label: 'My Tasks', icon: CheckSquare, path: '/member/my-tasks' },
-    { label: 'Participating projects', icon: FolderGit2, path: '/member/projects' },
-    { label: 'Personal Profile', icon: User, path: '/member/profile' },
+    { labelKey: 'sidebar.dashboard', icon: LayoutDashboard, path: '/member/dashboard' },
+    { labelKey: 'sidebar.my_tasks', icon: CheckSquare, path: '/member/my-tasks' },
+    { labelKey: 'sidebar.participating_projects', icon: FolderGit2, path: '/member/projects' },
+    { labelKey: 'sidebar.profile', icon: User, path: '/member/profile' },
   ];
 
   return (
@@ -25,7 +27,7 @@ export const MemberSidebar: React.FC = () => {
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto min-h-0 p-3 space-y-1">
         <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-          Workspace
+          {t('sidebar.workspace')}
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -42,7 +44,7 @@ export const MemberSidebar: React.FC = () => {
               }
             >
               <Icon size={18} />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           );
         })}
@@ -52,12 +54,13 @@ export const MemberSidebar: React.FC = () => {
       <div className="p-4 border-t border-slate-200 bg-slate-50/80 mt-auto shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-all shadow-2xs"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
         >
           <LogOut size={16} />
-          <span>Logout</span>
+          <span>{t('sidebar.logout')}</span>
         </button>
       </div>
     </aside>
   );
 };
+

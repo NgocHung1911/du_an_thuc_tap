@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FolderKanban, RefreshCw, Search, Inbox, X, Filter,
   Plus, CheckCircle2, AlertCircle
@@ -12,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 export const ManagerProjectsPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { t } = useTranslation();
   const pathPrefix = isAdmin ? '/admin/projects' : '/member/projects';
 
   const [projects, setProjects] = useState<ProjectDTO[]>([]);
@@ -74,14 +76,14 @@ export const ManagerProjectsPage: React.FC = () => {
         endDate: currentProject.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: newStatus,
       });
-      showToast(`Project status updated to ${newStatus}!`, 'success');
+      showToast(t('projects.status_updated', { status: newStatus }), 'success');
     } catch (err: any) {
       console.error('Error changing project status:', err);
       // Revert optimistic update
       setProjects((prev) =>
         prev.map((p) => (p.id === projectId ? { ...p, status: previousStatus } : p))
       );
-      const msg = err.response?.data?.message || err.message || 'Unable to update project status!';
+      const msg = err.response?.data?.message || err.message || t('common.loading');
       showToast(msg, 'error');
     }
   };
@@ -90,10 +92,10 @@ export const ManagerProjectsPage: React.FC = () => {
   const handleFormSubmit = async (data: ProjectRequest, projectId?: number) => {
     if (projectId) {
       await projectApi.updateProject(projectId, data);
-      showToast(`Successfully updated project #${projectId}!`, 'success');
+      showToast(t('projects.project_updated', { id: projectId }), 'success');
     } else {
       await projectApi.createProject(data);
-      showToast('Successfully created new project!', 'success');
+      showToast(t('projects.project_created'), 'success');
     }
     await fetchProjects();
   };
@@ -108,9 +110,9 @@ export const ManagerProjectsPage: React.FC = () => {
               <FolderKanban size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Joined Projects</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('projects.title')}</h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                List of workspace projects you are currently participating in or managing
+                {t('projects.subtitle')}
               </p>
             </div>
           </div>
@@ -120,7 +122,7 @@ export const ManagerProjectsPage: React.FC = () => {
           <button
             onClick={fetchProjects}
             className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
-            title="Refresh projects list"
+            title={t('projects.refresh_title')}
           >
             <RefreshCw size={18} className={loading ? 'animate-spin text-blue-600' : ''} />
           </button>
@@ -133,7 +135,7 @@ export const ManagerProjectsPage: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all hover:shadow-md"
           >
             <Plus size={18} />
-            <span>Create New Project</span>
+            <span>{t('projects.create_project')}</span>
           </button>
         </div>
       </div>
@@ -148,7 +150,7 @@ export const ManagerProjectsPage: React.FC = () => {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="Search projects by name..."
+            placeholder={t('projects.search_placeholder')}
             className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-900 text-xs rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all"
           />
           {searchKeyword && (
@@ -163,17 +165,17 @@ export const ManagerProjectsPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-slate-400" />
-          <span className="text-xs font-semibold text-slate-600 shrink-0">Status:</span>
+          <span className="text-xs font-semibold text-slate-600 shrink-0">{t('projects.filter_status_label')}</span>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl px-3 py-2 font-bold outline-none cursor-pointer focus:border-blue-600 transition-colors"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="PLANNING">PLANNING</option>
-            <option value="IN_PROGRESS">IN_PROGRESS</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="ON_HOLD">ON_HOLD</option>
+            <option value="ALL">{t('projects.status.all')}</option>
+            <option value="PLANNING">{t('projects.status.PLANNING')}</option>
+            <option value="IN_PROGRESS">{t('projects.status.IN_PROGRESS')}</option>
+            <option value="COMPLETED">{t('projects.status.COMPLETED')}</option>
+            <option value="ON_HOLD">{t('projects.status.ON_HOLD')}</option>
           </select>
         </div>
       </div>
@@ -205,13 +207,13 @@ export const ManagerProjectsPage: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-slate-900">
               {searchKeyword || filterStatus !== 'ALL'
-                ? 'No projects found matching the filter'
-                : 'You have not joined any projects yet'}
+                ? t('projects.no_projects_found')
+                : t('projects.no_projects_yet')}
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
               {searchKeyword || filterStatus !== 'ALL'
-                ? 'Please try searching with a different keyword or reset filters.'
-                : 'Click "Create New Project" to create your first project, or contact your team manager for an invitation link.'}
+                ? t('projects.no_projects_filter_hint')
+                : t('projects.no_projects_empty_hint')}
             </p>
           </div>
 
@@ -224,7 +226,7 @@ export const ManagerProjectsPage: React.FC = () => {
                 }}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-blue-600 text-xs font-bold rounded-xl border border-slate-200 transition-colors"
               >
-                Reset all filters
+                {t('projects.reset_filters')}
               </button>
             ) : (
               <button
@@ -235,7 +237,7 @@ export const ManagerProjectsPage: React.FC = () => {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors inline-flex items-center gap-1.5"
               >
                 <Plus size={16} />
-                <span>Create New Project</span>
+                <span>{t('projects.create_project')}</span>
               </button>
             )}
           </div>

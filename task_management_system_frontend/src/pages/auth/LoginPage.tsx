@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../services/authApi';
 import { GoogleLogin } from '@react-oauth/google';
 import { LogIn, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
 import { PublicHeader } from '../../components/layout/PublicHeader';
-import { PublicFooter } from '../../components/layout/PublicFooter';
 
 export const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -53,7 +54,7 @@ export const LoginPage: React.FC = () => {
     setUnverifiedEmail(null);
 
     if (!username.trim() || !password.trim()) {
-      setError('Please enter both Username and Password!');
+      setError('Vui lòng nhập cả Tên đăng nhập và Mật khẩu!');
       return;
     }
 
@@ -65,12 +66,12 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.isVerified === false) {
-        setError(err.response.data.message || 'Account not verified with OTP!');
+        setError(err.response.data.message || 'Tài khoản chưa được xác thực OTP!');
         setUnverifiedEmail(err.response.data.email || '');
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Sign in failed. Please check your credentials!');
+        setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
       }
     } finally {
       setLoading(false);
@@ -79,7 +80,7 @@ export const LoginPage: React.FC = () => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse.credential) {
-      setError('Failed to retrieve authentication token from Google!');
+      setError('Không thể lấy mã xác thực từ Google!');
       return;
     }
 
@@ -95,7 +96,7 @@ export const LoginPage: React.FC = () => {
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Google sign in failed!');
+        setError('Đăng nhập bằng Google thất bại!');
       }
     } finally {
       setLoading(false);
@@ -110,13 +111,13 @@ export const LoginPage: React.FC = () => {
       {/* ========== MAIN FORM CARD ========== */}
       <main className="flex-1 flex items-center justify-center p-6 py-12">
         <div className="w-full max-w-md bg-white rounded-2xl border border-[#DFE1E6] shadow-xl p-8">
-          {/* Jira Style Header */}
+          {/* Header */}
           <div className="flex flex-col items-center mb-6">
             <div className="w-12 h-12 bg-[#0052CC] rounded-xl flex items-center justify-center text-white mb-3 shadow-md shadow-blue-500/20">
               <LogIn size={26} />
             </div>
-            <h1 className="text-2xl font-bold text-[#172B4D]">TaskFlow Sign In</h1>
-            <p className="text-sm text-[#5E6C84] mt-1">Access your workspace and manage projects</p>
+            <h1 className="text-2xl font-bold text-[#172B4D]">{t('auth.login_title')}</h1>
+            <p className="text-sm text-[#5E6C84] mt-1">{t('auth.login_subtitle')}</p>
           </div>
 
           {error && (
@@ -130,10 +131,10 @@ export const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigate('/verify-otp', { state: { email: unverifiedEmail } })}
-                    className="bg-[#0052CC] hover:bg-[#0747A6] text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+                    className="bg-[#0052CC] hover:bg-[#0747A6] text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                   >
                     <ShieldCheck size={14} />
-                    <span>Verify OTP now</span>
+                    <span>{t('auth.verify_btn')}</span>
                   </button>
                 </div>
               )}
@@ -143,7 +144,7 @@ export const LoginPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#5E6C84] uppercase tracking-wider mb-1.5">
-                Username / Email
+                {t('auth.username_or_email')}
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#6B778C]">
@@ -153,7 +154,7 @@ export const LoginPage: React.FC = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username or email"
+                  placeholder={t('auth.username_placeholder')}
                   className="w-full pl-10 pr-3 py-2 bg-[#FAFBFC] border border-[#DFE1E6] rounded-xl text-[#172B4D] placeholder-[#a5adba] text-sm focus:bg-white focus:border-[#4C9AFF] focus:ring-2 focus:ring-[#4C9AFF]/20 focus:outline-none transition-colors"
                   required
                 />
@@ -162,7 +163,7 @@ export const LoginPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-[#5E6C84] uppercase tracking-wider mb-1.5">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#6B778C]">
@@ -172,7 +173,7 @@ export const LoginPage: React.FC = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  placeholder={t('auth.password_placeholder')}
                   className="w-full pl-10 pr-3 py-2 bg-[#FAFBFC] border border-[#DFE1E6] rounded-xl text-[#172B4D] placeholder-[#a5adba] text-sm focus:bg-white focus:border-[#4C9AFF] focus:ring-2 focus:ring-[#4C9AFF]/20 focus:outline-none transition-colors"
                   required
                 />
@@ -182,13 +183,13 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#0052CC] hover:bg-[#0747A6] active:bg-[#172B4D] text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 mt-6"
+              className="w-full bg-[#0052CC] hover:bg-[#0747A6] active:bg-[#172B4D] text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 mt-6 cursor-pointer"
             >
               {loading ? (
                 <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>{t('auth.login_btn')}</span>
                   <LogIn size={16} />
                 </>
               )}
@@ -199,7 +200,7 @@ export const LoginPage: React.FC = () => {
           <div className="mt-6 flex flex-col items-center justify-center">
             <div className="w-full flex items-center gap-3 mb-5">
               <div className="h-px bg-[#DFE1E6] flex-1"></div>
-              <span className="text-xs font-semibold text-[#6B778C] uppercase">or sign in with</span>
+              <span className="text-xs font-semibold text-[#6B778C] uppercase">Hoặc</span>
               <div className="h-px bg-[#DFE1E6] flex-1"></div>
             </div>
 
@@ -217,9 +218,9 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div className="mt-6 pt-6 border-t border-[#EBECF0] text-center text-sm text-[#5E6C84]">
-            Don't have an account?{' '}
+            {t('auth.no_account')}{' '}
             <Link to="/register" className="text-[#0052CC] font-semibold hover:underline">
-              Create one now
+              {t('auth.register_now')}
             </Link>
           </div>
         </div>
@@ -230,22 +231,16 @@ export const LoginPage: React.FC = () => {
         <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-[#0052CC] flex items-center justify-center text-white font-bold text-[10px]">
-              T
+              K
             </div>
-            <span className="font-bold text-stone-900 text-sm">TaskFlow</span>
-            <span>— Enterprise Task & Project Management System</span>
+            <span className="font-bold text-stone-900 text-sm">Kira Task Management</span>
           </div>
 
-          <div className="flex items-center gap-6">
-            <Link to="/#features" className="hover:text-stone-900 transition-colors">Features</Link>
-            <Link to="/#how-it-works" className="hover:text-stone-900 transition-colors">How it works</Link>
-            <Link to="/#pricing" className="hover:text-stone-900 transition-colors">Pricing</Link>
-          </div>
-
-          <p>© {new Date().getFullYear()} TaskFlow Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Kira Task Management. All rights reserved.</p>
         </div>
       </footer>
     </div>
   );
 };
+
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   CheckSquare, Clock, AlertTriangle, Calendar, ArrowRight,
   FolderGit2, AlertCircle, RefreshCw, Folder, User,
@@ -14,6 +15,7 @@ import { useNotificationWebSocket } from '../../hooks/useWebSocket';
 import { WebSocketEvent } from '../../services/websocketService';
 
 export const MemberDashboardPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -192,9 +194,9 @@ export const MemberDashboardPage: React.FC = () => {
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'No deadline';
+    if (!dateStr) return '';
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
+      return new Date(dateStr).toLocaleDateString('vi-VN', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -214,10 +216,10 @@ export const MemberDashboardPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
-              <span>Welcome back, {displayName}!</span> 👋
+              <span>{t('dashboard.welcome_back')}, {displayName}!</span> 👋
             </h1>
             <p className="text-blue-100 text-sm mt-1 flex flex-wrap items-center gap-2">
-              <span>Here is your personal task summary, and upcoming deadlines.</span>
+              <span>{t('dashboard.summary_subtitle')}</span>
               {displayEmail && (
                 <span className="bg-white/15 px-2.5 py-0.5 rounded-full text-xs text-blue-100 font-medium border border-white/20">
                   {displayEmail}
@@ -232,14 +234,14 @@ export const MemberDashboardPage: React.FC = () => {
             className="flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold backdrop-blur-xs transition-all border border-white/20 cursor-pointer"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Refresh Data</span>
+            <span>{t('dashboard.refresh_data')}</span>
           </button>
           <button
             onClick={() => navigate('/member/my-tasks')}
             className="flex items-center gap-2 px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
           >
             <CheckSquare size={16} />
-            <span>View All Tasks</span>
+            <span>{t('dashboard.view_all_tasks')}</span>
           </button>
         </div>
       </div>
@@ -256,9 +258,9 @@ export const MemberDashboardPage: React.FC = () => {
         {/* 1. Projects (Số Project) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Projects</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('dashboard.projects')}</p>
             <p className="text-3xl font-extrabold text-indigo-600">{projects.length}</p>
-            <p className="text-xs text-slate-500">Participating projects</p>
+            <p className="text-xs text-slate-500">{t('sidebar.participating_projects')}</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
             <FolderGit2 size={24} />
@@ -268,9 +270,9 @@ export const MemberDashboardPage: React.FC = () => {
         {/* 2. Total Tasks (Số Task) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tasks</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('dashboard.total_tasks')}</p>
             <p className="text-3xl font-extrabold text-slate-900">{stats.total}</p>
-            <p className="text-xs text-slate-500">Assigned to you</p>
+            <p className="text-xs text-slate-500">{t('dashboard.assigned_to_you')}</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
             <CheckSquare size={24} />
@@ -280,9 +282,9 @@ export const MemberDashboardPage: React.FC = () => {
         {/* 3. Task Doing (Số Task Doing) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Task Doing</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('dashboard.task_doing')}</p>
             <p className="text-3xl font-extrabold text-amber-600">{stats.inProgressCount}</p>
-            <p className="text-xs text-slate-500">{stats.doingCount} Doing · {stats.reviewCount} Review</p>
+            <p className="text-xs text-slate-500">{t('dashboard.doing_review', { doing: stats.doingCount, review: stats.reviewCount })}</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
             <Clock size={24} />
@@ -292,9 +294,9 @@ export const MemberDashboardPage: React.FC = () => {
         {/* 4. Task Done (Số Task Done) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Task Done</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('dashboard.task_done')}</p>
             <p className="text-3xl font-extrabold text-emerald-600">{stats.doneCount}</p>
-            <p className="text-xs text-emerald-600 font-semibold">{stats.completionRate}% Completed</p>
+            <p className="text-xs text-emerald-600 font-semibold">{t('dashboard.completed_rate', { rate: stats.completionRate })}</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
             <CheckCircle2 size={24} />
@@ -310,59 +312,59 @@ export const MemberDashboardPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <CheckSquare size={18} className="text-blue-600" />
-                <span>Recent Assigned Tasks</span>
+                <span>{t('dashboard.recent_assigned_tasks')}</span>
               </h2>
               <button
                 onClick={() => navigate('/member/my-tasks')}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
               >
-                <span>View all</span>
+                <span>{t('dashboard.view_all')}</span>
                 <ArrowRight size={14} />
               </button>
             </div>
 
             {loading ? (
               <div className="py-8 text-center text-slate-400 text-sm animate-pulse">
-                Loading tasks...
+                {t('dashboard.loading_tasks')}
               </div>
             ) : myTasks.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-sm">
-                🎉 No tasks currently assigned to you!
+                {t('dashboard.no_assigned_tasks')}
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {myTasks.slice(0, 6).map((t) => {
+                {myTasks.slice(0, 6).map((tItem) => {
                   let statusBg = 'bg-slate-100 text-slate-700';
-                  if (t.status === 'DOING') statusBg = 'bg-blue-100 text-blue-700';
-                  if (t.status === 'REVIEW') statusBg = 'bg-purple-100 text-purple-700';
-                  if (t.status === 'DONE') statusBg = 'bg-emerald-100 text-emerald-700';
+                  if (tItem.status === 'DOING') statusBg = 'bg-blue-100 text-blue-700';
+                  if (tItem.status === 'REVIEW') statusBg = 'bg-purple-100 text-purple-700';
+                  if (tItem.status === 'DONE') statusBg = 'bg-emerald-100 text-emerald-700';
 
                   let priorityBg = 'bg-slate-100 text-slate-600';
-                  if (t.priority === 'HIGH') priorityBg = 'bg-red-50 text-red-600 border border-red-100';
-                  if (t.priority === 'MEDIUM') priorityBg = 'bg-amber-50 text-amber-600 border border-amber-100';
+                  if (tItem.priority === 'HIGH') priorityBg = 'bg-red-50 text-red-600 border border-red-100';
+                  if (tItem.priority === 'MEDIUM') priorityBg = 'bg-amber-50 text-amber-600 border border-amber-100';
 
                   return (
                     <div
-                      key={t.id}
-                      onClick={() => handleOpenDetail(t)}
+                      key={tItem.id}
+                      onClick={() => handleOpenDetail(tItem)}
                       className="py-3 px-2 rounded-xl hover:bg-slate-50 flex items-center justify-between gap-4 cursor-pointer transition-colors"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-slate-900 truncate hover:text-blue-600">
-                          {t.title}
+                          {tItem.title}
                         </p>
                         <p className="text-xs text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
                           <FolderGit2 size={12} className="text-slate-400 shrink-0" />
-                          <span>{t.projectName || t.project?.name || 'General Project'}</span>
+                          <span>{tItem.projectName || tItem.project?.name || t('dashboard.general_project')}</span>
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${priorityBg}`}>
-                          {t.priority}
+                          {tItem.priority ? t(`tasks.priority.${tItem.priority}`, tItem.priority) : ''}
                         </span>
                         <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${statusBg}`}>
-                          {t.status}
+                          {tItem.status ? t(`tasks.status.${tItem.status}`, tItem.status) : ''}
                         </span>
                       </div>
                     </div>
@@ -377,30 +379,30 @@ export const MemberDashboardPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <FolderGit2 size={18} className="text-indigo-600" />
-                <span>My Participating Projects</span>
+                <span>{t('dashboard.my_participating_projects')}</span>
               </h2>
               <button
                 onClick={() => navigate('/member/projects')}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
               >
-                <span>View all projects</span>
+                <span>{t('dashboard.view_all_projects')}</span>
                 <ArrowRight size={14} />
               </button>
             </div>
 
             {loading ? (
               <div className="py-6 text-center text-slate-400 text-sm animate-pulse">
-                Loading projects...
+                {t('dashboard.loading_projects')}
               </div>
             ) : projects.length === 0 ? (
               <div className="py-6 text-center text-slate-400 text-sm">
-                📁 You haven't joined any projects yet.
+                {t('dashboard.no_projects')}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {projects.slice(0, 4).map((p) => {
                   const projectTaskCount = myTasks.filter(
-                    (t) => (t.projectId || t.project?.id) === p.id
+                    (tItem) => (tItem.projectId || tItem.project?.id) === p.id
                   ).length;
 
                   return (
@@ -418,7 +420,7 @@ export const MemberDashboardPage: React.FC = () => {
                         </p>
                         <div className="flex items-center gap-2 pt-1">
                           <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                            {projectTaskCount} assigned tasks
+                            {t('dashboard.assigned_tasks_count', { count: projectTaskCount })}
                           </span>
                         </div>
                       </div>
@@ -438,46 +440,46 @@ export const MemberDashboardPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar size={20} className="text-amber-500" />
-                <h2 className="text-base font-bold text-slate-900">Upcoming Deadlines</h2>
+                <h2 className="text-base font-bold text-slate-900">{t('dashboard.upcoming_deadlines')}</h2>
               </div>
               <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-                {upcomingDeadlines.length} pending
+                {t('dashboard.pending_count', { count: upcomingDeadlines.length })}
               </span>
             </div>
 
             {loading ? (
               <div className="py-6 text-center text-slate-400 text-sm animate-pulse">
-                Loading deadlines...
+                {t('dashboard.loading_deadlines')}
               </div>
             ) : upcomingDeadlines.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-sm">
-                ✨ No upcoming deadlines! All clear.
+                {t('dashboard.no_deadlines')}
               </div>
             ) : (
               <div className="space-y-3">
-                {upcomingDeadlines.slice(0, 5).map((t) => {
+                {upcomingDeadlines.slice(0, 5).map((tItem) => {
                   let badgeBg = 'bg-blue-50 text-blue-700 border-blue-200';
-                  let statusText = `Due in ${t.diffDays} day${t.diffDays > 1 ? 's' : ''}`;
+                  let statusText = t('dashboard.due_in_days', { days: tItem.diffDays });
 
-                  if (t.deadlineStatus === 'OVERDUE') {
+                  if (tItem.deadlineStatus === 'OVERDUE') {
                     badgeBg = 'bg-red-50 text-red-700 border-red-200';
-                    statusText = `Overdue by ${Math.abs(t.diffDays)} day${Math.abs(t.diffDays) > 1 ? 's' : ''}`;
-                  } else if (t.deadlineStatus === 'TODAY') {
+                    statusText = t('dashboard.overdue_by_days', { days: Math.abs(tItem.diffDays) });
+                  } else if (tItem.deadlineStatus === 'TODAY') {
                     badgeBg = 'bg-amber-50 text-amber-700 border-amber-200';
-                    statusText = 'Due Today';
-                  } else if (t.deadlineStatus === 'SOON') {
+                    statusText = t('dashboard.due_today');
+                  } else if (tItem.deadlineStatus === 'SOON') {
                     badgeBg = 'bg-amber-50 text-amber-700 border-amber-100';
                   }
 
                   return (
                     <div
-                      key={t.id}
-                      onClick={() => handleOpenDetail(t)}
+                      key={tItem.id}
+                      onClick={() => handleOpenDetail(tItem)}
                       className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/80 cursor-pointer transition-all space-y-2"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-xs font-bold text-slate-900 line-clamp-1 hover:text-blue-600">
-                          {t.title}
+                          {tItem.title}
                         </p>
                         <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0 ${badgeBg}`}>
                           {statusText}
@@ -487,10 +489,10 @@ export const MemberDashboardPage: React.FC = () => {
                       <div className="flex items-center justify-between text-[11px] text-slate-500">
                         <span className="flex items-center gap-1">
                           <FolderGit2 size={12} className="text-slate-400" />
-                          <span className="truncate max-w-[120px]">{t.projectName || t.project?.name || 'Project'}</span>
+                          <span className="truncate max-w-[120px]">{tItem.projectName || tItem.project?.name || t('dashboard.general_project')}</span>
                         </span>
                         <span className="font-semibold text-slate-700">
-                          {formatDate(t.deadline)}
+                          {formatDate(tItem.deadline)}
                         </span>
                       </div>
                     </div>
