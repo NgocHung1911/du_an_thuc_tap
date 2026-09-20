@@ -20,18 +20,21 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping
-    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-        return ResponseEntity.ok(taskService.getAllTasks());
+    public ResponseEntity<List<TaskDTO>> getAllTasks(Principal principal) {
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(taskService.getAllTasks(username));
     }
 
     @GetMapping("/project/{projectId}")
-    public ResponseEntity<List<TaskDTO>> getTasksByProjectId(@PathVariable Long projectId) {
-        return ResponseEntity.ok(taskService.getTasksByProjectId(projectId));
+    public ResponseEntity<List<TaskDTO>> getTasksByProjectId(@PathVariable Long projectId, Principal principal) {
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(taskService.getTasksByProjectId(projectId, username));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long id) {
-        return ResponseEntity.ok(taskService.getTaskById(id));
+    public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long id, Principal principal) {
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(taskService.getTaskById(id, username));
     }
 
     @PostMapping

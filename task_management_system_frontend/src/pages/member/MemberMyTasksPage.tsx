@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { taskApi, TaskDTO, TaskStatus, TaskPriority } from '../../services/taskApi';
+import { projectApi, ProjectDTO } from '../../services/projectApi';
 import { TaskDetailModal } from '../../components/project/TaskDetailModal';
 
 const STATUS_COLUMNS: {
@@ -61,6 +62,8 @@ export const MemberMyTasksPage: React.FC = () => {
   const { user } = useAuth();
 
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
+  const [projects, setProjects] = useState<ProjectDTO[]>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,8 +91,15 @@ export const MemberMyTasksPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const allTasks = await taskApi.getAllTasks();
+      const [allTasks, allProjects] = await Promise.all([
+        taskApi.getAllTasks(),
+        projectApi.getAllProjects().catch(() => null),
+      ]);
       setTasks(allTasks || []);
+      if (allProjects) {
+        setProjects(allProjects);
+        setProjectsLoaded(true);
+      }
     } catch (err: any) {
       console.error('Error loading tasks:', err);
       setError('Failed to load tasks from server. Please check your backend connection.');
@@ -102,9 +112,10 @@ export const MemberMyTasksPage: React.FC = () => {
     fetchTasks();
   }, []);
 
-  // Filter tasks assigned to current user
+  // Filter tasks assigned to current user that still belong to participating projects
   const myAssignedTasks = useMemo(() => {
     if (!tasks || !user) return [];
+    const participatingProjectIds = new Set(projects.map((project) => project.id));
     return tasks.filter((task) => {
       const assignedName = task.assignedUser?.username || task.userFullName;
       const assignedEmail = task.assignedUser?.email;
@@ -112,10 +123,13 @@ export const MemberMyTasksPage: React.FC = () => {
       const isAssigned =
         (assignedName && user.username && assignedName.toLowerCase() === user.username.toLowerCase()) ||
         (assignedEmail && user.email && assignedEmail.toLowerCase() === user.email.toLowerCase());
+      const projectId = task.projectId || task.project?.id;
+      const isInParticipatingProject =
+        !projectsLoaded || (projectId != null && participatingProjectIds.has(projectId));
 
-      return Boolean(isAssigned);
+      return Boolean(isAssigned && isInParticipatingProject);
     });
-  }, [tasks, user]);
+  }, [tasks, user, projects, projectsLoaded]);
 
   // Apply Search and Project filters
   const filteredTasks = useMemo(() => {

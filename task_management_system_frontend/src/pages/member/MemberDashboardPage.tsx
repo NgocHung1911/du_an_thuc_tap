@@ -19,6 +19,7 @@ export const MemberDashboardPage: React.FC = () => {
 
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
   const [projects, setProjects] = useState<ProjectDTO[]>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,11 +35,14 @@ export const MemberDashboardPage: React.FC = () => {
       setError(null);
       const [allTasks, allProjects, currentUser] = await Promise.all([
         taskApi.getAllTasks().catch(() => []),
-        projectApi.getAllProjects().catch(() => []),
+        projectApi.getAllProjects().catch(() => null),
         userApi.getCurrentUser().catch(() => null),
       ]);
       setTasks(allTasks || []);
-      setProjects(allProjects || []);
+      if (allProjects) {
+        setProjects(allProjects);
+        setProjectsLoaded(true);
+      }
       if (currentUser) {
         setUserProfile(currentUser);
       }
@@ -54,10 +58,13 @@ export const MemberDashboardPage: React.FC = () => {
     try {
       const [allTasks, allProjects] = await Promise.all([
         taskApi.getAllTasks().catch(() => []),
-        projectApi.getAllProjects().catch(() => []),
+        projectApi.getAllProjects().catch(() => null),
       ]);
       setTasks(allTasks || []);
-      setProjects(allProjects || []);
+      if (allProjects) {
+        setProjects(allProjects);
+        setProjectsLoaded(true);
+      }
     } catch (err) {
       console.error('Failed to silently refresh dashboard data:', err);
     }
@@ -74,19 +81,23 @@ export const MemberDashboardPage: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  // Filter tasks assigned to current user
+  // Filter tasks assigned to current user that still belong to participating projects
   const myTasks = useMemo(() => {
     if (!tasks || !user) return [];
+    const participatingProjectIds = new Set(projects.map((project) => project.id));
     return tasks.filter((t) => {
       const assignedName = t.assignedUser?.username || t.userFullName;
       const assignedEmail = t.assignedUser?.email;
-
-      return (
+      const isAssigned =
         (assignedName && user.username && assignedName.toLowerCase() === user.username.toLowerCase()) ||
-        (assignedEmail && user.email && assignedEmail.toLowerCase() === user.email.toLowerCase())
-      );
+        (assignedEmail && user.email && assignedEmail.toLowerCase() === user.email.toLowerCase());
+      const projectId = t.projectId || t.project?.id;
+      const isInParticipatingProject =
+        !projectsLoaded || (projectId != null && participatingProjectIds.has(projectId));
+
+      return Boolean(isAssigned && isInParticipatingProject);
     });
-  }, [tasks, user]);
+  }, [tasks, user, projects, projectsLoaded]);
 
   // Statistics
   const stats = useMemo(() => {
