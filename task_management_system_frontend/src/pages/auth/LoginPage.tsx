@@ -6,6 +6,7 @@ import { authApi } from '../../services/authApi';
 import { GoogleLogin } from '@react-oauth/google';
 import { LogIn, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
 import { PublicHeader } from '../../components/layout/PublicHeader';
+import { PublicFooter } from '../../components/layout/PublicFooter';
 
 export const LoginPage: React.FC = () => {
   const { t } = useTranslation();
@@ -225,20 +226,8 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </main>
+      <PublicFooter />
 
-      {/* ========== FOOTER ========== */}
-      <footer className="border-t border-stone-200/80 py-8 px-6 lg:px-8 bg-white">
-        <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-[#0052CC] flex items-center justify-center text-white font-bold text-[10px]">
-              K
-            </div>
-            <span className="font-bold text-stone-900 text-sm">Kira Task Management</span>
-          </div>
-
-          <p>© {new Date().getFullYear()} Kira Task Management. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 };
