@@ -7,6 +7,8 @@ interface PublicHeaderProps {
   transparentOnTop?: boolean;
 }
 
+const APP_LOGO_URL = "https://res.cloudinary.com/disdu197t/image/upload/v1789886003/logo_vgnv5o.jpg";
+
 export const PublicHeader: React.FC<PublicHeaderProps> = ({ transparentOnTop = true }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -53,15 +55,15 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ transparentOnTop = t
             isScrolled ? "h-14" : "h-20"
           }`}
         >
-          {/* Brand Logo - Original Text Style */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <span
-              className={`font-display tracking-tight text-stone-900 transition-all duration-500 font-bold ${
-                isScrolled ? "text-xl" : "text-2xl"
+          {/* Brand Logo */}
+          <Link to="/" className="flex items-center gap-2 group" aria-label="Kira home">
+            <img
+              src={APP_LOGO_URL}
+              alt="Kira logo"
+              className={`object-contain transition-all duration-500 ${
+                isScrolled ? "h-8 w-8" : "h-10 w-10"
               }`}
-            >
-              Kira
-            </span>
+            />
           </Link>
 
           {/* Desktop Navigation */}
