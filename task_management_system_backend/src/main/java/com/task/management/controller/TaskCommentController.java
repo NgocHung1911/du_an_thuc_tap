@@ -22,8 +22,11 @@ public class TaskCommentController {
 
     // GET /api/tasks/{taskId}/comments
     @GetMapping("/{taskId}/comments")
-    public ResponseEntity<List<TaskCommentDTO>> getCommentsByTaskId(@PathVariable Long taskId) {
-        return ResponseEntity.ok(commentService.getCommentsByTaskId(taskId));
+    public ResponseEntity<List<TaskCommentDTO>> getCommentsByTaskId(
+            @PathVariable Long taskId,
+            Principal principal) {
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(commentService.getCommentsByTaskId(taskId, username));
     }
 
     // POST /api/tasks/{taskId}/comments
