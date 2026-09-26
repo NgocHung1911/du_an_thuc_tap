@@ -22,12 +22,12 @@ type ViewTab = 'Board' | 'List';
 
 
 export const ProjectDetailPage: React.FC = () => {
-  const { t }= useTranslation();
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const projectId = Number(id);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [project, setProject] = useState<ProjectDTO | null>(null);
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
@@ -111,44 +111,48 @@ export const ProjectDetailPage: React.FC = () => {
 
   // Fetch Project & Tasks & Members
   const fetchData = async () => {
+    if (!projectId || isNaN(projectId)) {
+      const fallbackRoute = isAdmin ? '/admin/projects' : '/member/projects';
+      showToast(t('projects.not_found'), 'error');
+      navigate(fallbackRoute, { replace: true });
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      if (projectId) {
-        // Fetch Project details
-        try {
-          const projData = await projectApi.getProjectById(projectId);
-          setProject(projData);
-        } catch {
-          setProject({
-            id: projectId,
-            name: `Project #${projectId}`,
-            description: 'Project management details and task assignments.',
-            status: 'IN_PROGRESS',
-          });
-        }
+      // Fetch Project details first to enforce authorization check from backend
+      const projData = await projectApi.getProjectById(projectId);
+      setProject(projData);
 
-        // Fetch Tasks from backend API
-        try {
-          const taskList = await taskApi.getTasksByProjectId(projectId);
-          setTasks(taskList || []);
-        } catch {
-          setTasks([]);
-        }
+      // Fetch Tasks and Project Members in parallel once project access is verified
+      const [taskList, members] = await Promise.all([
+        taskApi.getTasksByProjectId(projectId).catch(() => []),
+        projectApi.getProjectMembers(projectId).catch(() => []),
+      ]);
 
-        // Fetch Project Members from backend API
-        try {
-          const members = await projectApi.getProjectMembers(projectId);
-          setProjectMembers(members || []);
-        } catch {
-          setProjectMembers([]);
-        }
-      }
+      setTasks(taskList || []);
+      setProjectMembers(members || []);
     } catch (err: any) {
       console.error('Error loading project details:', err);
-      setError('Failed to load data from server.');
+      const isForbidden = err?.response?.status === 403;
+      const isNotFound = err?.response?.status === 404;
+      const fallbackRoute = isAdmin ? '/admin/projects' : '/member/projects';
+
+      setProject(null);
       setTasks([]);
+      setProjectMembers([]);
+
+      if (isForbidden) {
+        showToast(t('projects.access_denied'), 'error');
+      } else if (isNotFound) {
+        showToast(t('projects.not_found'), 'error');
+      } else {
+        const msg = err?.response?.data?.message || err?.message || t('projects.access_denied');
+        showToast(msg, 'error');
+      }
+      navigate(fallbackRoute, { replace: true });
     } finally {
       setLoading(false);
     }
@@ -700,6 +704,19 @@ export const ProjectDetailPage: React.FC = () => {
   }, [tasks]);
 
   const projectTitle = project?.name || `Project #${projectId || 1}`;
+
+  if (loading && !project) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+        <RefreshCw size={28} className="animate-spin text-blue-600" />
+        <p className="text-sm font-medium text-slate-500">{t('common.loading') || 'Loading...'}</p>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return null;
+  }
 
   return (
     <div className="space-y-5 max-w-[1600px] mx-auto pb-10 font-sans relative">
