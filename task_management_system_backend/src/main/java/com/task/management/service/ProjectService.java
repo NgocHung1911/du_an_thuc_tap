@@ -86,8 +86,26 @@ public class ProjectService {
     public ProjectDTO mapToDTO(Project project) {
         int taskCount = (project.getTasks() != null) ? project.getTasks().size() : 0;
         List<UserDTO> memberDTOs = (project.getMembers() != null)
-                ? project.getMembers().stream().map(this::mapProjectMemberToDTO).collect(Collectors.toList())
-                : Collections.emptyList();
+                ? project.getMembers().stream()
+                        .map(this::mapProjectMemberToDTO)
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toList())
+                : new java.util.ArrayList<>();
+
+        if (project.getUser() != null) {
+            boolean hasOwner = memberDTOs.stream().anyMatch(m -> m.getId() != null && m.getId().equals(project.getUser().getId()));
+            if (!hasOwner) {
+                memberDTOs.add(0, UserDTO.builder()
+                        .id(project.getUser().getId())
+                        .username(project.getUser().getUsername())
+                        .email(project.getUser().getEmail())
+                        .fullName(resolveFullName(project.getUser()))
+                        .avatarUrl(project.getUser().getAvatarUrl())
+                        .role(project.getUser().getRole())
+                        .projectRole(ProjectRole.OWNER)
+                        .build());
+            }
+        }
 
         return ProjectDTO.builder()
                 .id(project.getId())

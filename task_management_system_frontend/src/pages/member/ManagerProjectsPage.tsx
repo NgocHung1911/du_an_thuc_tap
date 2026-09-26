@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 
 export const ManagerProjectsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t } = useTranslation();
   const pathPrefix = isAdmin ? '/admin/projects' : '/member/projects';
 
@@ -98,6 +98,25 @@ export const ManagerProjectsPage: React.FC = () => {
       showToast(t('projects.project_created'), 'success');
     }
     await fetchProjects();
+  };
+
+  // Check if current user has permission to manage/edit the project (OWNER or ADMIN)
+  const canManageProject = (project: ProjectDTO): boolean => {
+    if (isAdmin) return true;
+    if (!user) return false;
+
+    const currentMember = project.members?.find(
+      (m) =>
+        (m.id && user.id && m.id === user.id) ||
+        (m.username && user.username && m.username.toLowerCase() === user.username.toLowerCase()) ||
+        (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase())
+    );
+
+    if (currentMember) {
+      return currentMember.projectRole === 'OWNER' || currentMember.projectRole === 'ADMIN';
+    }
+
+    return false;
   };
 
   return (
@@ -245,18 +264,26 @@ export const ManagerProjectsPage: React.FC = () => {
       ) : (
         /* Project Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onCardClick={(projectId) => navigate(`${pathPrefix}/${projectId}`)}
-              onStatusChange={handleStatusChange}
-              onEditClick={(proj) => {
-                setProjectToEdit(proj);
-                setIsFormModalOpen(true);
-              }}
-            />
-          ))}
+          {projects.map((project) => {
+            const hasManagePermission = canManageProject(project);
+
+            return (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onCardClick={(projectId) => navigate(`${pathPrefix}/${projectId}`)}
+                onStatusChange={hasManagePermission ? handleStatusChange : undefined}
+                onEditClick={
+                  hasManagePermission
+                    ? (proj) => {
+                        setProjectToEdit(proj);
+                        setIsFormModalOpen(true);
+                      }
+                    : undefined
+                }
+              />
+            );
+          })}
         </div>
       )}
 
