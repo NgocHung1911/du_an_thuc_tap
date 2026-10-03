@@ -23,4 +23,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
            "(:status IS NULL OR p.status = :status) " +
            "ORDER BY p.id DESC")
     List<Project> searchProjectsByUser(@Param("userId") Long userId, @Param("name") String name, @Param("status") ProjectStatus status);
+
+    @Query("SELECT COALESCE((SELECT SUM(a.fileSize) FROM TaskAttachment a WHERE a.task.project.user.id = :ownerId), 0) + " +
+           "COALESCE((SELECT SUM(ca.fileSize) FROM TaskCommentAttachment ca WHERE ca.comment.task.project.user.id = :ownerId), 0)")
+    Long sumAttachmentSizeByOwnerId(@Param("ownerId") Long ownerId);
 }

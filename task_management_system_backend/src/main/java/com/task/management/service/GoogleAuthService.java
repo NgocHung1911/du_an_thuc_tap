@@ -28,6 +28,7 @@ public class GoogleAuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final SubscriptionService subscriptionService;
 
     @Value("${google.client-id:YOUR_GOOGLE_CLIENT_ID}")
     private String googleClientId;
@@ -108,6 +109,8 @@ public class GoogleAuthService {
                 user.setUsername(username);
                 userRepository.save(user);
             }
+
+            subscriptionService.initializeStarterSubscription(user);
 
             String roleName = user.getRole().name();
             if (!roleName.startsWith("ROLE_")) {

@@ -49,6 +49,7 @@ public class TaskCommentService {
     private final CloudflareR2Service cloudflareR2Service;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationService notificationService;
+    private final SubscriptionService subscriptionService;
 
     private String resolveUsername(String username) {
         if (username != null && !username.trim().isEmpty()) {
@@ -199,6 +200,13 @@ public class TaskCommentService {
                 String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "attachment";
                 Long fileSize = file.getSize();
                 String contentType = file.getContentType();
+
+                // Enforce subscription limits for uploader and project owner
+                subscriptionService.enforceFileSizeLimit(author, fileSize);
+                subscriptionService.enforceFileTypeLimit(author, contentType, originalFilename);
+                if (task.getProject() != null && task.getProject().getUser() != null) {
+                    subscriptionService.enforceStorageQuota(task.getProject().getUser(), fileSize);
+                }
 
                 String fileUrl;
                 if (contentType != null && contentType.toLowerCase().startsWith("image/")) {
