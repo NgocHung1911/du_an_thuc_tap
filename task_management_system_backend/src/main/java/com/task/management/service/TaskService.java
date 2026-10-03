@@ -251,8 +251,8 @@ public class TaskService {
     @Transactional(readOnly = true)
     public List<TaskDTO> getTasksByProjectId(Long projectId, String username) {
         User currentUser = resolveCurrentUser(username);
-        if (currentUser != null && !canAccessProject(currentUser, projectId)) {
-            throw new BadRequestException("You are not a member of this project!");
+        if (username != null && (currentUser == null || !canAccessProject(currentUser, projectId))) {
+            throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
         }
         return taskRepository.findByProjectId(projectId)
                 .stream()
@@ -271,8 +271,8 @@ public class TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
         User currentUser = resolveCurrentUser(username);
         Long projectId = task.getProject() != null ? task.getProject().getId() : null;
-        if (currentUser != null && !canAccessProject(currentUser, projectId)) {
-            throw new BadRequestException("You are not a member of this project!");
+        if (username != null && (currentUser == null || !canAccessProject(currentUser, projectId))) {
+            throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this task!");
         }
         return mapToDTO(task);
     }
@@ -299,11 +299,16 @@ public class TaskService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + request.getProjectId()));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(request.getProjectId(), effectiveUsername);
-            if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Members (MEMBER) do not have permission to create a new task!");
+        User currentUser = resolveCurrentUser(username);
+        if (username != null) {
+            if (currentUser == null || !canAccessProject(currentUser, request.getProjectId())) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+            }
+            if (!isSystemAdmin(currentUser)) {
+                ProjectRole role = projectService.getUserRoleInProject(request.getProjectId(), currentUser.getUsername());
+                if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
+                    throw new org.springframework.security.access.AccessDeniedException("Members (MEMBER) do not have permission to create a new task!");
+                }
             }
         }
 
@@ -328,11 +333,9 @@ public class TaskService {
             reporterUser = userRepository.findById(request.getReporterId())
                     .orElseThrow(() -> new ResourceNotFoundException("Reporter not found with ID: " + request.getReporterId()));
             validateUserBelongsToProject(reporterUser, project);
-        } else if (effectiveUsername != null) {
-            reporterUser = userRepository.findByUsername(effectiveUsername).orElse(null);
-            if (reporterUser != null) {
-                validateUserBelongsToProject(reporterUser, project);
-            }
+        } else if (currentUser != null) {
+            reporterUser = currentUser;
+            validateUserBelongsToProject(reporterUser, project);
         }
         if (reporterUser == null && project.getUser() != null) {
             reporterUser = project.getUser();
@@ -367,11 +370,16 @@ public class TaskService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + request.getProjectId()));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(project.getId(), effectiveUsername);
-            if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Members (MEMBER) do not have permission to edit task details!");
+        User currentUser = resolveCurrentUser(username);
+        if (username != null) {
+            if (currentUser == null || !canAccessProject(currentUser, existingTask.getProject().getId()) || !canAccessProject(currentUser, project.getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+            }
+            if (!isSystemAdmin(currentUser)) {
+                ProjectRole role = projectService.getUserRoleInProject(project.getId(), currentUser.getUsername());
+                if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
+                    throw new org.springframework.security.access.AccessDeniedException("Members (MEMBER) do not have permission to edit task details!");
+                }
             }
         }
 
@@ -398,10 +406,7 @@ public class TaskService {
             validateUserBelongsToProject(reporterUser, project);
             existingTask.setReporter(reporterUser);
         } else if (existingTask.getReporter() == null) {
-            User creatorUser = null;
-            if (effectiveUsername != null) {
-                creatorUser = userRepository.findByUsername(effectiveUsername).orElse(null);
-            }
+            User creatorUser = currentUser;
             if (creatorUser == null && project.getUser() != null) {
                 creatorUser = project.getUser();
             }
@@ -435,12 +440,9 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
-            if (role == null) {
-                throw new BadRequestException("You are not a member of this project, so you cannot change the task status!");
-            }
+        User currentUser = resolveCurrentUser(username);
+        if (username != null && (currentUser == null || !canAccessProject(currentUser, task.getProject().getId()))) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not a member of this project, so you cannot change the task status!");
         }
 
         task.setStatus(status);
@@ -461,11 +463,16 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
-            if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Members (MEMBER) do not have permission to change task priority!");
+        User currentUser = resolveCurrentUser(username);
+        if (username != null) {
+            if (currentUser == null || !canAccessProject(currentUser, task.getProject().getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+            }
+            if (!isSystemAdmin(currentUser)) {
+                ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), currentUser.getUsername());
+                if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
+                    throw new org.springframework.security.access.AccessDeniedException("Members (MEMBER) do not have permission to change task priority!");
+                }
             }
         }
 
@@ -487,11 +494,16 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
-            if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Members (MEMBER) do not have permission to assign or unassign team members!");
+        User currentUser = resolveCurrentUser(username);
+        if (username != null) {
+            if (currentUser == null || !canAccessProject(currentUser, task.getProject().getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+            }
+            if (!isSystemAdmin(currentUser)) {
+                ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), currentUser.getUsername());
+                if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
+                    throw new org.springframework.security.access.AccessDeniedException("Members (MEMBER) do not have permission to assign or unassign team members!");
+                }
             }
         }
 
@@ -508,7 +520,7 @@ public class TaskService {
         Task updatedTask = taskRepository.save(task);
         TaskDTO dto = mapToDTO(updatedTask);
 
-        User actor = effectiveUsername != null ? userRepository.findByUsername(effectiveUsername).orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null)) : null;
+        User actor = currentUser;
         String actorName = actor != null ? resolveFullName(actor) : "System";
         if (updatedTask.getUser() != null) {
             notificationService.createAndSendNotification(
@@ -536,26 +548,28 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
-            if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Members (MEMBER) do not have permission to change the reporter!");
+        User currentUser = resolveCurrentUser(username);
+        if (username != null) {
+            if (currentUser == null || !canAccessProject(currentUser, task.getProject().getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+            }
+            if (!isSystemAdmin(currentUser)) {
+                ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), currentUser.getUsername());
+                if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
+                    throw new org.springframework.security.access.AccessDeniedException("Members (MEMBER) do not have permission to change the reporter!");
+                }
             }
         }
 
         if (reporterId == null) {
-            User defaultReporter = null;
-            if (effectiveUsername != null) {
-                defaultReporter = userRepository.findByUsername(effectiveUsername).orElse(null);
-            }
+            User defaultReporter = currentUser;
             if (defaultReporter == null && task.getProject().getUser() != null) {
                 defaultReporter = task.getProject().getUser();
             }
             task.setReporter(defaultReporter);
         } else {
             User reporterUser = userRepository.findById(reporterId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + reporterId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Reporter not found with ID: " + reporterId));
             validateUserBelongsToProject(reporterUser, task.getProject());
             task.setReporter(reporterUser);
         }
@@ -563,7 +577,7 @@ public class TaskService {
         Task updatedTask = taskRepository.save(task);
         TaskDTO dto = mapToDTO(updatedTask);
 
-        User actor = effectiveUsername != null ? userRepository.findByUsername(effectiveUsername).orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null)) : null;
+        User actor = currentUser;
         String actorName = actor != null ? resolveFullName(actor) : "System";
         if (updatedTask.getReporter() != null) {
             notificationService.createAndSendNotification(
@@ -590,11 +604,16 @@ public class TaskService {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(existingTask.getProject().getId(), effectiveUsername);
-            if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
-                throw new BadRequestException("Members (MEMBER) do not have permission to delete tasks!");
+        User currentUser = resolveCurrentUser(username);
+        if (username != null) {
+            if (currentUser == null || !canAccessProject(currentUser, existingTask.getProject().getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+            }
+            if (!isSystemAdmin(currentUser)) {
+                ProjectRole role = projectService.getUserRoleInProject(existingTask.getProject().getId(), currentUser.getUsername());
+                if (role != ProjectRole.OWNER && role != ProjectRole.ADMIN) {
+                    throw new org.springframework.security.access.AccessDeniedException("Members (MEMBER) do not have permission to delete tasks!");
+                }
             }
         }
 
@@ -608,12 +627,9 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
-            if (role == null) {
-                throw new BadRequestException("You are not a member of this project!");
-            }
+        User currentUser = resolveCurrentUser(username);
+        if (username != null && (currentUser == null || !canAccessProject(currentUser, task.getProject().getId()))) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not a member of this project!");
         }
 
         if (file == null || file.isEmpty()) {
@@ -653,12 +669,9 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
 
-        String effectiveUsername = resolveUsername(username);
-        if (effectiveUsername != null) {
-            ProjectRole role = projectService.getUserRoleInProject(task.getProject().getId(), effectiveUsername);
-            if (role == null) {
-                throw new BadRequestException("You are not a member of this project!");
-            }
+        User currentUser = resolveCurrentUser(username);
+        if (username != null && (currentUser == null || !canAccessProject(currentUser, task.getProject().getId()))) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not a member of this project!");
         }
 
         if (task.getAttachments() != null && attachmentUrl != null) {

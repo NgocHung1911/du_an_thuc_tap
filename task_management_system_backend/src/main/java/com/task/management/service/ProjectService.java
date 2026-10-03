@@ -87,8 +87,26 @@ public class ProjectService {
     private ProjectDTO mapToDTO(Project project) {
         int taskCount = (project.getTasks() != null) ? project.getTasks().size() : 0;
         List<UserDTO> memberDTOs = (project.getMembers() != null)
-                ? project.getMembers().stream().map(this::mapProjectMemberToDTO).collect(Collectors.toList())
-                : Collections.emptyList();
+                ? project.getMembers().stream()
+                        .map(this::mapProjectMemberToDTO)
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toList())
+                : new java.util.ArrayList<>();
+
+        if (project.getUser() != null) {
+            boolean hasOwner = memberDTOs.stream().anyMatch(m -> m.getId() != null && m.getId().equals(project.getUser().getId()));
+            if (!hasOwner) {
+                memberDTOs.add(0, UserDTO.builder()
+                        .id(project.getUser().getId())
+                        .username(project.getUser().getUsername())
+                        .email(project.getUser().getEmail())
+                        .fullName(resolveFullName(project.getUser()))
+                        .avatarUrl(project.getUser().getAvatarUrl())
+                        .role(project.getUser().getRole())
+                        .projectRole(ProjectRole.OWNER)
+                        .build());
+            }
+        }
 
         return ProjectDTO.builder()
                 .id(project.getId())
@@ -116,14 +134,46 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public ProjectRole getUserRoleInProject(Long projectId, String username) {
-        if (username == null || username.trim().isEmpty()) return null;
+        if (username == null || username.trim().isEmpty() || projectId == null) return null;
         User user = userRepository.findByUsername(username)
                 .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
         if (user == null) return null;
 
-        return projectMemberRepository.findByProjectIdAndUserId(projectId, user.getId())
+        ProjectRole role = projectMemberRepository.findByProjectIdAndUserId(projectId, user.getId())
                 .map(pm -> pm.getRole())
                 .orElse(null);
+        if (role != null) return role;
+
+        Project project = projectRepository.findById(projectId).orElse(null);
+        if (project != null && project.getUser() != null && project.getUser().getId().equals(user.getId())) {
+            return ProjectRole.OWNER;
+        }
+
+        return null;
+    }
+
+    private User resolveUser(String username) {
+        if (username == null || username.trim().isEmpty()) return null;
+        return userRepository.findByUsername(username)
+                .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
+    }
+
+    private boolean isSystemAdmin(User user) {
+        return user != null && user.getRole() == Role.ADMIN;
+    }
+
+    public void checkProjectAccess(Long projectId, String username) {
+        User currentUser = resolveUser(username);
+        if (currentUser == null) {
+            throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+        }
+        if (isSystemAdmin(currentUser)) {
+            return;
+        }
+        ProjectRole role = getUserRoleInProject(projectId, username);
+        if (role == null) {
+            throw new org.springframework.security.access.AccessDeniedException("You do not have permission to access this project!");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -169,17 +219,7 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
-        if (username != null && !username.trim().isEmpty()) {
-            User currentUser = userRepository.findByUsername(username)
-                    .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
-
-            if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
-                ProjectRole callerRole = getUserRoleInProject(id, username);
-                if (callerRole == null) {
-                    throw new BadRequestException("You are not a member of this project!");
-                }
-            }
-        }
+        checkProjectAccess(id, username);
         return mapToDTO(project);
     }
 
@@ -228,15 +268,11 @@ public class ProjectService {
         Project existingProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
-        if (username != null && !username.trim().isEmpty()) {
-            User currentUser = userRepository.findByUsername(username)
-                    .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
-
-            if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
-                ProjectRole callerRole = getUserRoleInProject(id, username);
-                if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
-                    throw new BadRequestException("You do not have permission to update this project!");
-                }
+        User currentUser = resolveUser(username);
+        if (currentUser == null || !isSystemAdmin(currentUser)) {
+            ProjectRole callerRole = getUserRoleInProject(id, username);
+            if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to update this project!");
             }
         }
 
@@ -267,15 +303,11 @@ public class ProjectService {
         Project existingProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
-        if (username != null && !username.trim().isEmpty()) {
-            User currentUser = userRepository.findByUsername(username)
-                    .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
-
-            if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
-                ProjectRole callerRole = getUserRoleInProject(id, username);
-                if (callerRole != ProjectRole.OWNER) {
-                    throw new BadRequestException("Only the Project Owner can delete the project!");
-                }
+        User currentUser = resolveUser(username);
+        if (currentUser == null || !isSystemAdmin(currentUser)) {
+            ProjectRole callerRole = getUserRoleInProject(id, username);
+            if (callerRole != ProjectRole.OWNER) {
+                throw new org.springframework.security.access.AccessDeniedException("Only the Project Owner can delete the project!");
             }
         }
 
@@ -293,10 +325,11 @@ public class ProjectService {
             throw new BadRequestException("Email or Username cannot be blank!");
         }
 
-        if (currentUsername != null && !currentUsername.trim().isEmpty()) {
+        User currentUser = resolveUser(currentUsername);
+        if (currentUser == null || !isSystemAdmin(currentUser)) {
             ProjectRole callerRole = getUserRoleInProject(projectId, currentUsername);
             if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
-                throw new BadRequestException("You do not have permission to invite/add members to this project!");
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to invite/add members to this project!");
             }
         }
 
@@ -358,12 +391,7 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
-        if (username != null && !username.trim().isEmpty()) {
-            ProjectRole callerRole = getUserRoleInProject(projectId, username);
-            if (callerRole == null) {
-                throw new BadRequestException("You do not have permission to view members of this project!");
-            }
-        }
+        checkProjectAccess(projectId, username);
 
         if (project.getMembers() == null) {
             return Collections.emptyList();
@@ -386,10 +414,11 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
-        if (currentUsername != null && !currentUsername.trim().isEmpty()) {
+        User currentUser = resolveUser(currentUsername);
+        if (currentUser == null || !isSystemAdmin(currentUser)) {
             ProjectRole callerRole = getUserRoleInProject(projectId, currentUsername);
             if (callerRole != ProjectRole.OWNER) {
-                throw new BadRequestException("Only the Owner can grant or revoke ADMIN rights for members!");
+                throw new org.springframework.security.access.AccessDeniedException("Only the Owner can grant or revoke ADMIN rights for members!");
             }
         }
 
@@ -421,11 +450,12 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
 
+        User currentUser = resolveUser(currentUsername);
         ProjectRole callerRole = null;
-        if (currentUsername != null && !currentUsername.trim().isEmpty()) {
+        if (currentUser == null || !isSystemAdmin(currentUser)) {
             callerRole = getUserRoleInProject(projectId, currentUsername);
             if (callerRole != ProjectRole.OWNER && callerRole != ProjectRole.ADMIN) {
-                throw new BadRequestException("You do not have permission to remove members from this project!");
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to remove members from this project!");
             }
         }
 

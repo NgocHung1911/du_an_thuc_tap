@@ -1,6 +1,6 @@
 # AGENTS.md
 
-## 1. Project Overview
+ ## 1. Project Overview
 
 This repository is a monorepo named `du_an_thuc_tap` containing two independent applications:
 

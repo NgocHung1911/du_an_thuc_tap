@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface UserInfo {
+  id?: number;
   username: string;
   email: string;
   fullName?: string;
@@ -13,7 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isMember: boolean;
-  login: (token: string, userData: { username: string; email: string; roles: string[]; fullName?: string }) => void;
+  login: (token: string, userData: { id?: number; username: string; email: string; roles: string[]; fullName?: string }) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -41,8 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = roles.some(r => r === 'ROLE_ADMIN' || r === 'ADMIN');
   const isMember = roles.some(r => r === 'ROLE_MEMBER' || r === 'MEMBER');
 
-  const login = (newToken: string, userData: { username: string; email: string; roles: string[]; fullName?: string }) => {
-    const userObj = { username: userData.username, email: userData.email, fullName: userData.fullName };
+  const login = (newToken: string, userData: { id?: number; username: string; email: string; roles: string[]; fullName?: string }) => {
+    const userObj: UserInfo = { id: userData.id, username: userData.username, email: userData.email, fullName: userData.fullName };
     setToken(newToken);
     setUser(userObj);
     setRoles(userData.roles);

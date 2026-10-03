@@ -166,9 +166,10 @@
     },
     "you":"Bạn",
     "recipient_email": "Email người nhận",
-    "recipient_email_placeholder": "Nhập email người nhận...",
     "cancel_invitation": "Hủy lời mời",
     "send_invitation":"Gửi lời mời",
+    "access_denied": "Bạn không có quyền truy cập vào dự án này!",
+    "not_found": "Không tìm thấy dự án yêu cầu!",
     "status": {
       "all": "Tất cả trạng thái",
       "PLANNING": "Lên kế hoạch",

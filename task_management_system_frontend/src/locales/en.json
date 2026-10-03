@@ -171,9 +171,9 @@
     },
     "you":"You",
     "recipient_email": "Recipient Email:",
-    "recipient_email_placeholder": "Enter recipient's email...",
-    "send_invitation": "Send Email Invitation",
     "cancel_invitation": "Cancel",
+    "access_denied": "You do not have permission to access this project!",
+    "not_found": "The requested project was not found!",
     "status": {
       "all": "All Statuses",
       "PLANNING": "Planning",

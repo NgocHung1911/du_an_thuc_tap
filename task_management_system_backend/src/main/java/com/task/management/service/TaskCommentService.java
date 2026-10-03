@@ -120,7 +120,7 @@ public class TaskCommentService {
                 project.getMembers().stream().anyMatch(m -> m.getUser() != null && m.getUser().getId().equals(user.getId()));
         boolean isOwner = project.getUser() != null && project.getUser().getId().equals(user.getId());
         if (!isMember && !isOwner) {
-            throw new BadRequestException("User does not belong to this project!");
+            throw new org.springframework.security.access.AccessDeniedException("User does not belong to this project!");
         }
     }
 
@@ -154,6 +154,28 @@ public class TaskCommentService {
 
     @Transactional(readOnly = true)
     public List<TaskCommentDTO> getCommentsByTaskId(Long taskId) {
+        return getCommentsByTaskId(taskId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskCommentDTO> getCommentsByTaskId(Long taskId, String username) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        String effectiveUsername = resolveUsername(username);
+        if (effectiveUsername == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized user action.");
+        }
+
+        User currentUser = userRepository.findByUsername(effectiveUsername)
+                .orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null));
+
+        if (currentUser == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized user action.");
+        }
+
+        validateUserBelongsToProject(currentUser, task.getProject());
+
         return commentRepository.findByTaskIdAndParentCommentIsNullOrderByCreatedAtAsc(taskId)
                 .stream()
                 .map(this::mapToDTO)
@@ -167,7 +189,7 @@ public class TaskCommentService {
 
         String effectiveUsername = resolveUsername(username);
         if (effectiveUsername == null) {
-            throw new BadRequestException("Unauthorized user action.");
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized user action.");
         }
 
         User author = userRepository.findByUsername(effectiveUsername)
@@ -346,13 +368,13 @@ public class TaskCommentService {
                 .orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null));
 
         if (currentUser == null) {
-            throw new BadRequestException("Unauthorized action.");
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized action.");
         }
 
         boolean isAuthor = comment.getUser() != null && comment.getUser().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         if (!isAuthor && !isAdmin) {
-            throw new BadRequestException("You do not have permission to edit this comment!");
+            throw new org.springframework.security.access.AccessDeniedException("You do not have permission to edit this comment!");
         }
 
         comment.setContent(request.getContent());
@@ -372,7 +394,7 @@ public class TaskCommentService {
                 .orElseGet(() -> userRepository.findByEmail(effectiveUsername).orElse(null));
 
         if (currentUser == null) {
-            throw new BadRequestException("Unauthorized action.");
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized action.");
         }
 
         boolean isAuthor = comment.getUser() != null && comment.getUser().getId().equals(currentUser.getId());
@@ -381,7 +403,7 @@ public class TaskCommentService {
         boolean isOwnerOrAdmin = projectRole == ProjectRole.OWNER || projectRole == ProjectRole.ADMIN;
 
         if (!isAuthor && !isAdmin && !isOwnerOrAdmin) {
-            throw new BadRequestException("You do not have permission to delete this comment!");
+            throw new org.springframework.security.access.AccessDeniedException("You do not have permission to delete this comment!");
         }
 
         Task task = comment.getTask();

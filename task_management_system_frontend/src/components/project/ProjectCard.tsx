@@ -64,7 +64,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </select>
           ) : (
             <span
-              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${getStatusBadgeStyle(
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border inline-flex items-center ${getStatusBadgeStyle(
                 project.status
               )}`}
             >

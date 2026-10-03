@@ -45,6 +45,9 @@ public class WebSocketConfigTest {
     @Mock
     private ProjectMemberRepository projectMemberRepository;
 
+    @Mock
+    private com.task.management.repository.ProjectRepository projectRepository;
+
     @Test
     public void testConnect_WithValidJwt_ShouldSucceed() {
         String validToken = "valid.jwt.token";
@@ -107,6 +110,7 @@ public class WebSocketConfigTest {
         user.setRole(Role.MEMBER);
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
         when(projectMemberRepository.existsByProjectIdAndUserId(1L, 20L)).thenReturn(false);
+        when(projectRepository.findById(1L)).thenReturn(Optional.empty());
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
         accessor.setDestination("/topic/projects/1");

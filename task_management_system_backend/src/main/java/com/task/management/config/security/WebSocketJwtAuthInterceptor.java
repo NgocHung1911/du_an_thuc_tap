@@ -34,6 +34,7 @@ public class WebSocketJwtAuthInterceptor implements ChannelInterceptor {
     private final CustomUserDetailsService userDetailsService;
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final com.task.management.repository.ProjectRepository projectRepository;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -92,7 +93,11 @@ public class WebSocketJwtAuthInterceptor implements ChannelInterceptor {
             }
 
             boolean isMember = projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId());
-            if (!isMember) {
+            boolean isOwner = projectRepository.findById(projectId)
+                    .map(p -> p.getUser() != null && p.getUser().getId().equals(user.getId()))
+                    .orElse(false);
+
+            if (!isMember && !isOwner) {
                 log.warn("WebSocket SUBSCRIBE forbidden: User {} tried to subscribe to project {} without membership", username, projectId);
                 throw new MessageDeliveryException("Forbidden: You are not a member of this project");
             }
