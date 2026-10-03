@@ -30,7 +30,7 @@ public class GoogleAuthService {
     private final PasswordEncoder passwordEncoder;
     private final SubscriptionService subscriptionService;
 
-    @Value("${google.client-id:YOUR_GOOGLE_CLIENT_ID}")
+    @Value("${google.client-id}")
     private String googleClientId;
 
     public AuthResponseDTO processGoogleLogin(String idTokenString) {

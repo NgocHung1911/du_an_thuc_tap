@@ -56,7 +56,7 @@ class WebSocketService {
     }
 
     this.currentUsername = username || null;
-    const socketUrl = (import.meta as any).env?.VITE_WS_URL || 'http://localhost:8080/ws';
+    const socketUrl = (import.meta as any).env?.VITE_WS_URL || `${window.location.protocol}//${window.location.host}/ws`;
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),

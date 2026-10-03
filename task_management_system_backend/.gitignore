@@ -34,9 +34,13 @@ build/
 
 ### Secrets & Application Configs ###
 *.properties
+!.mvn/wrapper/maven-wrapper.properties
 .env
 .env.*
 !.env.example
 *.yml
 *.yaml
+# This file contains only placeholders and must be committed so deployments
+# receive the application configuration without secrets.
+!**/src/main/resources/application.yml
 !**/src/main/resources/application-example.yml
