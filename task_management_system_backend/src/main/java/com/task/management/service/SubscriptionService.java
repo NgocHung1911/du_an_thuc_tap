@@ -213,8 +213,11 @@ public class SubscriptionService {
         Instant now = Instant.now();
 
         // Kiểm tra xem user có đơn PENDING nào cùng gói còn hiệu lực không, tái sử dụng để tránh sinh rác
-        Optional<PaymentOrder> existingPending = paymentOrderRepository.findByUserIdAndStatus(user.getId(), OrderStatus.PENDING)
-                .filter(o -> o.getTargetPlan() == targetPlan && o.getExpiresAt().isAfter(now));
+        Optional<PaymentOrder> existingPending = paymentOrderRepository
+                .findByUserIdAndStatusOrderByCreatedAtDesc(user.getId(), OrderStatus.PENDING)
+                .stream()
+                .filter(o -> o.getTargetPlan() == targetPlan && o.getExpiresAt() != null && o.getExpiresAt().isAfter(now))
+                .findFirst();
 
         if (existingPending.isPresent()) {
             return mapToOrderResponseDTO(existingPending.get());

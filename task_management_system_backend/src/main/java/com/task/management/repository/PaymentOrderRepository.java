@@ -26,5 +26,5 @@ public interface PaymentOrderRepository extends JpaRepository<PaymentOrder, Long
     @Query("SELECT o FROM PaymentOrder o WHERE o.status = 'PENDING' AND o.expiresAt <= :now")
     List<PaymentOrder> findExpiredPendingOrders(@Param("now") Instant now);
 
-    Optional<PaymentOrder> findByUserIdAndStatus(Long userId, OrderStatus status);
+    List<PaymentOrder> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, OrderStatus status);
 }
