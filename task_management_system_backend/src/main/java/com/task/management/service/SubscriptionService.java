@@ -68,8 +68,6 @@ public class SubscriptionService {
     @Value("${sepay.account-name:TRAN NGOC HUNG}")
     private String sepayAccountName;
 
-    private static final Pattern ORDER_CODE_PATTERN = Pattern.compile("(KIRA-(?:PRO|ENTERPRISE)-[A-Za-z0-9]+)", Pattern.CASE_INSENSITIVE);
-
     /**
      * Khởi tạo subscription STARTER cho user mới (hoặc user hiện hữu chưa có subscription).
      */
@@ -410,12 +408,29 @@ public class SubscriptionService {
         );
     }
 
+    private static final Pattern FLEXIBLE_ORDER_CODE_PATTERN = Pattern.compile(
+            "KIRA[-_\\s]?(PRO|ENTERPRISE)[-_\\s]?([A-Za-z0-9]+)",
+            Pattern.CASE_INSENSITIVE
+    );
+
     private String extractOrderCode(String text) {
         if (text == null || text.isBlank()) return null;
-        Matcher matcher = ORDER_CODE_PATTERN.matcher(text);
+
+        // 1. Thử match regex linh hoạt (hỗ trợ cả có dấu '-' và không có dấu '-')
+        Matcher matcher = FLEXIBLE_ORDER_CODE_PATTERN.matcher(text);
         if (matcher.find()) {
-            return matcher.group(1).toUpperCase();
+            String plan = matcher.group(1).toUpperCase();
+            String idPart = matcher.group(2);
+            return "KIRA-" + plan + "-" + idPart;
         }
+
+        // 2. Fallback: Chuẩn hóa bỏ hết ký tự đặc biệt rồi tìm kiếm
+        String clean = text.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
+        Matcher fallbackMatcher = Pattern.compile("KIRA(PRO|ENTERPRISE)([A-Z0-9]+)").matcher(clean);
+        if (fallbackMatcher.find()) {
+            return "KIRA-" + fallbackMatcher.group(1) + "-" + fallbackMatcher.group(2);
+        }
+
         return null;
     }
 
