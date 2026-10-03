@@ -390,7 +390,7 @@ public class SubscriptionService {
             // Bắn WebSocket thông báo tới topic riêng của User
             SubscriptionSummaryDTO summary = getUserSubscriptionSummary(user);
             WebSocketEvent wsEvent = WebSocketEvent.builder()
-                    .type(WebSocketEventType.SUBSCRIPTION_UPDATED)
+                    .eventType(WebSocketEventType.SUBSCRIPTION_UPDATED)
                     .actorUsername("System")
                     .actorFullName("System")
                     .data(summary)

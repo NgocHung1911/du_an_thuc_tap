@@ -28,4 +28,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
            "COALESCE((SELECT SUM(ca.fileSize) FROM TaskCommentAttachment ca WHERE ca.comment.task.project.user.id = :ownerId), 0)")
     Long sumAttachmentSizeByOwnerId(@Param("ownerId") Long ownerId);
     List<Project> findTop5ByOrderByIdDesc();
+    @Query("SELECT p.status AS status, COUNT(p) AS count FROM Project p GROUP BY p.status")
+    List<Object[]> countProjectsGroupedByStatus();
 }
