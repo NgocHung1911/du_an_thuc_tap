@@ -38,6 +38,7 @@ public class InvitationService {
     private final UserRepository userRepository;
     private final BrevoMailService brevoMailService;
     private final ApplicationEventPublisher eventPublisher;
+    private final SubscriptionService subscriptionService;
 
     @Transactional
     public AcceptInvitationResponseDTO sendInvitation(Long projectId, InviteMemberRequestDTO request) {
@@ -213,6 +214,10 @@ public class InvitationService {
         boolean alreadyMember = project.getMembers().stream()
                 .anyMatch(m -> m.getUser() != null && m.getUser().getId().equals(currentUserId));
         if (!alreadyMember) {
+            if (project.getUser() != null) {
+                subscriptionService.enforceMemberAddLimit(project.getUser(), currentUser.getId());
+            }
+
             ProjectMember newMember = ProjectMember.builder()
                     .project(project)
                     .user(currentUser)

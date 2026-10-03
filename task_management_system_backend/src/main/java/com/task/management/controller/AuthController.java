@@ -38,6 +38,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthService googleAuthService;
     private final OtpService otpService;
+    private final com.task.management.service.SubscriptionService subscriptionService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
@@ -104,6 +105,7 @@ public class AuthController {
         user.setRole(registerDTO.getRole() != null ? registerDTO.getRole() : Role.MEMBER);
 
         userRepository.save(user);
+        subscriptionService.initializeStarterSubscription(user);
 
         // Sinh mã OTP và gửi mail qua Brevo REST API
         try {

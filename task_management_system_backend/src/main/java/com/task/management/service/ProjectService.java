@@ -41,6 +41,7 @@ public class ProjectService {
     private final TaskRepository taskRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final NotificationService notificationService;
+    private final SubscriptionService subscriptionService;
 
     private void publishProjectEvent(WebSocketEventType eventType, Long projectId, UserDTO memberDto, Long targetUserId) {
         if (eventPublisher == null || projectId == null) return;
@@ -238,6 +239,9 @@ public class ProjectService {
             User currentUser = userRepository.findByUsername(username)
                     .orElseGet(() -> userRepository.findByEmail(username).orElse(null));
             if (currentUser != null) {
+                // Enforce subscription plan project limit for owner
+                subscriptionService.enforceProjectCreationLimit(currentUser);
+
                 project.setUser(currentUser);
 
                 ProjectMember ownerMember = ProjectMember.builder()
@@ -345,6 +349,10 @@ public class ProjectService {
 
         if (isAlreadyMember) {
             throw new BadRequestException("Member is already in the project");
+        }
+
+        if (project.getUser() != null) {
+            subscriptionService.enforceMemberAddLimit(project.getUser(), user.getId());
         }
 
         ProjectMember newMember = ProjectMember.builder()
