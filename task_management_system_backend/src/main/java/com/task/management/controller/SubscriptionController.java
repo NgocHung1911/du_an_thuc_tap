@@ -92,7 +92,7 @@ public class SubscriptionController {
     /**
      * Webhook nhận thông báo giao dịch từ SePay.
      */
-    @PostMapping("/webhook")
+    @PostMapping(value = "/webhook", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> handleSepayWebhook(
             @RequestBody SepayWebhookPayloadDTO payload,
             @RequestHeader(value = "Authorization", required = false) String authHeader

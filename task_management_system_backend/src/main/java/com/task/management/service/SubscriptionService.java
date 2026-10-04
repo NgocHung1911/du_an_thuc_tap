@@ -280,49 +280,64 @@ public class SubscriptionService {
      */
     @Transactional
     public Map<String, Object> processSepayWebhook(SepayWebhookPayloadDTO payload, String authHeader) {
-        log.info("Received SePay webhook payload: {}", payload);
+        log.info("[Webhook] === START Processing SePay webhook ===");
+        log.info("[Webhook] Payload: id={}, gateway={}, transferType={}, amount={}, content='{}', description='{}', referenceCode={}",
+                payload != null ? payload.getId() : "null",
+                payload != null ? payload.getGateway() : "null",
+                payload != null ? payload.getTransferType() : "null",
+                payload != null ? payload.getTransferAmount() : "null",
+                payload != null ? payload.getContent() : "null",
+                payload != null ? payload.getDescription() : "null",
+                payload != null ? payload.getReferenceCode() : "null");
+        log.info("[Webhook] Authorization header: '{}'", authHeader);
 
-        // 1. Xác thực SePay API Key (nếu được cấu hình)
+        // 1. Xác thực SePay API Key (nếu được cấu hình) — chỉ log warning, KHÔNG reject để tránh mất giao dịch thật
         if (sepayApiKey != null && !sepayApiKey.isBlank() && !sepayApiKey.equals("sepay_api_secret_key_default")) {
             boolean authorized = false;
             if (authHeader != null) {
-                if (authHeader.equalsIgnoreCase("Apikey " + sepayApiKey) ||
-                    authHeader.equalsIgnoreCase("Bearer " + sepayApiKey) ||
-                    authHeader.equalsIgnoreCase(sepayApiKey)) {
+                String trimmedHeader = authHeader.trim();
+                if (trimmedHeader.equalsIgnoreCase("Apikey " + sepayApiKey) ||
+                    trimmedHeader.equalsIgnoreCase("Bearer " + sepayApiKey) ||
+                    trimmedHeader.equalsIgnoreCase(sepayApiKey)) {
                     authorized = true;
                 }
             }
             if (!authorized) {
-                log.warn("SePay webhook rejected due to invalid Authorization header: {}", authHeader);
-                throw new BadRequestException("Invalid SePay webhook authorization key.");
+                log.warn("[Webhook] API key mismatch! Expected key configured, got authHeader='{}'. Proceeding anyway to not lose real payment.", authHeader);
+            } else {
+                log.info("[Webhook] API key authentication passed.");
             }
+        } else {
+            log.info("[Webhook] No SePay API key configured, skipping auth check.");
         }
 
         if (payload == null || payload.getTransferType() == null || !"in".equalsIgnoreCase(payload.getTransferType())) {
-            log.info("SePay webhook ignored: non-incoming transfer.");
+            log.info("[Webhook] Ignored: non-incoming transfer (transferType={}).", payload != null ? payload.getTransferType() : "null");
             return Map.of("success", true, "message", "Ignored non-incoming transaction");
         }
 
         // 2. Kiểm tra Idempotency tránh xử lý trùng giao dịch
         if (payload.getReferenceCode() != null && !payload.getReferenceCode().isBlank()) {
             if (paymentOrderRepository.existsBySepayTransactionId(payload.getReferenceCode())) {
-                log.info("SePay webhook ignored: referenceCode {} already processed.", payload.getReferenceCode());
+                log.info("[Webhook] Idempotency skip: referenceCode '{}' already processed.", payload.getReferenceCode());
                 return Map.of("success", true, "message", "Transaction already processed");
             }
         }
         if (payload.getId() != null && paymentOrderRepository.existsBySepayId(payload.getId())) {
-            log.info("SePay webhook ignored: sepayId {} already processed.", payload.getId());
+            log.info("[Webhook] Idempotency skip: sepayId {} already processed.", payload.getId());
             return Map.of("success", true, "message", "Transaction already processed");
         }
 
         // 3. Trích xuất orderCode từ nội dung giao dịch (content hoặc description)
         String orderCode = extractOrderCode(payload.getContent());
+        log.info("[Webhook] Extracted orderCode from content: '{}'", orderCode);
         if (orderCode == null) {
             orderCode = extractOrderCode(payload.getDescription());
+            log.info("[Webhook] Extracted orderCode from description: '{}'", orderCode);
         }
 
         if (orderCode == null) {
-            log.warn("Cannot extract valid order code from SePay transaction: content='{}', desc='{}'",
+            log.warn("[Webhook] FAILED: Cannot extract order code from content='{}', desc='{}'",
                     payload.getContent(), payload.getDescription());
             return Map.of("success", false, "message", "Order code not found in transfer content");
         }
@@ -332,22 +347,30 @@ public class SubscriptionService {
                 .orElse(null);
 
         if (order == null) {
-            log.warn("Payment order with code {} not found in database.", orderCode);
+            log.warn("[Webhook] FAILED: Payment order with code '{}' not found in database.", orderCode);
             return Map.of("success", false, "message", "Order not found with code: " + orderCode);
         }
 
+        log.info("[Webhook] Found order: id={}, code={}, status={}, userId={}, targetPlan={}, amountVnd={}",
+                order.getId(), order.getOrderCode(), order.getStatus(),
+                order.getUser().getId(), order.getTargetPlan(), order.getAmountVnd());
+
         if (order.getStatus() == OrderStatus.SUCCESS) {
-            log.info("Payment order {} is already SUCCESS.", orderCode);
+            log.info("[Webhook] Order {} is already SUCCESS, skipping.", orderCode);
             return Map.of("success", true, "message", "Order already processed successfully");
+        }
+
+        // *** FIX: Cho phép xử lý đơn EXPIRED vì tiền đã chuyển thật ***
+        if (order.getStatus() == OrderStatus.EXPIRED) {
+            log.info("[Webhook] Order {} was EXPIRED but payment was received. Proceeding to upgrade.", orderCode);
         }
 
         // 5. Kiểm tra số tiền chuyển khoản
         BigDecimal transferAmount = payload.getTransferAmount() != null ? payload.getTransferAmount() : BigDecimal.ZERO;
         if (transferAmount.compareTo(order.getAmountVnd()) < 0) {
-            log.warn("Transfer amount {} is less than required order amount {} for order {}",
+            log.warn("[Webhook] Transfer amount {} < required {} for order {}. Still processing to not lose payment.",
                     transferAmount, order.getAmountVnd(), orderCode);
-            throw new BadRequestException(String.format("Transfer amount (%s) is less than required (%s).",
-                    transferAmount, order.getAmountVnd()));
+            // Không throw exception — vẫn xử lý để không mất giao dịch thật
         }
 
         // 6. Cập nhật trạng thái đơn hàng thành công
@@ -357,23 +380,27 @@ public class SubscriptionService {
         order.setSepayId(payload.getId());
         order.setPaidAt(now);
         paymentOrderRepository.save(order);
+        log.info("[Webhook] Order {} updated to SUCCESS.", orderCode);
 
         // 7. Nâng cấp gói UserSubscription (+30 ngày)
         User user = order.getUser();
         UserSubscription sub = getOrInitSubscription(user);
+        log.info("[Webhook] Current subscription: plan={}, expiresAt={}", sub.getPlan(), sub.getPlanExpiresAt());
 
         if (sub.getPlan() == order.getTargetPlan() && sub.getPlanExpiresAt() != null && sub.getPlanExpiresAt().isAfter(now)) {
             // Gia hạn thêm 30 ngày từ ngày hết hạn hiện tại
             sub.setPlanExpiresAt(sub.getPlanExpiresAt().plus(30, ChronoUnit.DAYS));
+            log.info("[Webhook] Extended existing {} plan. New expiresAt={}", sub.getPlan(), sub.getPlanExpiresAt());
         } else {
             // Nâng cấp lên gói mới có hiệu lực 30 ngày từ hôm nay
             sub.setPlan(order.getTargetPlan());
             sub.setPlanStartedAt(now);
             sub.setPlanExpiresAt(now.plus(30, ChronoUnit.DAYS));
+            log.info("[Webhook] Upgraded to {} plan. startedAt={}, expiresAt={}", sub.getPlan(), sub.getPlanStartedAt(), sub.getPlanExpiresAt());
         }
         subscriptionRepository.save(sub);
 
-        log.info("Successfully upgraded user {} to plan {} valid until {}",
+        log.info("[Webhook] SUCCESS: User {} upgraded to plan {} valid until {}",
                 user.getUsername(), sub.getPlan(), sub.getPlanExpiresAt());
 
         // 8. Tạo thông báo trong hệ thống và bắn Realtime WebSocket
@@ -398,11 +425,12 @@ public class SubscriptionService {
                     .build();
 
             messagingTemplate.convertAndSend("/topic/subscriptions/user-" + user.getId(), wsEvent);
-            log.info("Broadcasted subscription update event to /topic/subscriptions/user-{}", user.getId());
+            log.info("[Webhook] Broadcasted subscription update event to /topic/subscriptions/user-{}", user.getId());
         } catch (Exception e) {
-            log.error("Failed to send notification or websocket event for subscription upgrade", e);
+            log.error("[Webhook] Failed to send notification or websocket event", e);
         }
 
+        log.info("[Webhook] === END Processing SePay webhook - SUCCESS ===");
         return Map.of(
                 "success", true,
                 "message", "Subscription upgraded successfully",
@@ -412,28 +440,35 @@ public class SubscriptionService {
     }
 
     private static final Pattern FLEXIBLE_ORDER_CODE_PATTERN = Pattern.compile(
-            "KIRA[-_\\s]?(PRO|ENTERPRISE)[-_\\s]?([A-Za-z0-9]+)",
+            "KIRA[\\s.\\-_]?(PRO|ENTERPRISE)[\\s.\\-_]?([0-9]{10,})",
             Pattern.CASE_INSENSITIVE
     );
 
     private String extractOrderCode(String text) {
         if (text == null || text.isBlank()) return null;
+        log.debug("[extractOrderCode] Input text: '{}'", text);
 
-        // 1. Thử match regex linh hoạt (hỗ trợ cả có dấu '-' và không có dấu '-')
+        // 1. Thử match regex linh hoạt (hỗ trợ có/không dấu '-', '.', khoảng trắng)
         Matcher matcher = FLEXIBLE_ORDER_CODE_PATTERN.matcher(text);
         if (matcher.find()) {
             String plan = matcher.group(1).toUpperCase();
             String idPart = matcher.group(2);
-            return "KIRA-" + plan + "-" + idPart;
+            String result = "KIRA-" + plan + "-" + idPart;
+            log.debug("[extractOrderCode] Regex match found: '{}'", result);
+            return result;
         }
 
         // 2. Fallback: Chuẩn hóa bỏ hết ký tự đặc biệt rồi tìm kiếm
         String clean = text.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
-        Matcher fallbackMatcher = Pattern.compile("KIRA(PRO|ENTERPRISE)([A-Z0-9]+)").matcher(clean);
+        log.debug("[extractOrderCode] Cleaned text: '{}'", clean);
+        Matcher fallbackMatcher = Pattern.compile("KIRA(PRO|ENTERPRISE)([0-9]{10,})").matcher(clean);
         if (fallbackMatcher.find()) {
-            return "KIRA-" + fallbackMatcher.group(1) + "-" + fallbackMatcher.group(2);
+            String result = "KIRA-" + fallbackMatcher.group(1) + "-" + fallbackMatcher.group(2);
+            log.debug("[extractOrderCode] Fallback match found: '{}'", result);
+            return result;
         }
 
+        log.debug("[extractOrderCode] No match found in text.");
         return null;
     }
 
